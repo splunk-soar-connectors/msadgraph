@@ -2870,7 +2870,7 @@
         "wheel": [
             {
                 "module": "Django",
-                "input_file": "wheels/py3/Django-3.2.11-py3-none-any.whl"
+                "input_file": "wheels/py3/Django-4.0.3-py3-none-any.whl"
             },
             {
                 "module": "asgiref",
@@ -2922,7 +2922,7 @@
         "wheel": [
             {
                 "module": "Django",
-                "input_file": "wheels/py3/Django-3.2.11-py3-none-any.whl"
+                "input_file": "wheels/py3/Django-4.0.3-py3-none-any.whl"
             },
             {
                 "module": "asgiref",
@@ -2943,10 +2943,6 @@
             {
                 "module": "idna",
                 "input_file": "wheels/shared/idna-2.10-py2.py3-none-any.whl"
-            },
-            {
-                "module": "pytz",
-                "input_file": "wheels/shared/pytz-2021.3-py2.py3-none-any.whl"
             },
             {
                 "module": "requests",
