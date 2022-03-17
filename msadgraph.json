@@ -43,7 +43,7 @@
         },
         "region": {
             "data_type": "string",
-            "description": "Azure AD Region",
+            "description": "Microsoft AD Region",
             "default": "Global",
             "order": 1,
             "value_list": [

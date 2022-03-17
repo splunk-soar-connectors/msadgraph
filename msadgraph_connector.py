@@ -935,7 +935,7 @@ class AzureADGraphConnector(BaseConnector):
         user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
 
         data = {
-            '@odata.id': "https://{}/v1.0/directoryObjects/{}".format(AZUREADGRAPH_API_REGION[config.get(MS_AZURE_URL, "Global")], user_id)
+            '@odata.id': "https://{}/directoryObjects/{}".format(AZUREADGRAPH_API_REGION[config.get(MS_AZURE_URL, "Global")], user_id)
         }
 
         endpoint = '/groups/{}/members/$ref'.format(object_id)

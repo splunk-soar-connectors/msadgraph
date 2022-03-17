@@ -57,9 +57,8 @@ MS_OAUTH_URL_MSG = 'Using OAuth URL:\n'
 MS_AUTHORIZE_USER_MSG = 'Please authorize user in a separate tab using URL:'
 MS_GENERATING_ACCESS_TOKEN_MSG = 'Generating access token'
 MS_TC_STATUS_SLEEP = 3
-MS_AZURE_CODE_GENERATION_SCOPE = 'offline_access Group.ReadWrite.All User.Read.All User.ReadWrite.All User.ReadWrite'\
-                                 'Directory.ReadWrite.All Directory.AccessAsUser.All User.ManageIdentities.All'\
-                                 'GroupMember.ReadWrite.All RoleManagement.ReadWrite.Directory'
+MS_AZURE_CODE_GENERATION_SCOPE = 'offline_access Group.ReadWrite.All User.Read.All User.ReadWrite.All Directory.ReadWrite.All \
+Directory.AccessAsUser.All User.ManageIdentities.All GroupMember.ReadWrite.All RoleManagement.ReadWrite.Directory'
 MS_AZURE_AUTHORIZE_TROUBLESHOOT_MSG = 'If authorization URL fails to communicate with your Phantom instance, check whether you have:  '\
                                 ' 1. Specified the Web Redirect URL of your App -- The Redirect URL should be <POST URL>/result . '\
                                 ' 2. Configured the base URL of your Phantom Instance at Administration -> Company Settings -> Info'
