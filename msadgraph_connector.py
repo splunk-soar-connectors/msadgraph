@@ -1,6 +1,6 @@
 # File: msadgraph_connector.py
 #
-# Copyright (c) 2019-2022 Splunk Inc.
+# Copyright (c) 2022 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ except ImportError:
 
 TC_FILE = "oauth_task.out"
 SERVER_TOKEN_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token"
-AZUREADGRAPH_API_URL = "https://graph.microsoft.com/v1.0"
 MAX_END_OFFSET_VAL = 2147483646
 
 
@@ -607,7 +606,7 @@ class AzureADGraphConnector(BaseConnector):
             ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
 
         if phantom.is_fail(ret_val):
-            return action_result.get_status(), None
+            return RetVal(phantom.APP_ERROR, None)
 
         return phantom.APP_SUCCESS, resp_json
 
@@ -755,7 +754,8 @@ class AzureADGraphConnector(BaseConnector):
         if filter_string:
             parameters['$filter'] = filter_string
         if select_string:
-            parameters['$select'] = select_string
+            select_string = select_string.strip(',').split(',')
+            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
 
         endpoint = '/users'
         endpoint += '?{}'.format(self._format_params_to_query(parameters))
@@ -781,7 +781,7 @@ class AzureADGraphConnector(BaseConnector):
 
         data = {
             'passwordProfile': {
-                'forceChangePasswordNextLogin': force_change,
+                'forceChangePasswordNextSignIn': force_change,
                 'password': temp_password
             }
         }
@@ -791,7 +791,7 @@ class AzureADGraphConnector(BaseConnector):
         ret_val = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
-            return action_result.get_status()
+            return ret_val
 
         summary = action_result.update_summary({})
         summary['status'] = "Successfully reset password for {}".format(user_id)
@@ -878,7 +878,8 @@ class AzureADGraphConnector(BaseConnector):
         parameters = dict()
         select_string = self._handle_py_ver_compat_for_input_str(param.get('select_string'))
         if select_string:
-            parameters['$select'] = select_string
+            select_string = select_string.strip(',').split(',')
+            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
 
         if user_id:
             endpoint = '/users/{}'.format(user_id)
@@ -946,7 +947,7 @@ class AzureADGraphConnector(BaseConnector):
             if 'references already exist for the following modified properties: \'members\'.' in message:
                 summary['status'] = "User already in group"
             else:
-                return action_result.get_status()
+                return ret_val
         else:
             summary['status'] = "Successfully added user to group"
 
@@ -983,7 +984,8 @@ class AzureADGraphConnector(BaseConnector):
         parameters = dict()
         select_string = param.get('select_string')
         if select_string:
-            parameters['$select'] = select_string
+            select_string = select_string.strip(',').split(',')
+            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
 
         endpoint = '/groups'
         endpoint += '?{}'.format(self._format_params_to_query(parameters))
@@ -1005,7 +1007,8 @@ class AzureADGraphConnector(BaseConnector):
         parameters = dict()
         select_string = param.get('select_string')
         if select_string:
-            parameters['$select'] = select_string
+            select_string = select_string.strip(',').split(',')
+            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
 
         object_id = self._handle_py_ver_compat_for_input_str(param['object_id'])
 
@@ -1034,7 +1037,8 @@ class AzureADGraphConnector(BaseConnector):
         parameters = dict()
         select_string = param.get('select_string')
         if select_string:
-            parameters['$select'] = select_string
+            select_string = select_string.strip(',').split(',')
+            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
 
         endpoint = '/groups/{}/members'.format(object_id)
         endpoint += '?{}'.format(self._format_params_to_query(parameters))
@@ -1116,10 +1120,13 @@ class AzureADGraphConnector(BaseConnector):
         if from_action or self._state.get('token', {}).get('refresh_token', None) is not None:
             data['refresh_token'] = self._state.get('token').get('refresh_token')
             data['grant_type'] = 'refresh_token'
+            data['redirect_uri'] = self._state.get('redirect_uri')
+            data['scope'] = MS_AZURE_CODE_GENERATION_SCOPE
         else:
             data['redirect_uri'] = self._state.get('redirect_uri')
             data['code'] = self._state.get('code')
             data['grant_type'] = 'authorization_code'
+            data['scope'] = MS_AZURE_CODE_GENERATION_SCOPE
 
         ret_val, resp_json = self._make_rest_call(req_url, action_result, headers=headers, data=data, method='post')
 

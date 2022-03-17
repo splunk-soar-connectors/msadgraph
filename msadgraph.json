@@ -8,16 +8,11 @@
     "logo_dark": "logo_msadgraph_dark.svg",
     "product_name": "MS Graph for Active Directory",
     "product_version_regex": ".*",
-    "publisher": "Splunk Community",
-    "contributors": [
-        {
-            "name": "Ekta Bhoir"
-        }
-    ],
-    "license": "Copyright (c) 2019-2022 Splunk Inc.",
+    "publisher": "Splunk",
+    "license": "Copyright (c) 2022 Splunk Inc.",
     "app_version": "1.0.0",
     "python_version": "3",
-    "utctime_updated": "2022-01-31T20:02:22.000000Z",
+    "utctime_updated": "2022-03-15T20:02:22.000000Z",
     "package_name": "phantom_msadgraph",
     "main_module": "msadgraph_connector.py",
     "min_phantom_version": "5.1.0",
@@ -552,7 +547,7 @@
         },
         {
             "action": "reset password",
-            "description": "Reset or set a user's password in an Azure AD environment",
+            "description": "Reset or set a user's password in an Microsoft AD environment",
             "type": "contain",
             "identifier": "reset_password",
             "read_only": false,
@@ -667,7 +662,7 @@
         },
         {
             "action": "disable tokens",
-            "description": "Invalidate all active refresh tokens for a user in an Azure AD environment",
+            "description": "Invalidate all active refresh tokens for a user in a Microsoft AD environment",
             "type": "contain",
             "identifier": "invalidate_tokens",
             "read_only": false,
@@ -1490,6 +1485,196 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.classification",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.createdDateTime",
+                    "data_type": "string",
+                    "example_value": "2021-03-25T18:40:53Z"
+                },
+                {
+                    "data_path": "action_result.data.*.deletedDateTime",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.deletionTimestamp",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.description",
+                    "data_type": "string",
+                    "example_values": [
+                        "This is for testing purpose"
+                    ],
+                    "column_name": "Description",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.data.*.dirSyncEnabled",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.displayName",
+                    "data_type": "string",
+                    "example_values": [
+                        "Test-site"
+                    ],
+                    "column_name": "Display Name",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.data.*.expirationDateTime",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.id",
+                    "data_type": "string",
+                    "example_values": [
+                        "2a201c95-101b-42d9-a7af-9a2fdf8193f1"
+                    ],
+                    "contains": [
+                        "azure object id"
+                    ],
+                    "column_name": "Object ID",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "action_result.data.*.isAssignableToRole",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.lastDirSyncTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.mail",
+                    "data_type": "string",
+                    "example_values": [
+                        "Test-site@test.onmicrosoft.com"
+                    ],
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.mailEnabled",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.mailNickname",
+                    "data_type": "string",
+                    "example_values": [
+                        "Test-site"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.membershipRule",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.membershipRuleProcessingState",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.objectType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Group"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.odata.type",
+                    "data_type": "string",
+                    "example_values": [
+                        "Microsoft.DirectoryServices.Group"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesDomainName",
+                    "data_type": "string",
+                    "contains": [
+                        "domain"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesNetBiosName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSamAccountName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSecurityIdentifier",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSyncEnabled",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.preferredDataLocation",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.preferredLanguage",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.proxyAddresses",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP:test-h@test.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.renewedDateTime",
+                    "data_type": "string",
+                    "example_value": "2021-03-25T18:40:53Z"
+                },
+                {
+                    "data_path": "action_result.data.*.securityEnabled",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.securityIdentifier",
+                    "data_type": "string",
+                    "example_value": "S-1-12-1-294681889-1319597617-672379543-28952017"
+                },
+                {
+                    "data_path": "action_result.data.*.theme",
+                    "data_type": "string",
+                    "example_value": ""
+                },
+                {
+                    "data_path": "action_result.data.*.visibility",
+                    "data_type": "string",
+                    "example_value": "Private"
+                },
+                {
                     "data_path": "action_result.summary.status",
                     "data_type": "string",
                     "example_values": [
@@ -1633,7 +1818,7 @@
         },
         {
             "action": "add user",
-            "description": "Add a user to the tenant by creating an organizational account",
+            "description": "Add a user to a specified group",
             "type": "generic",
             "identifier": "add_user",
             "read_only": false,
