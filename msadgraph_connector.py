@@ -281,7 +281,7 @@ class AzureADGraphConnector(BaseConnector):
         try:
             if input_str and self._python_version < 3:
                 input_str = UnicodeDammit(input_str).unicode_markup.encode('utf-8')
-        except:
+        except Exception:
             self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
 
         return input_str
@@ -557,7 +557,7 @@ class AzureADGraphConnector(BaseConnector):
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Error Connecting to server. Details: {0}"
-                                                   .format(error_message)), resp_json)
+                                                   .format(error_message)), r)
 
         return self._process_response(r, action_result)
 
@@ -595,6 +595,12 @@ class AzureADGraphConnector(BaseConnector):
 
         ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
 
+        if phantom.is_fail(ret_val):
+            if method == 'get':
+                return RetVal(phantom.APP_ERROR, ret_val)
+            else:
+                return action_result.get_status()
+
         # If token is expired, generate a new token
         msg = action_result.get_message()
         if msg and any(failure_message in msg for failure_message in AUTH_FAILURE_MESSAGES):
@@ -604,9 +610,11 @@ class AzureADGraphConnector(BaseConnector):
             headers.update({'Authorization': 'Bearer {0}'.format(self._access_token)})
 
             ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
-
-        if phantom.is_fail(ret_val):
-            return RetVal(phantom.APP_ERROR, None)
+            if phantom.is_fail(ret_val):
+                if method == 'get':
+                    return RetVal(phantom.APP_ERROR, ret_val)
+                else:
+                    return action_result.get_status()
 
         return phantom.APP_SUCCESS, resp_json
 
@@ -1161,7 +1169,7 @@ class AzureADGraphConnector(BaseConnector):
             ret_val, response = self._make_rest_call_helper(action_result, endpoint, params=parameters, method='get')
 
             if phantom.is_fail(ret_val):
-                return action_result.get_status()
+                return None
 
             if "value" in response:
                 for user in response.get('value', []):

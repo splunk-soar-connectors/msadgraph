@@ -1450,21 +1450,25 @@
                         "failed"
                     ],
                     "column_name": "Status",
-                    "column_order": 1
+                    "column_order": 3
                 },
                 {
                     "data_path": "action_result.parameter.attribute",
                     "data_type": "string",
                     "example_values": [
                         "department"
-                    ]
+                    ],
+                    "column_name": "Attribute Name",
+                    "column_order": 1
                 },
                 {
                     "data_path": "action_result.parameter.attribute_value",
                     "data_type": "string",
                     "example_values": [
                         "Sales"
-                    ]
+                    ],
+                    "column_name": "Attribute Value",
+                    "column_order": 2
                 },
                 {
                     "data_path": "action_result.parameter.user_id",
@@ -1508,9 +1512,7 @@
                     "data_type": "string",
                     "example_values": [
                         "This is for testing purpose"
-                    ],
-                    "column_name": "Description",
-                    "column_order": 1
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.dirSyncEnabled",
@@ -1521,9 +1523,7 @@
                     "data_type": "string",
                     "example_values": [
                         "Test-site"
-                    ],
-                    "column_name": "Display Name",
-                    "column_order": 0
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.expirationDateTime",
@@ -1538,9 +1538,7 @@
                     ],
                     "contains": [
                         "azure object id"
-                    ],
-                    "column_name": "Object ID",
-                    "column_order": 2
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.isAssignableToRole",
