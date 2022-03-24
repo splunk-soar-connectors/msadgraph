@@ -819,12 +819,10 @@ class AzureADGraphConnector(BaseConnector):
         }
 
         endpoint = '/users/{}'.format(user_id)
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
+        ret_val = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
-
-        action_result.add_data(response)
 
         summary = action_result.update_summary({})
         summary['status'] = "Successfully enabled user {}".format(user_id)
@@ -840,12 +838,10 @@ class AzureADGraphConnector(BaseConnector):
         user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
         endpoint = '/users/{0}/revokeSignInSessions'.format(user_id)
 
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='post')
+        ret_val = self._make_rest_call_helper(action_result, endpoint, method='post')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
-
-        action_result.add_data(response)
 
         summary = action_result.update_summary({})
         summary['status'] = "Successfully disabled tokens"
@@ -864,12 +860,10 @@ class AzureADGraphConnector(BaseConnector):
         }
 
         endpoint = '/users/{}'.format(user_id)
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
+        ret_val = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
-
-        action_result.add_data(response)
 
         summary = action_result.update_summary({})
         summary['status'] = "Successfully disabled user {}".format(user_id)
@@ -954,6 +948,7 @@ class AzureADGraphConnector(BaseConnector):
             message = action_result.get_message()
             if 'references already exist for the following modified properties: \'members\'.' in message:
                 summary['status'] = "User already in group"
+                return action_result.get_status()
             else:
                 return ret_val
         else:
@@ -977,6 +972,7 @@ class AzureADGraphConnector(BaseConnector):
             message = action_result.get_message()
             if 'does not exist or one of its queried' in message:
                 summary['status'] = "User not in group"
+                return action_result.get_status()
             else:
                 return action_result.get_status()
         else:
@@ -1031,7 +1027,7 @@ class AzureADGraphConnector(BaseConnector):
         action_result.add_data(response)
 
         summary = action_result.update_summary({})
-        summary['display_name'] = response.get('displayName')
+        summary['status'] = "Successfully retrieved group {}".format(object_id)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 

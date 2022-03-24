@@ -1,10 +1,10 @@
 {
     "appid": "f2a239df-acb2-47d6-861c-726a435cfe76",
     "name": "MS Graph for Active Directory",
-    "description": "Connects to Microsoft AD using MS Graph REST API services",
+    "description": "Connects to Microsoft Active Directory using MS Graph REST API services",
     "type": "identity management",
     "product_vendor": "Microsoft",
-    "logo": "logo_msadgraph_dark.svg",
+    "logo": "logo_msadgraph.svg",
     "logo_dark": "logo_msadgraph_dark.svg",
     "product_name": "MS Graph for Active Directory",
     "product_version_regex": ".*",
@@ -2875,7 +2875,7 @@
         },
         {
             "action": "list directory roles",
-            "description": "List the directory roles in a tenant",
+            "description": "List the directory roles that are activated in the tenant",
             "verbose": "<p>Pagination is not implemented for this action as this endpoint does not support pagination. Here is the <b><a href='https://docs.microsoft.com/en-us/graph/paging' target='_blank'>Documentation</a></b> for the same.</p>",
             "type": "investigate",
             "identifier": "list_directory_roles",

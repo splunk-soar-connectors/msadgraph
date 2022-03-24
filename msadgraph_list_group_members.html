@@ -83,8 +83,10 @@ and limitations under the License.
     {% for result in results %}
     <!-- loop for each result -->
     <!------------------- For each Result ---------------------->
-
-    {% if result.data %}
+    {% if not result.data %}
+        <h4 class="wf-h4-style">No data found</h4>
+    {% else %}
+    {% if result.param.select_string %}
         {% for curr_data in result.data %}
             <h3 class="wf-h3-style">Group Members</h3>
                 <table class="wf-table-horizontal">
@@ -97,15 +99,38 @@ and limitations under the License.
                 </table>
                 <br>
         {% endfor %}
-    {% else %}
-        <p> Could not retrieve data </p>
-    {% endif %}
-
     <br>
-
     <!------------------- For each Result END ---------------------->
-
+    {% else %}
+        <h3 class="wf-h3-style">Group Members</h3>
+            <table class="wf-table-horizontal">
+                <thead>
+                    <th class="widget-th">Display Name</th>
+                    <th class="widget-th">Object Id</th>
+                    <th class="widget-th">User Princicple Name</th>
+                </thead>
+                <tbody>
+                        {% for curr_data in result.data %}
+                            <tr>
+                                <td class="widget-td" >
+                                    {{ curr_data.displayName  }}
+                                </td>
+                                <td class="widget-td" >
+                                    {{ curr_data.id  }}
+                                </td>
+                                <td class="widget-td" >
+                                    {{ curr_data.userPrincipalName }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                </tbody>
+            </table>
+        <br>
+    {% endif %}
+    {% endif %}
+    <br>
     {% endfor %}
+
     <!-- loop for each result end -->
 </div> <!-- Main Div -->
 
