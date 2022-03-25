@@ -88,8 +88,12 @@ and limitations under the License.
     {% else %}
     {% if result.param.select_string %}
         {% for curr_data in result.data %}
-            <h3 class="wf-h3-style">Users</h3>
+        {% if curr_data == 'Empty response' %}
+            <h3 class="wf-h3-style">Empty response. Please add valid property name</h3>
+        {% else %}
+            <h3 class="wf-h3-style">User Attributes</h3>
                 <table class="wf-table-horizontal">
+                    <!-- <h3 class="wf-h3-style">Users</h3> -->
                     {% for key, value in curr_data.items %}
                         <tr>
                             <th>{{ key }}</th>
@@ -98,6 +102,7 @@ and limitations under the License.
                     {% endfor %}
                 </table>
                 <br>
+        {% endif %}
         {% endfor %}
     <br>
     <!------------------- For each Result END ---------------------->
@@ -116,10 +121,20 @@ and limitations under the License.
                                     {{ curr_data.displayName  }}
                                 </td>
                                 <td class="widget-td" >
-                                    {{ curr_data.id  }}
+                                    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['azure user id'],
+                                    'value':'{{ curr_data.id }}' }], 0, {{ container.id }}, null, false);">
+                                        {{ curr_data.id }}
+                                        &nbsp;
+                                        <span class="fa fa-caret-down" style="font-size: smaller;"></span>
+                                    </a>
                                 </td>
                                 <td class="widget-td" >
-                                    {{ curr_data.userPrincipalName }}
+                                    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['azure user id'],
+                                    'value':'{{ curr_data.userPrincipalName }}' }], 0, {{ container.id }}, null, false);">
+                                        {{ curr_data.userPrincipalName }}
+                                        &nbsp;
+                                        <span class="fa fa-caret-down" style="font-size: smaller;"></span>
+                                    </a>
                                 </td>
                             </tr>
                         {% endfor %}

@@ -116,10 +116,20 @@ and limitations under the License.
                                     {{ curr_data.displayName  }}
                                 </td>
                                 <td class="widget-td" >
-                                    {{ curr_data.id  }}
+                                    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['azure user id'],
+                                    'value':'{{ curr_data.id }}' }], 0, {{ container.id }}, null, false);">
+                                        {{ curr_data.id }}
+                                        &nbsp;
+                                        <span class="fa fa-caret-down" style="font-size: smaller;"></span>
+                                    </a>
                                 </td>
                                 <td class="widget-td" >
-                                    {{ curr_data.userPrincipalName }}
+                                    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['azure user id'],
+                                    'value':'{{ curr_data.userPrincipalName }}' }], 0, {{ container.id }}, null, false);">
+                                        {{ curr_data.userPrincipalName }}
+                                        &nbsp;
+                                        <span class="fa fa-caret-down" style="font-size: smaller;"></span>
+                                    </a>
                                 </td>
                             </tr>
                         {% endfor %}

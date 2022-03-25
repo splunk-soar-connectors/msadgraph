@@ -1170,6 +1170,8 @@ class AzureADGraphConnector(BaseConnector):
             if "value" in response:
                 for user in response.get('value', []):
                     action_result.add_data(user)
+                if len(response.get('value')) > 0 and response.get('value')[0] == {}:
+                    action_result.add_data('Empty response')
             else:
                 action_result.add_data(response)
 
