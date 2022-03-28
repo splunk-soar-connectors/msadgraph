@@ -91,16 +91,18 @@ and limitations under the License.
         {% if curr_data == 'Empty response' %}
             <h3 class="wf-h3-style">Empty response. Please add valid property name</h3>
         {% else %}
-            <h3 class="wf-h3-style">User Attributes</h3>
-                <table class="wf-table-horizontal">
+            <h3 class="wf-h3-style">User</h3>
+            {% for key, value in curr_data.items %}
+                <table class="phantom-table dataTable">
                     <!-- <h3 class="wf-h3-style">Users</h3> -->
-                    {% for key, value in curr_data.items %}
+
                         <tr>
                             <th>{{ key }}</th>
                             <td>{{ value }}</td>
                         </tr>
-                    {% endfor %}
+
                 </table>
+                {% endfor %}
                 <br>
         {% endif %}
         {% endfor %}
@@ -108,7 +110,7 @@ and limitations under the License.
     <!------------------- For each Result END ---------------------->
     {% else %}
         <h3 class="wf-h3-style">Users</h3>
-            <table class="wf-table-horizontal">
+            <table class="phantom-table dataTable">
                 <thead>
                     <th class="widget-th">Display Name</th>
                     <th class="widget-th">Object Id</th>
@@ -150,24 +152,23 @@ and limitations under the License.
 
 <script>
     $.extend(true, $.fn.dataTable.defaults, {
-      "searching": true,
-      "bLengthChange": false,
-      "language": {
-        "paginate": {
-          "previous": "<i class='fa fa-angle-left fa-lg'></i>",
-          "next": "<i class='fa fa-angle-right fa-lg'></i>"
+        "searching": true,
+        "bLengthChange": false,
+        "language": {
+          "paginate": {
+            "previous": "<i class='fa fa-angle-left fa-lg'></i>",
+            "next": "<i class='fa fa-angle-right fa-lg'></i>"
+          },
+          "emptyTable": "No data available"
         },
-        "emptyTable": "No data available"
-      },
-      "dom": '<"top">rt<"bottom"p><"clear">',
-      drawCallback: function(settings) {
-        var pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
-        pagination.toggle(this.api().page.info().pages > 1);
-      }
-    });
-    $('.dataTable').DataTable();
-
-</script>
+        "dom": '<"top">rt<"bottom"p><"clear">',
+        drawCallback: function(settings) {
+          var pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
+          pagination.toggle(this.api().page.info().pages > 1);
+        }
+      });
+      $('.dataTable').DataTable();
+    </script>
 
 {% endblock %}
 <!-- Main Start Block -->

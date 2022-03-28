@@ -1100,7 +1100,7 @@ class AzureADGraphConnector(BaseConnector):
         # summary = action_result.update_summary({})
         # summary['message'] = "User is member of group"
 
-        return action_result.set_status(phantom.APP_SUCCESS, "User is member of group")
+        return action_result.set_status(phantom.APP_SUCCESS, "User is member of group: {}".format(ret_val))
 
     def _get_token(self, action_result, from_action=False):
         """ This function is used to get a token via REST Call.

@@ -89,13 +89,21 @@ and limitations under the License.
     {% if result.param.select_string %}
         {% for curr_data in result.data %}
             <h3 class="wf-h3-style">Group Details</h3>
-                <table class="wf-table-horizontal">
+            <table class="wf-table-horizontal">
+                <tr>
                     {% for key, value in curr_data.items %}
-                        <tr>
-                            <th>{{ key }}</th>
-                            <td>{{ value }}</td>
-                        </tr>
+                    <thead>
+                            {{ key }}
+                    </thead>
                     {% endfor %}
+                </tr>
+                    <tr>
+                    {% for key, value in curr_data.items %}
+                            <tbody>
+                                <td>{{ value }}</td>
+                            </tbody>
+                    {% endfor %}
+                    </tr>
                 </table>
                 <br>
         {% endfor %}
@@ -103,7 +111,7 @@ and limitations under the License.
     <!------------------- For each Result END ---------------------->
     {% else %}
         <h3 class="wf-h3-style">Group Details</h3>
-            <table class="wf-table-horizontal">
+            <table class="phantom-table dataTable">
                 <thead>
                     <th class="widget-th">Display Name</th>
                     <th class="widget-th">Object Id</th>
@@ -138,6 +146,27 @@ and limitations under the License.
 
     <!-- loop for each result end -->
 </div> <!-- Main Div -->
+
+<script>
+    $.extend(true, $.fn.dataTable.defaults, {
+        "searching": true,
+        "bLengthChange": false,
+        "language": {
+          "paginate": {
+            "previous": "<i class='fa fa-angle-left fa-lg'></i>",
+            "next": "<i class='fa fa-angle-right fa-lg'></i>"
+          },
+          "emptyTable": "No data available"
+        },
+        "dom": '<"top">rt<"bottom"p><"clear">',
+        drawCallback: function(settings) {
+          var pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
+          pagination.toggle(this.api().page.info().pages > 1);
+        }
+      });
+      $('.dataTable').DataTable();
+
+ </script>
 
 {% endblock %}
 <!-- Main Start Block -->
