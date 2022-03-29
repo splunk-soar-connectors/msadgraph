@@ -1,14 +1,14 @@
 [comment]: # "Auto-generated SOAR connector documentation"
-# Azure AD Graph
+# MS Graph for Active Directory
 
 Publisher: Splunk  
 Connector Version: 2\.2\.2  
 Product Vendor: Microsoft  
-Product Name: Azure AD Graph  
+Product Name: MS Graph for Active Directory  
 Product Version Supported (regex): "\.\*"  
 Minimum Product Version: 5\.0\.0  
 
-Connects to Azure AD Graph REST API services
+Connects to MS Graph for Active Directory REST API services
 
 [comment]: # " File: README.md"
 [comment]: # "  Copyright (c) 2022 Splunk Inc."
@@ -38,7 +38,7 @@ Active Directory** .
         secure, as it cannot be retrieved after closing the window.
     -   Under **Redirect URIs** we will be updating the entry of https://phantom.local to reflect
         the actual redirect URI. We will get this from the Phantom asset we create below in the
-        section titled "Configure the Azure AD Graph Phantom app Asset"
+        section titled "Configure the MS Graph for Active Directory Phantom app Asset"
     -   Under **API Permissions** , click on **Add a permission** .
     -   Go to **Microsoft Graph Permissions** , the following **Delegated Permissions** need to be
         added:
@@ -51,20 +51,20 @@ Active Directory** .
 
 After making these changes, click on **Grant admin consent** .
 
-## Configure the Azure AD Graph Phantom app Asset
+## Configure the MS Graph for Active Directory Phantom app Asset
 
-When creating an asset for the **Azure AD Graph** app, place the **Application ID** of the app
+When creating an asset for the **MS Graph for Active Directory** app, place the **Application ID** of the app
 created during the previous step in the **Client ID** field and place the password generated during
 the app creation process in the **Client Secret** field. Then, after filling out the **Tenant**
 field, click **SAVE** .  
   
 After saving, a new field will appear in the **Asset Settings** tab. Take the URL found in the
-**POST incoming for Azure AD Graph to this location** field and place it in the **Redirect URIs**
+**POST incoming for MS Graph for Active Directory to this location** field and place it in the **Redirect URIs**
 field mentioned in a previous step. To this URL, add **/result** . After doing so the URL should
 look something like:  
   
 
-https://\<phantom_host>/rest/handler/azureadgraph_c6d3b801-5c26-4abd-9e89-6d8007e2778f/\<asset_name>/result
+https://\<phantom_host>/rest/handler/msgraphforactivedirectory_f2a239df-acb2-47d6-861c-726a435cfe76/\<asset_name>/result
 
   
 Once again, click on Save.
@@ -124,7 +124,7 @@ default ports used by Splunk SOAR.
 
 
 ### Configuration Variables
-The below configuration variables are required for this Connector to operate.  These variables are specified when configuring a Azure AD Graph asset in SOAR.
+The below configuration variables are required for this Connector to operate.  These variables are specified when configuring a MS Graph for Active Directory asset in SOAR.
 
 VARIABLE | REQUIRED | TYPE | DESCRIPTION
 -------- | -------- | ---- | -----------
@@ -209,7 +209,7 @@ action\_result\.data\.\*\.legalAgeGroupClassification | string |
 action\_result\.data\.\*\.mail | string |  `email` 
 action\_result\.data\.\*\.mailNickname | string | 
 action\_result\.data\.\*\.mobile | string | 
-action\_result\.data\.\*\.objectId | string |  `azure object id` 
+action\_result\.data\.\*\.objectId | string |  `user id` 
 action\_result\.data\.\*\.objectType | string | 
 action\_result\.data\.\*\.odata\.type | string | 
 action\_result\.data\.\*\.onPremisesDistinguishedName | string | 
@@ -236,7 +236,7 @@ action\_result\.data\.\*\.surname | string |
 action\_result\.data\.\*\.telephoneNumber | string | 
 action\_result\.data\.\*\.thumbnailPhoto\@odata\.mediaEditLink | string | 
 action\_result\.data\.\*\.usageLocation | string | 
-action\_result\.data\.\*\.userPrincipalName | string |  `email`  `azure user principal name` 
+action\_result\.data\.\*\.userPrincipalName | string |  `email`  `user principal name` 
 action\_result\.data\.\*\.userState | string | 
 action\_result\.data\.\*\.userStateChangedOn | string | 
 action\_result\.data\.\*\.userType | string | 
@@ -256,7 +256,7 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID to change password \- can be user principal name or object ID | string |  `azure user principal name`  `azure object id`  `email` 
+**user\_id** |  required  | User ID to change password \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
 **force\_change** |  optional  | Force user to change password on next login | boolean | 
 **temp\_password** |  required  | Temporary password for user | string | 
 
@@ -266,7 +266,7 @@ DATA PATH | TYPE | CONTAINS
 action\_result\.status | string | 
 action\_result\.parameter\.force\_change | boolean | 
 action\_result\.parameter\.temp\_password | string | 
-action\_result\.parameter\.user\_id | string |  `azure user principal name`  `azure object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -282,13 +282,13 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID to disable tokens of \- can be user principal name or object ID | string |  `azure user principal name`  `azure object id`  `email` 
+**user\_id** |  required  | User ID to disable tokens of \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.user\_id | string |  `azure user principal name`  `azure object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
 action\_result\.data | string | 
 action\_result\.data\.\*\.odata\.metadata | string |  `url` 
 action\_result\.data\.\*\.odata\.null | boolean | 
@@ -307,13 +307,13 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID to enable tokens of \- can be user principal name or object ID | string |  `azure user principal name`  `azure object id`  `email` 
+**user\_id** |  required  | User ID to enable tokens of \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.user\_id | string |  `azure user principal name`  `azure object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -329,13 +329,13 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID to change password \- can be user principal name or object ID | string |  `azure user principal name`  `azure object id`  `email` 
+**user\_id** |  required  | User ID to change password \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.user\_id | string |  `azure user principal name`  `azure object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -351,13 +351,13 @@ Read only: **True**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  optional  | User ID \- can be user principal name or object ID | string |  `azure user principal name`  `azure object id`  `email` 
+**user\_id** |  optional  | User ID \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.user\_id | string |  `azure user principal name`  `azure object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
 action\_result\.data\.\*\.accountEnabled | boolean | 
 action\_result\.data\.\*\.ageGroup | string | 
 action\_result\.data\.\*\.assignedLicenses\.\*\.skuId | string | 
@@ -433,7 +433,7 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID \- can be user principal name or object ID | string |  `azure user principal name`  `azure object id`  `email` 
+**user\_id** |  required  | User ID \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
 **attribute** |  required  | Attribute to set | string | 
 **attribute\_value** |  required  | Value of attribute to set | string | 
 
@@ -443,7 +443,7 @@ DATA PATH | TYPE | CONTAINS
 action\_result\.status | string | 
 action\_result\.parameter\.attribute | string | 
 action\_result\.parameter\.attribute\_value | string | 
-action\_result\.parameter\.user\_id | string |  `azure user principal name`  `azure object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -459,15 +459,15 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**group\_object\_id** |  required  | Object ID of group | string |  `azure group object id` 
-**user\_id** |  required  | User ID to remove from group | string |  `azure user principal name`  `azure object id`  `email` 
+**group\_object\_id** |  required  | Object ID of group | string |  `group object id` 
+**user\_id** |  required  | User ID to remove from group | string |  `user principal name`  `user object id`  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.group\_object\_id | string |  `azure group object id` 
-action\_result\.parameter\.user\_id | string |  `azure user principal name`  `azure object id`  `email` 
+action\_result\.parameter\.group\_object\_id | string |  `group object id` 
+action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -483,15 +483,15 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**group\_object\_id** |  required  | Object ID of group | string |  `azure group object id` 
-**user\_id** |  required  | User ID to add to group | string |  `azure object id` 
+**group\_object\_id** |  required  | Object ID of group | string |  `group object id` 
+**user\_id** |  required  | User ID to add to group | string |  `user id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.group\_object\_id | string |  `azure group object id` 
-action\_result\.parameter\.user\_id | string |  `azure object id` 
+action\_result\.parameter\.group\_object\_id | string |  `group object id` 
+action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -519,7 +519,7 @@ action\_result\.data\.\*\.lastDirSyncTime | string |
 action\_result\.data\.\*\.mail | string |  `email` 
 action\_result\.data\.\*\.mailEnabled | boolean | 
 action\_result\.data\.\*\.mailNickname | string | 
-action\_result\.data\.\*\.objectId | string |  `azure object id` 
+action\_result\.data\.\*\.objectId | string |  `group object id` 
 action\_result\.data\.\*\.objectType | string | 
 action\_result\.data\.\*\.odata\.type | string | 
 action\_result\.data\.\*\.onPremisesDomainName | string |  `domain` 
@@ -542,13 +542,13 @@ Read only: **True**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**object\_id** |  required  | Object ID of group | string |  `azure object id` 
+**object\_id** |  required  | Object ID of group | string |  `group object id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.object\_id | string |  `azure object id` 
+action\_result\.parameter\.object\_id | string |  `group object id` 
 action\_result\.data\.\*\.deletionTimestamp | string | 
 action\_result\.data\.\*\.description | string | 
 action\_result\.data\.\*\.dirSyncEnabled | string | 
@@ -557,7 +557,7 @@ action\_result\.data\.\*\.lastDirSyncTime | string |
 action\_result\.data\.\*\.mail | string |  `email` 
 action\_result\.data\.\*\.mailEnabled | boolean | 
 action\_result\.data\.\*\.mailNickname | string | 
-action\_result\.data\.\*\.objectId | string |  `azure object id` 
+action\_result\.data\.\*\.objectId | string |  `group object id` 
 action\_result\.data\.\*\.objectType | string | 
 action\_result\.data\.\*\.odata\.metadata | string | 
 action\_result\.data\.\*\.odata\.type | string | 
@@ -583,15 +583,15 @@ Read only: **True**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**group\_object\_id** |  required  | Object ID of group | string |  `azure object id` 
+**group\_object\_id** |  required  | Object ID of group | string |  `group object id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.group\_object\_id | string |  `azure object id` 
+action\_result\.parameter\.group\_object\_id | string |  `group object id` 
 action\_result\.data\.\*\.displayName | string | 
-action\_result\.data\.\*\.objectId | string |  `azure object id` 
+action\_result\.data\.\*\.objectId | string |  `group object id` 
 action\_result\.summary\.num\_members | numeric | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 
@@ -606,15 +606,15 @@ Read only: **True**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**group\_object\_id** |  required  | Object ID of group | string |  `azure group object id` 
-**user\_id** |  required  | User ID to validate | string |  `azure user principal name`  `azure object id`  `email` 
+**group\_object\_id** |  required  | Object ID of group | string |  `group object id` 
+**user\_id** |  required  | User ID to validate | string |  `user principal name`  `user id`  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.group\_object\_id | string |  `azure group object id` 
-action\_result\.parameter\.user\_id | string |  `azure user principal name`  `azure object id`  `email` 
+action\_result\.parameter\.group\_object\_id | string |  `group object id` 
+action\_result\.parameter\.user\_id | string |  `user principal name`  `user id`  `email` 
 action\_result\.data\.\*\.user\_in\_group | boolean | 
 action\_result\.summary\.user\_in\_group | boolean | 
 action\_result\.message | string | 
@@ -640,11 +640,11 @@ action\_result\.data\.\*\.deletionTimestamp | string |
 action\_result\.data\.\*\.description | string | 
 action\_result\.data\.\*\.displayName | string | 
 action\_result\.data\.\*\.isSystem | boolean | 
-action\_result\.data\.\*\.objectId | string |  `azure object id` 
+action\_result\.data\.\*\.objectId | string |  `directory object id` 
 action\_result\.data\.\*\.objectType | string | 
 action\_result\.data\.\*\.odata\.type | string | 
 action\_result\.data\.\*\.roleDisabled | boolean | 
-action\_result\.data\.\*\.roleTemplateId | string |  `azure role template id` 
+action\_result\.data\.\*\.roleTemplateId | string |  `role template id` 
 action\_result\.summary\.num\_directory\_roles | numeric | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 

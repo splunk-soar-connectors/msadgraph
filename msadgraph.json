@@ -235,7 +235,7 @@
                         "e4c722ac-3b83-478d-8f52-c388885dc30f"
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 },
                 {
@@ -475,7 +475,7 @@
                         "user@test.onmicrosoft.com"
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 },
                 {
@@ -558,8 +558,8 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure user principal name",
-                        "azure object id",
+                        "user principal name",
+                        "user object id",
                         "email"
                     ]
                 },
@@ -610,8 +610,8 @@
                         "user@test.onmicrosoft.com"
                     ],
                     "contains": [
-                        "azure user principal name",
-                        "azure object id",
+                        "user principal name",
+                        "user object id",
                         "email"
                     ],
                     "column_name": "User ID",
@@ -673,8 +673,8 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure user principal name",
-                        "azure object id",
+                        "user principal name",
+                        "user object id",
                         "email"
                     ]
                 }
@@ -698,8 +698,8 @@
                         "user@test.onmicrosoft.com"
                     ],
                     "contains": [
-                        "azure user principal name",
-                        "azure object id",
+                        "user principal name",
+                        "user object id",
                         "email"
                     ],
                     "column_name": "User ID",
@@ -793,7 +793,7 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 }
             },
@@ -815,7 +815,7 @@
                         "user@test.onmicrosoft.com"
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ],
                     "column_name": "User ID",
                     "column_order": 0
@@ -873,7 +873,7 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 }
             },
@@ -895,7 +895,7 @@
                         "user@test.onmicrosoft.com"
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ],
                     "column_name": "User ID",
                     "column_order": 0
@@ -952,7 +952,7 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 },
                 "select_string": {
@@ -984,7 +984,7 @@
                         "user@test.onmicrosoft.com"
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 },
                 {
@@ -1105,7 +1105,7 @@
                     "data_type": "string",
                     "example_value": "7d55d7e6-cf5a-4dd2-a176-57a3c33b7fa9",
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 },
                 {
@@ -1338,7 +1338,7 @@
                         "user@test.onmicrosoft.com"
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 },
                 {
@@ -1408,7 +1408,7 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 },
                 "ph_0": {
@@ -1465,7 +1465,7 @@
                         "user@test.onmicrosoft.com"
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ],
                     "column_name": "User ID",
                     "column_order": 0
@@ -1523,7 +1523,7 @@
                         "2a201c95-101b-42d9-a7af-9a2fdf8193f1"
                     ],
                     "contains": [
-                        "azure id"
+                        "user id"
                     ]
                 },
                 {
@@ -1707,7 +1707,7 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ]
                 },
                 "user_id": {
@@ -1717,7 +1717,7 @@
                     "primary": true,
                     "order": 1,
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 }
             },
@@ -1739,7 +1739,7 @@
                         "ddb876b3-603a-437b-9814-2d46a2219a1e"
                     ],
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ],
                     "column_name": "Group Object ID",
                     "column_order": 0
@@ -1751,7 +1751,7 @@
                         "17be76d0-35ed-4881-ab62-d2eb73c2ebe3"
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ],
                     "column_name": "User ID",
                     "column_order": 1
@@ -1811,7 +1811,7 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ]
                 },
                 "user_id": {
@@ -1821,7 +1821,7 @@
                     "primary": true,
                     "order": 1,
                     "contains": [
-                        "azure object id"
+                        "user object id"
                     ]
                 }
             },
@@ -1843,7 +1843,7 @@
                         "ddb876b3-603a-437b-9814-2d46a2219a1e"
                     ],
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ],
                     "column_name": "Group Object ID",
                     "column_order": 0
@@ -1855,7 +1855,7 @@
                         "17be76d0-35ed-4881-ab62-d2eb73c2ebe3"
                     ],
                     "contains": [
-                        "azure object id"
+                        "user object id"
                     ],
                     "column_name": "User ID",
                     "column_order": 1
@@ -1983,7 +1983,7 @@
                         "2a201c95-101b-42d9-a7af-9a2fdf8193f1"
                     ],
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ]
                 },
                 {
@@ -2169,7 +2169,7 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ]
                 },
                 "select_string": {
@@ -2194,7 +2194,7 @@
                         "ddb876b3-603a-437b-9814-2d46a2219a1e"
                     ],
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ]
                 },
                 {
@@ -2260,7 +2260,7 @@
                         "ddb876b3-603a-437b-9814-2d46a2219a1e"
                     ],
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ],
                     "column_name": "Object ID",
                     "column_order": 1
@@ -2459,7 +2459,7 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ]
                 },
                 "select_string": {
@@ -2484,7 +2484,7 @@
                         "ebcd3130-55a1-4cbf-81b2-86408ff21203"
                     ],
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ]
                 },
                 {
@@ -2525,7 +2525,7 @@
                         "17be76d0-35ed-4881-ab62-d2eb73c2ebe3"
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 },
                 {
@@ -2570,7 +2570,7 @@
                         3
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 },
                 {
@@ -2621,7 +2621,7 @@
                     "primary": true,
                     "order": 0,
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ]
                 },
                 "user_id": {
@@ -2631,7 +2631,7 @@
                     "primary": true,
                     "order": 1,
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ]
                 }
             },
@@ -2653,7 +2653,7 @@
                         "ebcd3130-55a1-4cbf-81b2-86408ff21203"
                     ],
                     "contains": [
-                        "azure group object id"
+                        "group object id"
                     ],
                     "column_name": "Group Object ID",
                     "column_order": 0
@@ -2665,7 +2665,7 @@
                         "user@test.onmicrosoft.com"
                     ],
                     "contains": [
-                        "azure user id"
+                        "user id"
                     ],
                     "column_name": "User ID",
                     "column_order": 1
@@ -2899,7 +2899,7 @@
                         "02b238cb-0d15-454b-aae6-0e94993a3207"
                     ],
                     "contains": [
-                        "azure object id"
+                        "directory object id"
                     ],
                     "column_name": "Object ID",
                     "column_order": 1
@@ -2933,7 +2933,7 @@
                         "88d8e3e3-8f55-4a1e-953a-9b9898b8876b"
                     ],
                     "contains": [
-                        "azure role template id"
+                        "role template id"
                     ]
                 },
                 {

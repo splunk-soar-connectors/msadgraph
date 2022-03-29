@@ -16,14 +16,14 @@ TC_STATUS_SLEEP = 2
 PHANTOM_SYS_INFO_URL = "{base_url}rest/system_info"
 PHANTOM_ASSET_INFO_URL = "{base_url}rest/asset/{asset_id}"
 
-AZUREADGRAPH_API_URLS = {
+MSADGRAPH_API_URLS = {
     "Global": "https://graph.microsoft.com/v1.0",
     "US Gov L4": "https://graph.microsoft.us",
     "US Gov L5 (DOD)": "https://dod-graph.microsoft.us",
     "Germany": "https://graph.microsoft.de",
     "China (21Vianet)": "https://microsoftgraph.chinacloudapi.cn"
 }
-AZUREADGRAPH_API_REGION = {
+MSADGRAPH_API_REGION = {
     "Global": "graph.microsoft.com/v1.0",
     "US Gov L4": "graph.microsoft.us",
     "US Gov L5 (DOD)": "dod-graph.microsoft.us",

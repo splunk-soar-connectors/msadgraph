@@ -257,12 +257,12 @@ class RetVal(tuple):
         return tuple.__new__(RetVal, (val1, val2))
 
 
-class AzureADGraphConnector(BaseConnector):
+class MSADGraphConnector(BaseConnector):
 
     def __init__(self):
 
         # Call the BaseConnectors init first
-        super(AzureADGraphConnector, self).__init__()
+        super(MSADGraphConnector, self).__init__()
 
         self._state = None
         self._tenant = None
@@ -937,7 +937,7 @@ class AzureADGraphConnector(BaseConnector):
         user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
 
         data = {
-            '@odata.id': "https://{}/directoryObjects/{}".format(AZUREADGRAPH_API_REGION[config.get(MS_AZURE_URL, "Global")], user_id)
+            '@odata.id': "https://{}/directoryObjects/{}".format(MSADGRAPH_API_REGION[config.get(MS_AZURE_URL, "Global")], user_id)
         }
 
         endpoint = '/groups/{}/members/$ref'.format(object_id)
@@ -1271,7 +1271,7 @@ class AzureADGraphConnector(BaseConnector):
         self._client_secret = config[MS_AZURE_CONFIG_CLIENT_SECRET]
         self._access_token = self._state.get(MS_AZURE_TOKEN_STRING, {}).get(MS_AZURE_ACCESS_TOKEN_STRING)
         self._refresh_token = self._state.get(MS_AZURE_TOKEN_STRING, {}).get(MS_AZURE_REFRESH_TOKEN_STRING)
-        self._base_url = AZUREADGRAPH_API_URLS[config.get(MS_AZURE_URL, "Global")]
+        self._base_url = MSADGRAPH_API_URLS[config.get(MS_AZURE_URL, "Global")]
 
         return phantom.APP_SUCCESS
 
@@ -1339,7 +1339,7 @@ if __name__ == '__main__':
         in_json = json.loads(in_json)
         print(json.dumps(in_json, indent=4))
 
-        connector = AzureADGraphConnector()
+        connector = MSADGraphConnector()
         connector.print_progress_message = True
 
         if session_id is not None:

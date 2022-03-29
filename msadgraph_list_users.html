@@ -91,19 +91,22 @@ and limitations under the License.
         {% if curr_data == 'Empty response' %}
             <h3 class="wf-h3-style">Empty response. Please add valid property name</h3>
         {% else %}
-            <h3 class="wf-h3-style">User</h3>
-            {% for key, value in curr_data.items %}
-                <table class="phantom-table dataTable">
-                    <!-- <h3 class="wf-h3-style">Users</h3> -->
-
-                        <tr>
-                            <th>{{ key }}</th>
-                            <td>{{ value }}</td>
-                        </tr>
-
-                </table>
-                {% endfor %}
+        <h3 class="wf-h3-style">Users</h3>
+        <table class="wf-table-horizontal">
+                <tr>
+                    <thead>
+                    {% for key, value in curr_data.items %}
+                        <th> {{ key }} </th>
+                    {% endfor %}
+                    </thead>
+                </tr>
+                <tr>
+                    {% for key, value in curr_data.items %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
                 <br>
+        </table>
         {% endif %}
         {% endfor %}
     <br>
@@ -123,7 +126,7 @@ and limitations under the License.
                                     {{ curr_data.displayName  }}
                                 </td>
                                 <td class="widget-td" >
-                                    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['azure user id'],
+                                    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['user id'],
                                     'value':'{{ curr_data.id }}' }], 0, {{ container.id }}, null, false);">
                                         {{ curr_data.id }}
                                         &nbsp;
@@ -131,7 +134,7 @@ and limitations under the License.
                                     </a>
                                 </td>
                                 <td class="widget-td" >
-                                    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['azure user id'],
+                                    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['user id'],
                                     'value':'{{ curr_data.userPrincipalName }}' }], 0, {{ container.id }}, null, false);">
                                         {{ curr_data.userPrincipalName }}
                                         &nbsp;
@@ -168,7 +171,7 @@ and limitations under the License.
         }
       });
       $('.dataTable').DataTable();
-    </script>
+</script>
 
 {% endblock %}
 <!-- Main Start Block -->

@@ -87,23 +87,24 @@ and limitations under the License.
         <h4 class="wf-h4-style">No data found</h4>
     {% else %}
     {% if result.param.select_string %}
-        {% for curr_data in result.data %}
-        {% if curr_data == 'Empty response' %}
-            <h3 class="wf-h3-style">Empty response. Please add valid property name</h3>
-        {% else %}
-            <h3 class="wf-h3-style">Groups</h3>
-                <table class="wf-table-horizontal">
-                    <!-- <h3 class="wf-h3-style">Users</h3> -->
-                    {% for key, value in curr_data.items %}
-                        <tr>
-                            <th>{{ key }}</th>
-                            <td>{{ value }}</td>
-                        </tr>
-                    {% endfor %}
-                </table>
-                <br>
-        {% endif %}
-        {% endfor %}
+    {% for curr_data in result.data %}
+    <h3 class="wf-h3-style">Groups</h3>
+    <table class="wf-table-horizontal">
+        <tr>
+            <thead>
+            {% for key, value in curr_data.items %}
+                <th> {{ key }} </th>
+            {% endfor %}
+            </thead>
+        </tr>
+        <tr>
+            {% for key, value in curr_data.items %}
+                <td>{{ value }}</td>
+            {% endfor %}
+        </tr>
+    </table>
+    <br>
+    {% endfor %}
     <br>
     <!------------------- For each Result END ---------------------->
     {% else %}
@@ -118,7 +119,7 @@ and limitations under the License.
                         {% for curr_data in result.data %}
                             <tr>
                                 <td class="widget-td" >
-                                    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['azure group object id'],
+                                    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['group object id'],
                                     'value':'{{ curr_data.id }}' }], 0, {{ container.id }}, null, false);">
                                         {{ curr_data.id }}
                                         &nbsp;
