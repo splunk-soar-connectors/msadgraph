@@ -89,7 +89,7 @@ give this user permission to view assets, follow these steps:
 
 After setting up the asset and user, click the **TEST CONNECTIVITY** button. A window should pop up
 and display a URL. Navigate to this URL in a separate browser tab. This new tab will redirect to a
-Microsoft login page. Log in to a Microsoft account with administrator privileges to the Azure AD
+Microsoft login page. Log in to a Microsoft account with administrator privileges to the Microsoft AD
 environment. After logging in, review the requested permissions listed, then click **Accept** .
 Finally, close that tab. The test connectivity window should show a success.  
   
@@ -131,13 +131,13 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **tenant\_id** |  required  | string | Tenant \(Tenant ID or Tenant Name\)
 **client\_id** |  required  | string | Application ID
 **client\_secret** |  required  | password | Client Secret
-**region** |  optional  | string | Azure AD Region
+**region** |  optional  | string | Microsoft AD Region
 
 ### Supported Actions  
 [test connectivity](#action-test-connectivity) - Use supplied credentials to generate a token with MS Graph  
 [list users](#action-list-users) - List users in a tenant  
-[reset password](#action-reset-password) - Reset or set a user's password in an Azure AD environment  
-[disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in an Azure AD environment  
+[reset password](#action-reset-password) - Reset or set a user's password in an Microsoft AD environment  
+[disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in an Microsoft AD environment  
 [enable user](#action-enable-user) - Enable a user  
 [disable user](#action-disable-user) - Disable a user  
 [list user attributes](#action-list-user-attributes) - List attributes for all or a specified user  
@@ -169,12 +169,13 @@ List users in a tenant
 Type: **investigate**  
 Read only: **True**
 
-For more information on using the filter\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/previous\-versions/azure/ad/graph/howto/azure\-ad\-graph\-api\-supported\-queries\-filters\-and\-paging\-options\.
+For more information on using the filter\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **filter\_string** |  optional  | Filter string to apply to user listing | string | 
+**select\_string** |  optional  | Select string to get additional user properties\. Separate multiple values with commas | string | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
@@ -248,7 +249,7 @@ summary\.total\_objects | numeric |
 summary\.total\_objects\_successful | numeric |   
 
 ## action: 'reset password'
-Reset or set a user's password in an Azure AD environment
+Reset or set a user's password in an Microsoft AD environment
 
 Type: **contain**  
 Read only: **False**
@@ -274,7 +275,7 @@ summary\.total\_objects | numeric |
 summary\.total\_objects\_successful | numeric |   
 
 ## action: 'disable tokens'
-Invalidate all active refresh tokens for a user in an Azure AD environment
+Invalidate all active refresh tokens for a user in an Microsoft AD environment
 
 Type: **contain**  
 Read only: **False**
@@ -348,10 +349,13 @@ List attributes for all or a specified user
 Type: **investigate**  
 Read only: **True**
 
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **user\_id** |  optional  | User ID \- can be user principal name or object ID | string |  `user id` 
+**select\_string** |  optional  | Select string to get additional user properties\. Separate multiple values with commas | string | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
@@ -504,8 +508,12 @@ List groups in the organization
 Type: **investigate**  
 Read only: **True**
 
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+
 #### Action Parameters
-No parameters are required for this action
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**select\_string** |  optional  | Select string to get additional user properties\. Separate multiple values with commas | string | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
@@ -539,10 +547,13 @@ Get information about a group
 Type: **investigate**  
 Read only: **True**
 
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **object\_id** |  required  | Object ID of group | string |  `group object id` 
+**select\_string** |  optional  | Select string to get additional user properties\. Separate multiple values with commas | string | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
@@ -578,12 +589,13 @@ List the members in a group
 Type: **investigate**  
 Read only: **True**
 
-<p>Pagination is not implemented for this action as this endpoint does not support pagination\. Here is the <b><a href='https\://docs\.microsoft\.com/en\-us/previous\-versions/azure/ad/graph/howto/azure\-ad\-graph\-api\-supported\-queries\-filters\-and\-paging\-options' target='\_blank'>Documentation</a></b> for the same\.</p>
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **group\_object\_id** |  required  | Object ID of group | string |  `group object id` 
+**select\_string** |  optional  | Select string to get additional user properties\. Separate multiple values with commas | string | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
@@ -627,7 +639,7 @@ List the directory roles in a tenant
 Type: **investigate**  
 Read only: **True**
 
-<p>Pagination is not implemented for this action as this endpoint does not support pagination\. Here is the <b><a href='https\://docs\.microsoft\.com/en\-us/previous\-versions/azure/ad/graph/howto/azure\-ad\-graph\-api\-supported\-queries\-filters\-and\-paging\-options' target='\_blank'>Documentation</a></b> for the same\.</p>
+<p>Pagination is not implemented for this action as this endpoint does not support pagination\. Here is the <b><a href='https\://docs\.microsoft\.com/en\-us/graph/paging' target='\_blank'>Documentation</a></b> for the same\.</p>
 
 #### Action Parameters
 No parameters are required for this action
