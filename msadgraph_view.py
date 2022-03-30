@@ -53,5 +53,4 @@ def display_view(provides, all_app_runs, context):
     if provides == "list group members":
         return_page = "msadgraph_list_group_members.html"
 
-    # print context
     return return_page

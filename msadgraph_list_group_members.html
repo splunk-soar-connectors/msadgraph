@@ -87,8 +87,8 @@ and limitations under the License.
         <h4 class="wf-h4-style">No data found</h4>
     {% else %}
     {% if result.param.select_string %}
+    <h3 class="wf-h3-style">List of Group Members</h3>
     {% for curr_data in result.data %}
-    <h3 class="wf-h3-style">Group Members</h3>
     <table class="wf-table-horizontal">
         <tr>
             <thead>
@@ -108,7 +108,7 @@ and limitations under the License.
     <br>
     <!------------------- For each Result END ---------------------->
     {% else %}
-        <h3 class="wf-h3-style">Group Members</h3>
+        <h3 class="wf-h3-style">List of Group Members</h3>
             <table class="phantom-table dataTable">
                 <thead>
                     <th class="widget-th">Display Name</th>

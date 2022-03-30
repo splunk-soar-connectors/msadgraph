@@ -87,6 +87,7 @@ and limitations under the License.
         <h4 class="wf-h4-style">No data found</h4>
     {% else %}
     {% if result.param.select_string %}
+        <h3 class="wf-h3-style">List of Users</h3>
         {% for curr_data in result.data %}
         {% if curr_data == 'Empty response' %}
             <h3 class="wf-h3-style">Empty response. Please add valid property name</h3>
@@ -112,11 +113,11 @@ and limitations under the License.
     <br>
     <!------------------- For each Result END ---------------------->
     {% else %}
-        <h3 class="wf-h3-style">Users</h3>
+        <h3 class="wf-h3-style">List of Users</h3>
             <table class="phantom-table dataTable">
                 <thead>
                     <th class="widget-th">Display Name</th>
-                    <th class="widget-th">Object Id</th>
+                    <th class="widget-th">User Object Id</th>
                     <th class="widget-th">User Princicple Name</th>
                 </thead>
                 <tbody>

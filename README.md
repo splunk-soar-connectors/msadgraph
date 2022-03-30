@@ -102,9 +102,9 @@ Please check the permissions for the state file as mentioned below.
 #### State Filepath
 
 -   For Non-NRI Instance:
-    /opt/phantom/local_data/app_states/c6d3b801-5c26-4abd-9e89-6d8007e2778f/{asset_id}\_state.json
+    /opt/phantom/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}\_state.json
 -   For NRI Instance:
-    /\<PHANTOM_HOME_DIRECTORY>/local_data/app_states/c6d3b801-5c26-4abd-9e89-6d8007e2778f/{asset_id}\_state.json
+    /\<PHANTOM_HOME_DIRECTORY>/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}\_state.json
 
 #### State File Permissions
 
@@ -143,12 +143,12 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [list user attributes](#action-list-user-attributes) - List attributes for all or a specified user  
 [set user attribute](#action-set-user-attribute) - Set an attribute for a user  
 [remove user](#action-remove-user) - Remove a user from a specified group  
-[add user](#action-add-user) - Add a user to the tenant by creating an organizational account  
+[add user](#action-add-user) - Add a user to a specified group  
 [list groups](#action-list-groups) - List groups in the organization  
 [get group](#action-get-group) - Get information about a group  
 [list group members](#action-list-group-members) - List the members in a group  
 [validate group](#action-validate-group) - Returns true if a user is in a group; otherwise, false  
-[list directory roles](#action-list-directory-roles) - List the directory roles in a tenant  
+[list directory roles](#action-list-directory-roles) - List the directory roles that are activated in the tenant  
 [generate token](#action-generate-token) - Generate a token or regenerates token when the token expires  
 
 ## action: 'test connectivity'
@@ -256,7 +256,7 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID to change password \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
+**user\_id** |  required  | User ID to change password \- can be user principal name or object ID | string |  `user id` 
 **force\_change** |  optional  | Force user to change password on next login | boolean | 
 **temp\_password** |  required  | Temporary password for user | string | 
 
@@ -266,7 +266,7 @@ DATA PATH | TYPE | CONTAINS
 action\_result\.status | string | 
 action\_result\.parameter\.force\_change | boolean | 
 action\_result\.parameter\.temp\_password | string | 
-action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -282,13 +282,13 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID to disable tokens of \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
+**user\_id** |  required  | User ID to disable tokens of \- can be user principal name or object ID | string |  `user id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data | string | 
 action\_result\.data\.\*\.odata\.metadata | string |  `url` 
 action\_result\.data\.\*\.odata\.null | boolean | 
@@ -307,13 +307,13 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID to enable tokens of \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
+**user\_id** |  required  | User ID to enable tokens of \- can be user principal name or object ID | string |  `user id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -329,13 +329,13 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID to change password \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
+**user\_id** |  required  | User ID to change password \- can be user principal name or object ID | string |  `user id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -351,13 +351,13 @@ Read only: **True**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  optional  | User ID \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
+**user\_id** |  optional  | User ID \- can be user principal name or object ID | string |  `user id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data\.\*\.accountEnabled | boolean | 
 action\_result\.data\.\*\.ageGroup | string | 
 action\_result\.data\.\*\.assignedLicenses\.\*\.skuId | string | 
@@ -433,7 +433,7 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID \- can be user principal name or object ID | string |  `user principal name`  `user object id`  `email` 
+**user\_id** |  required  | User ID \- can be user principal name or object ID | string |  `user id` 
 **attribute** |  required  | Attribute to set | string | 
 **attribute\_value** |  required  | Value of attribute to set | string | 
 
@@ -443,7 +443,7 @@ DATA PATH | TYPE | CONTAINS
 action\_result\.status | string | 
 action\_result\.parameter\.attribute | string | 
 action\_result\.parameter\.attribute\_value | string | 
-action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -460,14 +460,14 @@ Read only: **False**
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **group\_object\_id** |  required  | Object ID of group | string |  `group object id` 
-**user\_id** |  required  | User ID to remove from group | string |  `user principal name`  `user object id`  `email` 
+**user\_id** |  required  | User ID to remove from group | string |  `user id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
 action\_result\.parameter\.group\_object\_id | string |  `group object id` 
-action\_result\.parameter\.user\_id | string |  `user principal name`  `user object id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
@@ -607,14 +607,14 @@ Read only: **True**
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **group\_object\_id** |  required  | Object ID of group | string |  `group object id` 
-**user\_id** |  required  | User ID to validate | string |  `user principal name`  `user id`  `email` 
+**user\_id** |  required  | User ID to validate | string |  `user id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
 action\_result\.parameter\.group\_object\_id | string |  `group object id` 
-action\_result\.parameter\.user\_id | string |  `user principal name`  `user id`  `email` 
+action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data\.\*\.user\_in\_group | boolean | 
 action\_result\.summary\.user\_in\_group | boolean | 
 action\_result\.message | string | 

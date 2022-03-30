@@ -1096,10 +1096,6 @@ class MSADGraphConnector(BaseConnector):
         for user in response.get('value', []):
             user_id_map[user['id']] = user['displayName']
 
-        # action_result.add_data(response)
-        # summary = action_result.update_summary({})
-        # summary['message'] = "User is member of group"
-
         return action_result.set_status(phantom.APP_SUCCESS, "User is member of group: {}".format(ret_val))
 
     def _get_token(self, action_result, from_action=False):
