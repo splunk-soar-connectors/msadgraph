@@ -42,7 +42,7 @@ MS_AZURE_REFRESH_TOKEN_STRING = 'refresh_token'
 MS_AZURE_PHANTOM_BASE_URL = '{phantom_base_url}rest'
 MS_AZURE_PHANTOM_SYS_INFO_URL = '/system_info'
 MS_AZURE_PHANTOM_ASSET_INFO_URL = '/asset/{asset_id}'
-MS_AZURE_BASE_URL_NOT_FOUND_MSG = 'Phantom Base URL not found in System Settings. ' \
+MS_AZURE_BASE_URL_NOT_FOUND_MSG = 'SOAR Base URL not found in System Settings. ' \
                                 'Please specify this value in System Settings.'
 MS_AZURE_HTML_ERROR = 'Bad Request Bad Request - Invalid URL HTTP Error 400. The request URL is invalid.'
 MS_AZURE_NEXT_LINK_STRING = 'odata.nextLink'
@@ -59,6 +59,6 @@ MS_GENERATING_ACCESS_TOKEN_MSG = 'Generating access token'
 MS_TC_STATUS_SLEEP = 3
 MS_AZURE_CODE_GENERATION_SCOPE = 'offline_access Group.ReadWrite.All User.Read.All User.ReadWrite.All Directory.ReadWrite.All \
 Directory.AccessAsUser.All User.ManageIdentities.All GroupMember.ReadWrite.All RoleManagement.ReadWrite.Directory'
-MS_AZURE_AUTHORIZE_TROUBLESHOOT_MSG = 'If authorization URL fails to communicate with your Phantom instance, check whether you have:  '\
+MS_AZURE_AUTHORIZE_TROUBLESHOOT_MSG = 'If authorization URL fails to communicate with your SOAR instance, check whether you have:  '\
                                 ' 1. Specified the Web Redirect URL of your App -- The Redirect URL should be <POST URL>/result . '\
-                                ' 2. Configured the base URL of your Phantom Instance at Administration -> Company Settings -> Info'
+                                ' 2. Configured the base URL of your SOAR Instance at Administration -> Company Settings -> Info'

@@ -26,7 +26,7 @@ and limitations under the License.
         <li>Click on the <b>Register</b>.</li>
         <ul>
           <li>Under <b>Certificates & secrets</b>, add <b>New client secret</b>. Note this key somewhere secure, as it cannot be retrieved after closing the window.</li>
-          <li>Under <b>Redirect URIs</b> we will be updating the entry of https://phantom.local to reflect the actual redirect URI.  We will get this from the Phantom asset we create below in the section titled "Configure the MS Graph for Active Directory Phantom app Asset"
+          <li>Under <b>Redirect URIs</b> we will be updating the entry of https://phantom.local to reflect the actual redirect URI.  We will get this from the SOAR asset we create below in the section titled "Configure the MS Graph for Active Directory SOAR app Asset"
           <li>Under <b>API Permissions</b>, click on <b>Add a permission</b>.</li>
           <li>Go to <b>Microsoft Graph Permissions</b>, the following <b>Delegated Permissions</b> need to be added:
             <ul>
@@ -47,7 +47,7 @@ and limitations under the License.
 
       After making these changes, click on <b>Grant admin consent</b>.
 
-    <h2>Configure the MS Graph for Active Directory Phantom app Asset</h2>
+    <h2>Configure the MS Graph for Active Directory SOAR app Asset</h2>
       When creating an asset for the <b>MS Graph for Active Directory</b> app, place the <b>Application ID</b> of the app created during the previous step in the <b>Client ID</b> field and place the password generated during the app creation process in the <b>Client Secret</b> field. Then, after filling out the <b>Tenant</b> field, click <b>SAVE</b>.
       <br><br>
       After saving, a new field will appear in the <b>Asset Settings</b> tab. Take the URL found in the <b>POST incoming for MS Graph to this location</b> field and place it in the <b>Redirect URIs</b> field mentioned in a previous step. To this URL, add <b>/result</b>. After doing so the URL should look something like:
@@ -78,8 +78,8 @@ and limitations under the License.
       </ul>
       <h4>State File Permissions</h4>
       <ul>
-        <li>File Rights: rw-rw-r-- (664) (The phantom user should have read and write access for the state file)</li>
-        <li>File Owner: appropriate phantom user</li>
+        <li>File Rights: rw-rw-r-- (664) (The SOAR user should have read and write access for the state file)</li>
+        <li>File Owner: appropriate SOAR user</li>
       </ul>
       <h2>Port Information</h2>
 	<p>

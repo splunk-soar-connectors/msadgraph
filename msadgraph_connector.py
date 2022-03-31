@@ -447,7 +447,7 @@ class MSADGraphConnector(BaseConnector):
             return self._process_json_response(response, action_result)
 
         # Process an HTML response, Do this no matter what the API talks.
-        # There is a high chance of a PROXY in between phantom and the rest of
+        # There is a high chance of a PROXY in between SOAR and the rest of
         # world, in case of errors, PROXY's return HTML, this function parses
         # the error and adds it to the action_result.
         if 'html' in response.headers.get('Content-Type', ''):
@@ -468,7 +468,7 @@ class MSADGraphConnector(BaseConnector):
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
     def _get_asset_name(self, action_result):
-        """ Get name of the asset using Phantom URL.
+        """ Get name of the asset using SOAR URL.
 
         :param action_result: object of ActionResult class
         :return: status phantom.APP_ERROR/phantom.APP_SUCCESS(along with appropriate message), asset name
@@ -488,11 +488,11 @@ class MSADGraphConnector(BaseConnector):
         return phantom.APP_SUCCESS, asset_name
 
     def _get_phantom_base_url_vmazure(self, action_result):
-        """ Get base url of phantom.
+        """ Get base url of SOAR.
 
         :param action_result: object of ActionResult class
         :return: status phantom.APP_ERROR/phantom.APP_SUCCESS(along with appropriate message),
-        base url of phantom
+        base url of SOAR
         """
 
         url = '{}{}'.format(MS_AZURE_PHANTOM_BASE_URL.format(phantom_base_url=self._get_phantom_base_url()), MS_AZURE_PHANTOM_SYS_INFO_URL)
@@ -521,7 +521,7 @@ class MSADGraphConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.get_status(), None
 
-        self.save_progress('Using Phantom base URL: {0}'.format(phantom_base_url))
+        self.save_progress('Using SOAR base URL: {0}'.format(phantom_base_url))
         app_json = self.get_app_json()
         app_name = app_json['name']
 
@@ -1257,7 +1257,7 @@ class MSADGraphConnector(BaseConnector):
         try:
             self._python_version = int(sys.version_info[0])
         except:
-            return self.set_status(phantom.APP_ERROR, "Error occurred while getting the Phantom server's Python major version.")
+            return self.set_status(phantom.APP_ERROR, "Error occurred while getting the SOAR server's Python major version.")
 
         # get the asset config
         config = self.get_config()

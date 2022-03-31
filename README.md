@@ -37,8 +37,8 @@ Active Directory** .
     -   Under **Certificates & secrets** , add **New client secret** . Note this key somewhere
         secure, as it cannot be retrieved after closing the window.
     -   Under **Redirect URIs** we will be updating the entry of https://phantom.local to reflect
-        the actual redirect URI. We will get this from the Phantom asset we create below in the
-        section titled "Configure the MS Graph for Active Directory Phantom app Asset"
+        the actual redirect URI. We will get this from the SOAR asset we create below in the
+        section titled "Configure the MS Graph for Active Directory SOAR app Asset"
     -   Under **API Permissions** , click on **Add a permission** .
     -   Go to **Microsoft Graph Permissions** , the following **Delegated Permissions** need to be
         added:
@@ -51,7 +51,7 @@ Active Directory** .
 
 After making these changes, click on **Grant admin consent** .
 
-## Configure the MS Graph for Active Directory Phantom app Asset
+## Configure the MS Graph for Active Directory SOAR app Asset
 
 When creating an asset for the **MS Graph for Active Directory** app, place the **Application ID** of the app
 created during the previous step in the **Client ID** field and place the password generated during
@@ -108,9 +108,9 @@ Please check the permissions for the state file as mentioned below.
 
 #### State File Permissions
 
--   File Rights: rw-rw-r-- (664) (The phantom user should have read and write access for the state
+-   File Rights: rw-rw-r-- (664) (The SOAR user should have read and write access for the state
     file)
--   File Owner: appropriate phantom user
+-   File Owner: appropriate SOAR user
 
 ## Port Information
 
