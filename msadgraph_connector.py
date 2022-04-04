@@ -775,7 +775,7 @@ class MSADGraphConnector(BaseConnector):
 
         summary = action_result.update_summary({})
         resp_data = action_result.get_data()
-        if resp_data[action_result.get_data_size() - 1] == 'Empty response':
+        if resp_data and resp_data[action_result.get_data_size() - 1] == 'Empty response':
             summary['num_users'] = (action_result.get_data_size()) - 1
         else:
             summary['num_users'] = action_result.get_data_size()
@@ -1004,7 +1004,7 @@ class MSADGraphConnector(BaseConnector):
 
         summary = action_result.update_summary({})
         resp_data = action_result.get_data()
-        if resp_data[action_result.get_data_size() - 1] == 'Empty response':
+        if resp_data and resp_data[action_result.get_data_size() - 1] == 'Empty response':
             summary['num_groups'] = (action_result.get_data_size()) - 1
         else:
             summary['num_groups'] = action_result.get_data_size()
