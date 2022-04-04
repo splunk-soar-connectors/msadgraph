@@ -48,7 +48,8 @@
             "order": 1,
             "value_list": [
                 "Global",
-                "US Gov",
+                "US Gov L4",
+                "US Gov L5 (DOD)",
                 "Germany",
                 "China (21Vianet)"
             ]

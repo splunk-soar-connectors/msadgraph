@@ -774,7 +774,11 @@ class MSADGraphConnector(BaseConnector):
             return action_result.get_status()
 
         summary = action_result.update_summary({})
-        summary['num_users'] = action_result.get_data_size()
+        resp_data = action_result.get_data()
+        if resp_data[action_result.get_data_size() - 1] == 'Empty response':
+            summary['num_users'] = (action_result.get_data_size()) - 1
+        else:
+            summary['num_users'] = action_result.get_data_size()
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -999,7 +1003,11 @@ class MSADGraphConnector(BaseConnector):
             return action_result.get_status()
 
         summary = action_result.update_summary({})
-        summary['num_groups'] = action_result.get_data_size()
+        resp_data = action_result.get_data()
+        if resp_data[action_result.get_data_size() - 1] == 'Empty response':
+            summary['num_groups'] = (action_result.get_data_size()) - 1
+        else:
+            summary['num_groups'] = action_result.get_data_size()
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
