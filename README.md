@@ -2,13 +2,13 @@
 # MS Graph for Active Directory
 
 Publisher: Splunk  
-Connector Version: 2\.2\.2  
+Connector Version: 1\.0\.1  
 Product Vendor: Microsoft  
 Product Name: MS Graph for Active Directory  
 Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 5\.0\.0  
+Minimum Product Version: 5\.2\.0  
 
-Connects to MS Graph for Active Directory REST API services
+Connects to Microsoft Active Directory using MS Graph REST API services
 
 [comment]: # " File: README.md"
 [comment]: # "  Copyright (c) 2022 Splunk Inc."
@@ -37,31 +37,35 @@ Active Directory** .
     -   Under **Certificates & secrets** , add **New client secret** . Note this key somewhere
         secure, as it cannot be retrieved after closing the window.
     -   Under **Redirect URIs** we will be updating the entry of https://phantom.local to reflect
-        the actual redirect URI. We will get this from the SOAR asset we create below in the
-        section titled "Configure the MS Graph for Active Directory SOAR app Asset"
+        the actual redirect URI. We will get this from the SOAR asset we create below in the section
+        titled "Configure the MS Graph for Active Directory SOAR app Asset"
     -   Under **API Permissions** , click on **Add a permission** .
     -   Go to **Microsoft Graph Permissions** , the following **Delegated Permissions** need to be
         added:
-        -   User.Read
         -   User.Read.All
+        -   User.ReadWrite.All
         -   Directory.ReadWrite.All
         -   Directory.AccessAsUser.All
-        -   Directory.ReadWrite.All
+        -   User.ManageIdentities.All
+        -   Group.ReadWrite.All
+        -   GroupMember.ReadWrite.All
+        -   RoleManagement.ReadWrite.Directory
+        -   offline_access
     -   Click on the **Add permissions** .
 
 After making these changes, click on **Grant admin consent** .
 
 ## Configure the MS Graph for Active Directory SOAR app Asset
 
-When creating an asset for the **MS Graph for Active Directory** app, place the **Application ID** of the app
-created during the previous step in the **Client ID** field and place the password generated during
-the app creation process in the **Client Secret** field. Then, after filling out the **Tenant**
-field, click **SAVE** .  
+When creating an asset for the **MS Graph for Active Directory** app, place the **Application ID**
+of the app created during the previous step in the **Client ID** field and place the password
+generated during the app creation process in the **Client Secret** field. Then, after filling out
+the **Tenant** field, click **SAVE** .  
   
 After saving, a new field will appear in the **Asset Settings** tab. Take the URL found in the
-**POST incoming for MS Graph for Active Directory to this location** field and place it in the **Redirect URIs**
-field mentioned in a previous step. To this URL, add **/result** . After doing so the URL should
-look something like:  
+**POST incoming for MS Graph to this location** field and place it in the **Redirect URIs** field
+mentioned in a previous step. To this URL, add **/result** . After doing so the URL should look
+something like:  
   
 
 https://\<phantom_host>/rest/handler/msgraphforactivedirectory_f2a239df-acb2-47d6-861c-726a435cfe76/\<asset_name>/result
@@ -89,8 +93,8 @@ give this user permission to view assets, follow these steps:
 
 After setting up the asset and user, click the **TEST CONNECTIVITY** button. A window should pop up
 and display a URL. Navigate to this URL in a separate browser tab. This new tab will redirect to a
-Microsoft login page. Log in to a Microsoft account with administrator privileges to the Microsoft AD
-environment. After logging in, review the requested permissions listed, then click **Accept** .
+Microsoft login page. Log in to a Microsoft account with administrator privileges to the Microsoft
+AD environment. After logging in, review the requested permissions listed, then click **Accept** .
 Finally, close that tab. The test connectivity window should show a success.  
   
 The app should now be ready to use.
@@ -135,9 +139,9 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions  
 [test connectivity](#action-test-connectivity) - Use supplied credentials to generate a token with MS Graph  
-[list users](#action-list-users) - List users in a tenant  
+[list users](#action-list-users) - Get a list of users  
 [reset password](#action-reset-password) - Reset or set a user's password in an Microsoft AD environment  
-[disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in an Microsoft AD environment  
+[disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in a Microsoft AD environment  
 [enable user](#action-enable-user) - Enable a user  
 [disable user](#action-disable-user) - Disable a user  
 [list user attributes](#action-list-user-attributes) - List attributes for all or a specified user  
@@ -164,12 +168,12 @@ No parameters are required for this action
 No Output  
 
 ## action: 'list users'
-List users in a tenant
+Get a list of users
 
 Type: **investigate**  
 Read only: **True**
 
-For more information on using the filter\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+For more information on using the filter\_string and select\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\. By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
@@ -182,6 +186,7 @@ DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
 action\_result\.parameter\.filter\_string | string | 
+action\_result\.parameter\.select\_string | string | 
 action\_result\.data\.\*\.accountEnabled | boolean | 
 action\_result\.data\.\*\.ageGroup | string | 
 action\_result\.data\.\*\.assignedLicenses\.\*\.skuId | string | 
@@ -202,6 +207,7 @@ action\_result\.data\.\*\.displayName | string |
 action\_result\.data\.\*\.employeeId | string | 
 action\_result\.data\.\*\.facsimileTelephoneNumber | string | 
 action\_result\.data\.\*\.givenName | string | 
+action\_result\.data\.\*\.id | string |  `user id` 
 action\_result\.data\.\*\.immutableId | string | 
 action\_result\.data\.\*\.isCompromised | string | 
 action\_result\.data\.\*\.jobTitle | string | 
@@ -210,9 +216,10 @@ action\_result\.data\.\*\.legalAgeGroupClassification | string |
 action\_result\.data\.\*\.mail | string |  `email` 
 action\_result\.data\.\*\.mailNickname | string | 
 action\_result\.data\.\*\.mobile | string | 
-action\_result\.data\.\*\.objectId | string |  `user id` 
+action\_result\.data\.\*\.mobilePhone | string | 
 action\_result\.data\.\*\.objectType | string | 
 action\_result\.data\.\*\.odata\.type | string | 
+action\_result\.data\.\*\.officeLocation | string | 
 action\_result\.data\.\*\.onPremisesDistinguishedName | string | 
 action\_result\.data\.\*\.onPremisesSecurityIdentifier | string | 
 action\_result\.data\.\*\.otherMails | string |  `email` 
@@ -237,7 +244,7 @@ action\_result\.data\.\*\.surname | string |
 action\_result\.data\.\*\.telephoneNumber | string | 
 action\_result\.data\.\*\.thumbnailPhoto\@odata\.mediaEditLink | string | 
 action\_result\.data\.\*\.usageLocation | string | 
-action\_result\.data\.\*\.userPrincipalName | string |  `email`  `user principal name` 
+action\_result\.data\.\*\.userPrincipalName | string |  `user id` 
 action\_result\.data\.\*\.userState | string | 
 action\_result\.data\.\*\.userStateChangedOn | string | 
 action\_result\.data\.\*\.userType | string | 
@@ -275,7 +282,7 @@ summary\.total\_objects | numeric |
 summary\.total\_objects\_successful | numeric |   
 
 ## action: 'disable tokens'
-Invalidate all active refresh tokens for a user in an Microsoft AD environment
+Invalidate all active refresh tokens for a user in a Microsoft AD environment
 
 Type: **contain**  
 Read only: **False**
@@ -291,6 +298,7 @@ DATA PATH | TYPE | CONTAINS
 action\_result\.status | string | 
 action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data | string | 
+action\_result\.data\.\*\.\@odata\.context | string | 
 action\_result\.data\.\*\.odata\.metadata | string |  `url` 
 action\_result\.data\.\*\.odata\.null | boolean | 
 action\_result\.data\.\*\.value | boolean | 
@@ -308,7 +316,7 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID to enable tokens of \- can be user principal name or object ID | string |  `user id` 
+**user\_id** |  required  | User ID to enable \- can be user principal name or object ID | string |  `user id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
@@ -330,7 +338,7 @@ Read only: **False**
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**user\_id** |  required  | User ID to change password \- can be user principal name or object ID | string |  `user id` 
+**user\_id** |  required  | User ID to disable \- can be user principal name or object ID | string |  `user id` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
@@ -349,7 +357,7 @@ List attributes for all or a specified user
 Type: **investigate**  
 Read only: **True**
 
-By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
@@ -361,7 +369,9 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
+action\_result\.parameter\.select\_string | string | 
 action\_result\.parameter\.user\_id | string |  `user id` 
+action\_result\.data\.\*\.\@odata\.context | string | 
 action\_result\.data\.\*\.accountEnabled | boolean | 
 action\_result\.data\.\*\.ageGroup | string | 
 action\_result\.data\.\*\.assignedLicenses\.\*\.skuId | string | 
@@ -382,6 +392,10 @@ action\_result\.data\.\*\.displayName | string |
 action\_result\.data\.\*\.employeeId | string | 
 action\_result\.data\.\*\.facsimileTelephoneNumber | string | 
 action\_result\.data\.\*\.givenName | string | 
+action\_result\.data\.\*\.id | string |  `user id` 
+action\_result\.data\.\*\.identities\.\*\.issuer | string | 
+action\_result\.data\.\*\.identities\.\*\.issuerAssignedId | string | 
+action\_result\.data\.\*\.identities\.\*\.signInType | string | 
 action\_result\.data\.\*\.immutableId | string | 
 action\_result\.data\.\*\.isCompromised | string | 
 action\_result\.data\.\*\.jobTitle | string | 
@@ -390,10 +404,12 @@ action\_result\.data\.\*\.legalAgeGroupClassification | string |
 action\_result\.data\.\*\.mail | string |  `email` 
 action\_result\.data\.\*\.mailNickname | string | 
 action\_result\.data\.\*\.mobile | string | 
+action\_result\.data\.\*\.mobilePhone | string | 
 action\_result\.data\.\*\.objectId | string | 
 action\_result\.data\.\*\.objectType | string | 
 action\_result\.data\.\*\.odata\.metadata | string | 
 action\_result\.data\.\*\.odata\.type | string | 
+action\_result\.data\.\*\.officeLocation | string | 
 action\_result\.data\.\*\.onPremisesDistinguishedName | string | 
 action\_result\.data\.\*\.onPremisesSecurityIdentifier | string | 
 action\_result\.data\.\*\.otherMails | string |  `email` 
@@ -418,12 +434,11 @@ action\_result\.data\.\*\.surname | string |
 action\_result\.data\.\*\.telephoneNumber | string | 
 action\_result\.data\.\*\.thumbnailPhoto\@odata\.mediaEditLink | string | 
 action\_result\.data\.\*\.usageLocation | string | 
-action\_result\.data\.\*\.userPrincipalName | string |  `email` 
+action\_result\.data\.\*\.userPrincipalName | string |  `user id` 
 action\_result\.data\.\*\.userState | string | 
 action\_result\.data\.\*\.userStateChangedOn | string | 
 action\_result\.data\.\*\.userType | string | 
 action\_result\.summary\.status | string | 
-action\_result\.summary\.user\_enabled | boolean | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 
 summary\.total\_objects\_successful | numeric |   
@@ -449,6 +464,38 @@ action\_result\.parameter\.attribute | string |
 action\_result\.parameter\.attribute\_value | string | 
 action\_result\.parameter\.user\_id | string |  `user id` 
 action\_result\.data | string | 
+action\_result\.data\.\*\.classification | string | 
+action\_result\.data\.\*\.createdDateTime | string | 
+action\_result\.data\.\*\.deletedDateTime | string | 
+action\_result\.data\.\*\.deletionTimestamp | string | 
+action\_result\.data\.\*\.description | string | 
+action\_result\.data\.\*\.dirSyncEnabled | string | 
+action\_result\.data\.\*\.displayName | string | 
+action\_result\.data\.\*\.expirationDateTime | string | 
+action\_result\.data\.\*\.id | string |  `user id` 
+action\_result\.data\.\*\.isAssignableToRole | string | 
+action\_result\.data\.\*\.lastDirSyncTime | string | 
+action\_result\.data\.\*\.mail | string |  `email` 
+action\_result\.data\.\*\.mailEnabled | boolean | 
+action\_result\.data\.\*\.mailNickname | string | 
+action\_result\.data\.\*\.membershipRule | string | 
+action\_result\.data\.\*\.membershipRuleProcessingState | string | 
+action\_result\.data\.\*\.objectType | string | 
+action\_result\.data\.\*\.odata\.type | string | 
+action\_result\.data\.\*\.onPremisesDomainName | string |  `domain` 
+action\_result\.data\.\*\.onPremisesLastSyncDateTime | string | 
+action\_result\.data\.\*\.onPremisesNetBiosName | string | 
+action\_result\.data\.\*\.onPremisesSamAccountName | string | 
+action\_result\.data\.\*\.onPremisesSecurityIdentifier | string | 
+action\_result\.data\.\*\.onPremisesSyncEnabled | string | 
+action\_result\.data\.\*\.preferredDataLocation | string | 
+action\_result\.data\.\*\.preferredLanguage | string | 
+action\_result\.data\.\*\.proxyAddresses | string | 
+action\_result\.data\.\*\.renewedDateTime | string | 
+action\_result\.data\.\*\.securityEnabled | boolean | 
+action\_result\.data\.\*\.securityIdentifier | string | 
+action\_result\.data\.\*\.theme | string | 
+action\_result\.data\.\*\.visibility | string | 
 action\_result\.summary\.status | string | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 
@@ -479,7 +526,7 @@ summary\.total\_objects | numeric |
 summary\.total\_objects\_successful | numeric |   
 
 ## action: 'add user'
-Add a user to the tenant by creating an organizational account
+Add a user to a specified group
 
 Type: **generic**  
 Read only: **False**
@@ -508,34 +555,50 @@ List groups in the organization
 Type: **investigate**  
 Read only: **True**
 
-By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**select\_string** |  optional  | Select string to get additional user properties\. Separate multiple values with commas | string | 
+**select\_string** |  optional  | Select string to get additional group properties\. Separate multiple values with commas | string | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
+action\_result\.parameter\.select\_string | string | 
+action\_result\.data\.\*\.classification | string | 
+action\_result\.data\.\*\.createdDateTime | string | 
+action\_result\.data\.\*\.deletedDateTime | string | 
 action\_result\.data\.\*\.deletionTimestamp | string | 
 action\_result\.data\.\*\.description | string | 
 action\_result\.data\.\*\.dirSyncEnabled | string | 
 action\_result\.data\.\*\.displayName | string | 
+action\_result\.data\.\*\.expirationDateTime | string | 
+action\_result\.data\.\*\.id | string |  `group object id` 
+action\_result\.data\.\*\.isAssignableToRole | string | 
 action\_result\.data\.\*\.lastDirSyncTime | string | 
 action\_result\.data\.\*\.mail | string |  `email` 
 action\_result\.data\.\*\.mailEnabled | boolean | 
 action\_result\.data\.\*\.mailNickname | string | 
-action\_result\.data\.\*\.objectId | string |  `group object id` 
+action\_result\.data\.\*\.membershipRule | string | 
+action\_result\.data\.\*\.membershipRuleProcessingState | string | 
 action\_result\.data\.\*\.objectType | string | 
 action\_result\.data\.\*\.odata\.type | string | 
 action\_result\.data\.\*\.onPremisesDomainName | string |  `domain` 
+action\_result\.data\.\*\.onPremisesLastSyncDateTime | string | 
 action\_result\.data\.\*\.onPremisesNetBiosName | string | 
 action\_result\.data\.\*\.onPremisesSamAccountName | string | 
 action\_result\.data\.\*\.onPremisesSecurityIdentifier | string | 
+action\_result\.data\.\*\.onPremisesSyncEnabled | string | 
+action\_result\.data\.\*\.preferredDataLocation | string | 
+action\_result\.data\.\*\.preferredLanguage | string | 
 action\_result\.data\.\*\.proxyAddresses | string | 
+action\_result\.data\.\*\.renewedDateTime | string | 
 action\_result\.data\.\*\.securityEnabled | boolean | 
+action\_result\.data\.\*\.securityIdentifier | string | 
+action\_result\.data\.\*\.theme | string | 
+action\_result\.data\.\*\.visibility | string | 
 action\_result\.summary\.num\_groups | numeric | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 
@@ -547,37 +610,54 @@ Get information about a group
 Type: **investigate**  
 Read only: **True**
 
-By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **object\_id** |  required  | Object ID of group | string |  `group object id` 
-**select\_string** |  optional  | Select string to get additional user properties\. Separate multiple values with commas | string | 
+**select\_string** |  optional  | Select string to get additional group properties\. Separate multiple values with commas | string | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
 action\_result\.parameter\.object\_id | string |  `group object id` 
+action\_result\.parameter\.select\_string | string | 
+action\_result\.data\.\*\.\@odata\.context | string | 
+action\_result\.data\.\*\.classification | string | 
+action\_result\.data\.\*\.createdDateTime | string | 
+action\_result\.data\.\*\.deletedDateTime | string | 
 action\_result\.data\.\*\.deletionTimestamp | string | 
 action\_result\.data\.\*\.description | string | 
 action\_result\.data\.\*\.dirSyncEnabled | string | 
 action\_result\.data\.\*\.displayName | string | 
+action\_result\.data\.\*\.expirationDateTime | string | 
+action\_result\.data\.\*\.id | string |  `group object id` 
+action\_result\.data\.\*\.isAssignableToRole | string | 
 action\_result\.data\.\*\.lastDirSyncTime | string | 
 action\_result\.data\.\*\.mail | string |  `email` 
 action\_result\.data\.\*\.mailEnabled | boolean | 
 action\_result\.data\.\*\.mailNickname | string | 
-action\_result\.data\.\*\.objectId | string |  `group object id` 
+action\_result\.data\.\*\.membershipRule | string | 
+action\_result\.data\.\*\.membershipRuleProcessingState | string | 
 action\_result\.data\.\*\.objectType | string | 
 action\_result\.data\.\*\.odata\.metadata | string | 
 action\_result\.data\.\*\.odata\.type | string | 
 action\_result\.data\.\*\.onPremisesDomainName | string |  `domain` 
+action\_result\.data\.\*\.onPremisesLastSyncDateTime | string | 
 action\_result\.data\.\*\.onPremisesNetBiosName | string | 
 action\_result\.data\.\*\.onPremisesSamAccountName | string | 
 action\_result\.data\.\*\.onPremisesSecurityIdentifier | string | 
+action\_result\.data\.\*\.onPremisesSyncEnabled | string | 
+action\_result\.data\.\*\.preferredDataLocation | string | 
+action\_result\.data\.\*\.preferredLanguage | string | 
 action\_result\.data\.\*\.proxyAddresses | string | 
+action\_result\.data\.\*\.renewedDateTime | string | 
 action\_result\.data\.\*\.securityEnabled | boolean | 
+action\_result\.data\.\*\.securityIdentifier | string | 
+action\_result\.data\.\*\.theme | string | 
+action\_result\.data\.\*\.visibility | string | 
 action\_result\.summary\.display\_name | string | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 
@@ -589,22 +669,34 @@ List the members in a group
 Type: **investigate**  
 Read only: **True**
 
-By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **group\_object\_id** |  required  | Object ID of group | string |  `group object id` 
-**select\_string** |  optional  | Select string to get additional user properties\. Separate multiple values with commas | string | 
+**select\_string** |  optional  | Select string to get additional properties\. Separate multiple values with commas | string | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
 action\_result\.parameter\.group\_object\_id | string |  `group object id` 
+action\_result\.parameter\.select\_string | string | 
+action\_result\.data\.\*\.\@odata\.type | string | 
+action\_result\.data\.\*\.accountEnabled | boolean | 
 action\_result\.data\.\*\.displayName | string | 
-action\_result\.data\.\*\.objectId | string |  `group object id` 
-action\_result\.summary\.num\_members | numeric | 
+action\_result\.data\.\*\.givenName | string | 
+action\_result\.data\.\*\.id | string |  `user id` 
+action\_result\.data\.\*\.jobTitle | string | 
+action\_result\.data\.\*\.mail | string | 
+action\_result\.data\.\*\.mobilePhone | string | 
+action\_result\.data\.\*\.officeLocation | string | 
+action\_result\.data\.\*\.preferredLanguage | string | 
+action\_result\.data\.\*\.surname | string | 
+action\_result\.data\.\*\.userPrincipalName | string | 
+action\_result\.summary\.num\_members | numeric |  `user id` 
+action\_result\.summary\.num\_users | numeric | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 
 summary\.total\_objects\_successful | numeric |   
@@ -627,14 +719,43 @@ DATA PATH | TYPE | CONTAINS
 action\_result\.status | string | 
 action\_result\.parameter\.group\_object\_id | string |  `group object id` 
 action\_result\.parameter\.user\_id | string |  `user id` 
-action\_result\.data\.\*\.user\_in\_group | boolean | 
-action\_result\.summary\.user\_in\_group | boolean | 
+action\_result\.data\.\*\.\@odata\.context | string | 
+action\_result\.data\.\*\.user\_in\_group | string | 
+action\_result\.data\.\*\.value\.\*\.\@odata\.type | string | 
+action\_result\.data\.\*\.value\.\*\.classification | string | 
+action\_result\.data\.\*\.value\.\*\.createdDateTime | string | 
+action\_result\.data\.\*\.value\.\*\.deletedDateTime | string | 
+action\_result\.data\.\*\.value\.\*\.description | string | 
+action\_result\.data\.\*\.value\.\*\.displayName | string | 
+action\_result\.data\.\*\.value\.\*\.expirationDateTime | string | 
+action\_result\.data\.\*\.value\.\*\.id | string |  `user id` 
+action\_result\.data\.\*\.value\.\*\.isAssignableToRole | string | 
+action\_result\.data\.\*\.value\.\*\.mail | string | 
+action\_result\.data\.\*\.value\.\*\.mailEnabled | boolean | 
+action\_result\.data\.\*\.value\.\*\.mailNickname | string | 
+action\_result\.data\.\*\.value\.\*\.membershipRule | string | 
+action\_result\.data\.\*\.value\.\*\.membershipRuleProcessingState | string | 
+action\_result\.data\.\*\.value\.\*\.onPremisesDomainName | string | 
+action\_result\.data\.\*\.value\.\*\.onPremisesLastSyncDateTime | string | 
+action\_result\.data\.\*\.value\.\*\.onPremisesNetBiosName | string | 
+action\_result\.data\.\*\.value\.\*\.onPremisesSamAccountName | string | 
+action\_result\.data\.\*\.value\.\*\.onPremisesSecurityIdentifier | string | 
+action\_result\.data\.\*\.value\.\*\.onPremisesSyncEnabled | string | 
+action\_result\.data\.\*\.value\.\*\.preferredDataLocation | string | 
+action\_result\.data\.\*\.value\.\*\.preferredLanguage | string | 
+action\_result\.data\.\*\.value\.\*\.renewedDateTime | string | 
+action\_result\.data\.\*\.value\.\*\.securityEnabled | boolean | 
+action\_result\.data\.\*\.value\.\*\.securityIdentifier | string | 
+action\_result\.data\.\*\.value\.\*\.theme | string | 
+action\_result\.data\.\*\.value\.\*\.visibility | string | 
+action\_result\.summary\.message | string | 
+action\_result\.summary\.user\_in\_group | string | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 
 summary\.total\_objects\_successful | numeric |   
 
 ## action: 'list directory roles'
-List the directory roles in a tenant
+List the directory roles that are activated in the tenant
 
 Type: **investigate**  
 Read only: **True**
@@ -648,14 +769,14 @@ No parameters are required for this action
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
+action\_result\.data\.\*\.deletedDateTime | string | 
 action\_result\.data\.\*\.deletionTimestamp | string | 
 action\_result\.data\.\*\.description | string | 
 action\_result\.data\.\*\.displayName | string | 
+action\_result\.data\.\*\.id | string |  `directory object id` 
 action\_result\.data\.\*\.isSystem | boolean | 
-action\_result\.data\.\*\.objectId | string |  `directory object id` 
 action\_result\.data\.\*\.objectType | string | 
 action\_result\.data\.\*\.odata\.type | string | 
-action\_result\.data\.\*\.roleDisabled | boolean | 
 action\_result\.data\.\*\.roleTemplateId | string |  `role template id` 
 action\_result\.summary\.num\_directory\_roles | numeric | 
 action\_result\.message | string | 

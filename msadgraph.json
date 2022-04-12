@@ -10,7 +10,7 @@
     "product_version_regex": ".*",
     "publisher": "Splunk",
     "license": "Copyright (c) 2022 Splunk Inc.",
-    "app_version": "1.0.0",
+    "app_version": "1.0.1",
     "python_version": "3",
     "utctime_updated": "2022-03-15T20:02:22.000000Z",
     "package_name": "phantom_msadgraph",
