@@ -87,8 +87,11 @@ and limitations under the License.
         <h4 class="wf-h4-style">No data found</h4>
     {% else %}
     {% if result.param.select_string %}
-    <h3 class="wf-h3-style">List of Groups</h3>
     {% for curr_data in result.data %}
+    {% if curr_data == 'Empty response' %}
+        <h3 class="wf-h3-style">Empty response. Please add valid property name</h3>
+    {% else %}
+    <h3 class="wf-h3-style">Group</h3>
     <table class="wf-table-horizontal">
         <tr>
             <thead>
@@ -102,8 +105,9 @@ and limitations under the License.
                 <td>{{ value }}</td>
             {% endfor %}
         </tr>
+        <br>
     </table>
-    <br>
+    {% endif %}
     {% endfor %}
     <br>
     <!------------------- For each Result END ---------------------->
