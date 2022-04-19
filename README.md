@@ -2,7 +2,7 @@
 # MS Graph for Active Directory
 
 Publisher: Splunk  
-Connector Version: 1\.0\.4  
+Connector Version: 1\.0\.5  
 Product Vendor: Microsoft  
 Product Name: MS Graph for Active Directory  
 Product Version Supported (regex): "\.\*"  
