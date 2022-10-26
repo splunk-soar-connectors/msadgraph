@@ -907,6 +907,32 @@ class MSADGraphConnector(BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
+    def _handle_list_user_devices(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+
+        parameters = dict()
+        select_string = self._handle_py_ver_compat_for_input_str(param.get('select_string'))
+        if select_string:
+            select_string = select_string.strip(',').split(',')
+            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+
+        endpoint = f'/users/{user_id}/ownedDevices'
+        endpoint += '?{}'.format(self._format_params_to_query(parameters))
+
+        ret_val = self._handle_pagination(action_result, endpoint)
+
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        summary = action_result.update_summary({})
+        summary['status'] = "Successfully retrieved owned devices for user {}".format(user_id)
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
     def _handle_set_user_attribute(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
@@ -1248,6 +1274,9 @@ class MSADGraphConnector(BaseConnector):
 
         elif action_id == 'generate_token':
             ret_val = self._handle_generate_token(param)
+        
+        elif action_id == 'list_user_devices':
+            ret_val = self._handle_list_user_devices(param)
 
         return ret_val
 

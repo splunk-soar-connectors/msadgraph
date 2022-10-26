@@ -10,7 +10,7 @@
     "product_version_regex": ".*",
     "publisher": "Splunk",
     "license": "Copyright (c) 2022 Splunk Inc.",
-    "app_version": "1.0.5",
+    "app_version": "1.0.6-fdse.1",
     "python_version": "3",
     "utctime_updated": "2022-04-18T12:59:04.000000Z",
     "package_name": "phantom_msadgraph",
@@ -928,6 +928,119 @@
             ],
             "render": {
                 "type": "table"
+            },
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "list user devices",
+            "description": "List devices for a specified user",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter.",
+            "type": "investigate",
+            "identifier": "list_user_devices",
+            "read_only": true,
+            "parameters": {
+                "user_id": {
+                    "description": "User ID - can be user principal name or object ID",
+                    "data_type": "string",
+                    "primary": true,
+                    "required": true,
+                    "order": 0,
+                    "contains": [
+                        "user id"
+                    ]
+                },
+                "select_string": {
+                    "description": "Select string to get additional user properties. Separate multiple values with commas",
+                    "data_type": "string",
+                    "order": 1
+                }
+            },
+            "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.select_string",
+                    "data_type": "string",
+                    "example_value": [
+                        "displayName"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.user_id",
+                    "data_type": "string",
+                    "example_values": [
+                        "user@test.onmicrosoft.com"
+                    ],
+                    "contains": [
+                        "user id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.accountEnabled",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.deviceId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deviceMetadata",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deviceVersion",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.data.*.displayName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.isCompliant",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.isManaged",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.manufacturer",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.mdmAppId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.model",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSyncEnabled",
+                    "data_type": "boolean"
+                }
+            ],
+            "render": {
+                "type": "table",
+                "title": "Owned Devices"
             },
             "versions": "EQ(*)"
         },
