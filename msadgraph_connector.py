@@ -1274,7 +1274,7 @@ class MSADGraphConnector(BaseConnector):
 
         elif action_id == 'generate_token':
             ret_val = self._handle_generate_token(param)
-        
+
         elif action_id == 'list_user_devices':
             ret_val = self._handle_list_user_devices(param)
 
