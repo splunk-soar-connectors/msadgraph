@@ -24,7 +24,7 @@ import time
 
 import phantom.app as phantom
 import requests
-from bs4 import BeautifulSoup, UnicodeDammit
+from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
@@ -272,20 +272,6 @@ class MSADGraphConnector(BaseConnector):
         self._refresh_token = None
         self._base_url = None
 
-    def _handle_py_ver_compat_for_input_str(self, input_str):
-        """
-        This method returns the encoded|original string based on the Python version.
-        :param input_str: Input string to be processed
-        :return: input_str (Processed input string based on following logic 'input_str - Python 3; encoded input_str - Python 2')
-        """
-        try:
-            if input_str and self._python_version < 3:
-                input_str = UnicodeDammit(input_str).unicode_markup.encode('utf-8')
-        except Exception:
-            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
-
-        return input_str
-
     def _get_error_message_from_exception(self, e):
         """ This function is used to get appropriate error message from the exception.
         :param e: Exception object
@@ -306,14 +292,6 @@ class MSADGraphConnector(BaseConnector):
                 error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
         except:
             error_code = "Error code unavailable"
-            error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
-
-        try:
-            error_msg = self._handle_py_ver_compat_for_input_str(error_msg)
-        except TypeError:
-            error_msg = "Error occurred while connecting to the Microsoft Teams server."\
-                "Please check the asset configuration and|or the action parameters."
-        except:
             error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
 
         return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
@@ -379,7 +357,7 @@ class MSADGraphConnector(BaseConnector):
         message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code,
                                                                       error_text)
 
-        message = self._handle_py_ver_compat_for_input_str(message.replace('{', '{{').replace('}', '}}'))
+        message = message.replace('{', '{{').replace('}', '}}')
 
         if status_code == 400:
             message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code, MS_AZURE_HTML_ERROR)
@@ -406,18 +384,18 @@ class MSADGraphConnector(BaseConnector):
         if 200 <= response.status_code < 399:
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
-        error_message = self._handle_py_ver_compat_for_input_str(response.text.replace('{', '{{').replace('}', '}}'))
+        error_message = response.text.replace('{', '{{').replace('}', '}}')
         message = "Error from server. Status Code: {0} Data from server: {1}".format(response.status_code,
                                                                                      error_message)
 
         # Show only error message if available
         if isinstance(resp_json.get('error', {}), dict):
             if resp_json.get('error', {}).get('message'):
-                error_message = self._handle_py_ver_compat_for_input_str(resp_json['error']['message'])
+                error_message = resp_json['error']['message']
                 message = "Error from server. Status Code: {0} Data from server: {1}".format(response.status_code,
                                                                                              error_message)
         else:
-            error_message = self._handle_py_ver_compat_for_input_str(resp_json['error'])
+            error_message = resp_json['error']
             message = "Error from server. Status Code: {0} Data from server: {1}".format(response.status_code,
                                                                                          error_message)
 
@@ -463,7 +441,7 @@ class MSADGraphConnector(BaseConnector):
 
         # everything else is actually an error at this point
         message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
-            response.status_code, self._handle_py_ver_compat_for_input_str(response.text.replace('{', '{{').replace('}', '}}')))
+            response.status_code, response.text.replace('{', '{{').replace('}', '}}'))
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -622,7 +600,7 @@ class MSADGraphConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
         ret_val = self._get_token(action_result)
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         self._state['admin_consent'] = True
@@ -787,8 +765,8 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
-        temp_password = self._handle_py_ver_compat_for_input_str(param.get('temp_password', ''))
+        user_id = param['user_id']
+        temp_password = param.get('temp_password', '')
         force_change = param.get('force_change', True)
 
         data = {
@@ -816,7 +794,7 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        user_id = param['user_id']
 
         data = {
             "accountEnabled": True
@@ -839,7 +817,7 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        user_id = param['user_id']
         endpoint = '/users/{0}/revokeSignInSessions'.format(user_id)
 
         ret_val = self._make_rest_call_helper(action_result, endpoint, method='post')
@@ -857,7 +835,7 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        user_id = param['user_id']
 
         data = {
             "accountEnabled": False
@@ -879,10 +857,10 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param.get('user_id'))
+        user_id = param.get('user_id')
 
         parameters = dict()
-        select_string = self._handle_py_ver_compat_for_input_str(param.get('select_string'))
+        select_string = param.get('select_string')
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
@@ -912,10 +890,10 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        user_id = param['user_id']
 
         parameters = dict()
-        select_string = self._handle_py_ver_compat_for_input_str(param.get('select_string'))
+        select_string = param.get('select_string')
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
@@ -938,9 +916,9 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
-        attribute = self._handle_py_ver_compat_for_input_str(param['attribute'])
-        attribute_value = self._handle_py_ver_compat_for_input_str(param['attribute_value'])
+        user_id = param['user_id']
+        attribute = param['attribute']
+        attribute_value = param['attribute_value']
 
         data = {
             attribute: attribute_value
@@ -963,8 +941,8 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        object_id = self._handle_py_ver_compat_for_input_str(param['group_object_id'])
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        object_id = param['group_object_id']
+        user_id = param['user_id']
 
         data = {
             '@odata.id': "https://{}/directoryObjects/{}".format(MSADGRAPH_API_REGION[config.get(MS_AZURE_URL, "Global")], user_id)
@@ -991,8 +969,8 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        object_id = self._handle_py_ver_compat_for_input_str(param['group_object_id'])
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        object_id = param['group_object_id']
+        user_id = param['user_id']
 
         endpoint = '/groups/{}/members/{}/$ref'.format(object_id, user_id)
         ret_val = self._make_rest_call_helper(action_result, endpoint, method='delete')
@@ -1048,7 +1026,7 @@ class MSADGraphConnector(BaseConnector):
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
 
-        object_id = self._handle_py_ver_compat_for_input_str(param['object_id'])
+        object_id = param['object_id']
 
         endpoint = '/groups/{}'.format(object_id)
         endpoint += '?{}'.format(self._format_params_to_query(parameters))
@@ -1070,7 +1048,7 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        object_id = self._handle_py_ver_compat_for_input_str(param['group_object_id'])
+        object_id = param['group_object_id']
 
         parameters = dict()
         select_string = param.get('select_string')
@@ -1116,8 +1094,8 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        object_id = self._handle_py_ver_compat_for_input_str(param['group_object_id'])
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        object_id = param['group_object_id']
+        user_id = param['user_id']
 
         endpoint = '/users/{}/memberOf?$filter=id eq \'{}\''.format(user_id, object_id)
         ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='get')
@@ -1299,8 +1277,8 @@ class MSADGraphConnector(BaseConnector):
         # get the asset config
         config = self.get_config()
 
-        self._tenant = self._handle_py_ver_compat_for_input_str(config[MS_AZURE_CONFIG_TENANT])
-        self._client_id = self._handle_py_ver_compat_for_input_str(config[MS_AZURE_CONFIG_CLIENT_ID])
+        self._tenant = config[MS_AZURE_CONFIG_TENANT]
+        self._client_id = config[MS_AZURE_CONFIG_CLIENT_ID]
         self._client_secret = config[MS_AZURE_CONFIG_CLIENT_SECRET]
         self._access_token = self._state.get(MS_AZURE_TOKEN_STRING, {}).get(MS_AZURE_ACCESS_TOKEN_STRING)
         self._refresh_token = self._state.get(MS_AZURE_TOKEN_STRING, {}).get(MS_AZURE_REFRESH_TOKEN_STRING)
