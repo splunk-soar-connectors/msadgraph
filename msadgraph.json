@@ -29,18 +29,6 @@
             "required": true,
             "order": 0
         },
-        "client_id": {
-            "description": "Application ID",
-            "data_type": "string",
-            "required": true,
-            "order": 2
-        },
-        "client_secret": {
-            "description": "Client Secret",
-            "data_type": "password",
-            "required": true,
-            "order": 3
-        },
         "region": {
             "data_type": "string",
             "description": "Microsoft AD Region",
@@ -53,6 +41,30 @@
                 "Germany",
                 "China (21Vianet)"
             ]
+        },
+        "client_id": {
+            "description": "Application ID",
+            "data_type": "string",
+            "required": true,
+            "order": 2
+        },
+        "client_secret": {
+            "description": "Client Secret",
+            "data_type": "password",
+            "required": true,
+            "order": 3
+        },
+        "admin_access_required": {
+            "description": "Admin Access Required",
+            "data_type": "boolean",
+            "default": false,
+            "order": 4
+        },
+        "admin_access_granted": {
+            "description": "Admin Consent Already Provided",
+            "data_type": "boolean",
+            "default": false,
+            "order": 5
         }
     },
     "actions": [
