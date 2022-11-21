@@ -18,7 +18,7 @@
     "min_phantom_version": "5.2.0",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud 2022-03-24, API Version: 1.0"
+        "Cloud 2022-11-24, API Version: 1.0"
     ],
     "app_wizard_version": "1.0.0",
     "rest_handler": "msadgraph_connector._handle_rest_request",
@@ -104,7 +104,7 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
@@ -288,8 +288,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.mobilePhone",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.objectType",
@@ -307,8 +306,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.officeLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesDistinguishedName",
@@ -705,7 +703,9 @@
                 {
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
-                    "example_value": "https://graph.microsoft.com/v1.0/$metadata#Edm.Boolean"
+                    "example_values": [
+                        "https://graph.microsoft.com/v1.0/$metadata#Edm.Boolean"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.odata.metadata",
@@ -967,7 +967,7 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
@@ -1040,6 +1040,10 @@
                 {
                     "data_path": "action_result.data.*.onPremisesSyncEnabled",
                     "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 }
             ],
             "render": {
@@ -1083,7 +1087,7 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
@@ -1100,7 +1104,9 @@
                 {
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
-                    "example_value": "https://graph.microsoft.com/v1.0/$metadata#users/$entity"
+                    "example_values": [
+                        "https://graph.microsoft.com/v1.0/$metadata#users/$entity"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.accountEnabled",
@@ -1213,7 +1219,9 @@
                 {
                     "data_path": "action_result.data.*.id",
                     "data_type": "string",
-                    "example_value": "7d55d7e6-cf5a-4dd2-a176-57a3c33b7fa9",
+                    "example_values": [
+                        "7d55d7e6-cf5a-4dd2-a176-57a3c33b7fa9"
+                    ],
                     "contains": [
                         "user id"
                     ]
@@ -1221,17 +1229,23 @@
                 {
                     "data_path": "action_result.data.*.identities.*.issuer",
                     "data_type": "string",
-                    "example_value": "phantomengineering2.onmicrosoft.com"
+                    "example_values": [
+                        "phantomengineering2.onmicrosoft.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.identities.*.issuerAssignedId",
                     "data_type": "string",
-                    "example_value": "test2@phantomengineering2.onmicrosoft.com"
+                    "example_values": [
+                        "test2@phantomengineering2.onmicrosoft.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.identities.*.signInType",
                     "data_type": "string",
-                    "example_value": "userPrincipalName"
+                    "example_values": [
+                        "userPrincipalName"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.immutableId",
@@ -1273,8 +1287,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.mobilePhone",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.objectId",
@@ -1293,7 +1306,9 @@
                 {
                     "data_path": "action_result.data.*.odata.metadata",
                     "data_type": "string",
-                    "example_value": "https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#directoryObjects/@Element"
+                    "example_values": [
+                        "https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#directoryObjects/@Element"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.odata.type",
@@ -1304,8 +1319,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.officeLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesDistinguishedName",
@@ -1586,18 +1600,18 @@
                 },
                 {
                     "data_path": "action_result.data.*.classification",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.createdDateTime",
                     "data_type": "string",
-                    "example_value": "2021-03-25T18:40:53Z"
+                    "example_values": [
+                        "2021-03-25T18:40:53Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.deletedDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.deletionTimestamp",
@@ -1623,8 +1637,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.expirationDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.id",
@@ -1638,8 +1651,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.isAssignableToRole",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.lastDirSyncTime",
@@ -1672,13 +1684,11 @@
                 },
                 {
                     "data_path": "action_result.data.*.membershipRule",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.membershipRuleProcessingState",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.objectType",
@@ -1703,8 +1713,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesNetBiosName",
@@ -1720,18 +1729,15 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesSyncEnabled",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredDataLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredLanguage",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.proxyAddresses",
@@ -1743,7 +1749,9 @@
                 {
                     "data_path": "action_result.data.*.renewedDateTime",
                     "data_type": "string",
-                    "example_value": "2021-03-25T18:40:53Z"
+                    "example_values": [
+                        "2021-03-25T18:40:53Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.securityEnabled",
@@ -1756,17 +1764,20 @@
                 {
                     "data_path": "action_result.data.*.securityIdentifier",
                     "data_type": "string",
-                    "example_value": "S-1-12-1-294681889-1319597617-672379543-28952017"
+                    "example_values": [
+                        "S-1-12-1-294681889-1319597617-672379543-28952017"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.theme",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.visibility",
                     "data_type": "string",
-                    "example_value": "Private"
+                    "example_values": [
+                        "Private"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.status",
@@ -2036,24 +2047,24 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.classification",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.createdDateTime",
                     "data_type": "string",
-                    "example_value": "2021-03-25T18:40:53Z"
+                    "example_values": [
+                        "2021-03-25T18:40:53Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.deletedDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.deletionTimestamp",
@@ -2083,8 +2094,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.expirationDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.id",
@@ -2098,8 +2108,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.isAssignableToRole",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.lastDirSyncTime",
@@ -2132,13 +2141,11 @@
                 },
                 {
                     "data_path": "action_result.data.*.membershipRule",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.membershipRuleProcessingState",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.objectType",
@@ -2163,8 +2170,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesNetBiosName",
@@ -2180,18 +2186,15 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesSyncEnabled",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredDataLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredLanguage",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.proxyAddresses",
@@ -2203,7 +2206,9 @@
                 {
                     "data_path": "action_result.data.*.renewedDateTime",
                     "data_type": "string",
-                    "example_value": "2021-03-25T18:40:53Z"
+                    "example_values": [
+                        "2021-03-25T18:40:53Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.securityEnabled",
@@ -2216,17 +2221,20 @@
                 {
                     "data_path": "action_result.data.*.securityIdentifier",
                     "data_type": "string",
-                    "example_value": "S-1-12-1-294681889-1319597617-672379543-28952017"
+                    "example_values": [
+                        "S-1-12-1-294681889-1319597617-672379543-28952017"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.theme",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.visibility",
                     "data_type": "string",
-                    "example_value": "Private"
+                    "example_values": [
+                        "Private"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.num_groups",
@@ -2310,29 +2318,31 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
-                    "example_value": "https://graph.microsoft.com/v1.0/$metadata#groups(id,displayName)/$entity"
+                    "example_values": [
+                        "https://graph.microsoft.com/v1.0/$metadata#groups(id,displayName)/$entity"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.classification",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.createdDateTime",
                     "data_type": "string",
-                    "example_value": "2020-08-05T11:59:49Z"
+                    "example_values": [
+                        "2020-08-05T11:59:49Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.deletedDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.deletionTimestamp",
@@ -2360,8 +2370,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.expirationDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.id",
@@ -2377,8 +2386,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.isAssignableToRole",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.lastDirSyncTime",
@@ -2413,13 +2421,11 @@
                 },
                 {
                     "data_path": "action_result.data.*.membershipRule",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.membershipRuleProcessingState",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.objectType",
@@ -2451,8 +2457,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesNetBiosName",
@@ -2468,18 +2473,15 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesSyncEnabled",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredDataLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredLanguage",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.proxyAddresses",
@@ -2491,7 +2493,9 @@
                 {
                     "data_path": "action_result.data.*.renewedDateTime",
                     "data_type": "string",
-                    "example_value": "2020-08-05T11:59:49Z"
+                    "example_values": [
+                        "2020-08-05T11:59:49Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.securityEnabled",
@@ -2506,17 +2510,17 @@
                 {
                     "data_path": "action_result.data.*.securityIdentifier",
                     "data_type": "string",
-                    "example_value": "S-1-12-1-909260723-1083662375-1952945031-2402852259"
+                    "example_values": [
+                        "S-1-12-1-909260723-1083662375-1952945031-2402852259"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.theme",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.visibility",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.summary.display_name",
@@ -2600,19 +2604,23 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.@odata.type",
                     "data_type": "string",
-                    "example_value": "#microsoft.graph.user"
+                    "example_values": [
+                        "#microsoft.graph.user"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.accountEnabled",
                     "data_type": "boolean",
-                    "example_value": true
+                    "example_values": [
+                        true
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.displayName",
@@ -2625,8 +2633,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.givenName",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.id",
@@ -2640,38 +2647,34 @@
                 },
                 {
                     "data_path": "action_result.data.*.jobTitle",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.mail",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.mobilePhone",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.officeLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredLanguage",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.surname",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.userPrincipalName",
                     "data_type": "string",
-                    "example_value": "ews_retest@phantomengineering2.onmicrosoft.com"
+                    "example_values": [
+                        "ews_retest@phantomengineering2.onmicrosoft.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.num_members",
@@ -2686,7 +2689,9 @@
                 {
                     "data_path": "action_result.summary.num_users",
                     "data_type": "numeric",
-                    "example_value": 3
+                    "example_values": [
+                        3
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -2783,7 +2788,9 @@
                 {
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
-                    "example_value": "https://graph.microsoft.com/v1.0/$metadata#directoryObjects"
+                    "example_values": [
+                        "https://graph.microsoft.com/v1.0/$metadata#directoryObjects"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.user_in_group",
@@ -2792,145 +2799,156 @@
                 {
                     "data_path": "action_result.data.*.value.*.@odata.type",
                     "data_type": "string",
-                    "example_value": "#microsoft.graph.group"
+                    "example_values": [
+                        "#microsoft.graph.group"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.classification",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.createdDateTime",
                     "data_type": "string",
-                    "example_value": "2022-02-25T12:05:22Z"
+                    "example_values": [
+                        "2022-02-25T12:05:22Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.deletedDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.description",
                     "data_type": "string",
-                    "example_value": "Test group for MSGraph"
+                    "example_values": [
+                        "Test group for MSGraph"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.displayName",
                     "data_type": "string",
-                    "example_value": "Test group for MSGraph"
+                    "example_values": [
+                        "Test group for MSGraph"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.expirationDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.id",
                     "data_type": "string",
-                    "example_value": "49233413-24c6-4516-a9e1-4d5f87fe34fd",
+                    "example_values": [
+                        "49233413-24c6-4516-a9e1-4d5f87fe34fd"
+                    ],
                     "contains": [
                         "user id"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.isAssignableToRole",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.mail",
                     "data_type": "string",
-                    "example_value": "TestgroupforMSGraph@phantomengineering2.onmicrosoft.com"
+                    "example_values": [
+                        "TestgroupforMSGraph@phantomengineering2.onmicrosoft.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.mailEnabled",
                     "data_type": "boolean",
-                    "example_value": true
+                    "example_values": [
+                        true
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.mailNickname",
                     "data_type": "string",
-                    "example_value": "TestgroupforMSGraph"
+                    "example_values": [
+                        "TestgroupforMSGraph"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.membershipRule",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.membershipRuleProcessingState",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesDomainName",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesLastSyncDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesNetBiosName",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesSamAccountName",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesSecurityIdentifier",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesSyncEnabled",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.preferredDataLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.preferredLanguage",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.renewedDateTime",
                     "data_type": "string",
-                    "example_value": "2022-02-25T12:05:22Z"
+                    "example_values": [
+                        "2022-02-25T12:05:22Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.securityEnabled",
                     "data_type": "boolean",
-                    "example_value": true
+                    "example_values": [
+                        true
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.securityIdentifier",
                     "data_type": "string",
-                    "example_value": "S-1-12-1-1227043859-1159079110-1598939561-4248108679"
+                    "example_values": [
+                        "S-1-12-1-1227043859-1159079110-1598939561-4248108679"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.theme",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.visibility",
                     "data_type": "string",
-                    "example_value": "Private"
+                    "example_values": [
+                        "Private"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.message",
                     "data_type": "string",
-                    "example_value": "User is member of group"
+                    "example_values": [
+                        "User is member of group"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.user_in_group",
@@ -2982,8 +3000,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.deletedDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.deletionTimestamp",
