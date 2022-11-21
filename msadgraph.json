@@ -982,12 +982,63 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.@odata.type",
+                    "data_type": "string",
+                    "example_values": [
+                        "#microsoft.graph.device"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.accountEnabled",
                     "data_type": "boolean",
                     "example_values": [
                         true,
                         false
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.alternativeSecurityIds.*.identityProvider",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.alternativeSecurityIds.*.key",
+                    "data_type": "string",
+                    "example_values": [
+                        "WAA1ADAAOQA6ADwAUwBIAEEAMQAtAFQAUAAtAFAAVQBCAEsARQBZAD4AOQA5AEEARQAwADgAOABDAEUANAA1ADgAMABCADcAQgBGAEEARQA2ADEAQQBCADYANAA3ADYANgA5ADUAOAAzAEQANABFAEYARQA5ADYAOAAyAHkAcQBSAEIANwBrAGEAMQA4AEoATAByACsAegB4AE8AYwB6AE8AYgBNAFEANQBZAEgAbgB0AFQAdgBOAG0AbgA5AEQAZQA2AFgAVQBUAGgAcwBFAD0A"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.alternativeSecurityIds.*.type",
+                    "data_type": "numeric",
+                    "example_values": [
+                        2
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.approximateLastSignInDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2019-09-26T03:42:15Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.complianceExpirationDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.createdDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2019-09-26T03:42:15Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.deletedDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deviceCategory",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.deviceId",
@@ -997,6 +1048,10 @@
                 },
                 {
                     "data_path": "action_result.data.*.deviceMetadata",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deviceOwnership",
                     "data_type": "string"
                 },
                 {
@@ -1010,6 +1065,82 @@
                     "column_order": 1
                 },
                 {
+                    "data_path": "action_result.data.*.domainName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.enrollmentProfileName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.enrollmentType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute1",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute10",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute11",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute12",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute13",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute14",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute15",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute2",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute3",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute4",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute5",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute6",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute7",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute8",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute9",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.externalSourceName",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.id",
                     "data_type": "string"
                 },
@@ -1020,6 +1151,14 @@
                 {
                     "data_path": "action_result.data.*.isManaged",
                     "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.isRooted",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.managementType",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.manufacturer",
@@ -1042,8 +1181,75 @@
                     "data_type": "boolean"
                 },
                 {
+                    "data_path": "action_result.data.*.operatingSystem",
+                    "data_type": "string",
+                    "example_values": [
+                        "Windows"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.operatingSystemVersion",
+                    "data_type": "string",
+                    "example_values": [
+                        "10.0.18362.0"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.profileType",
+                    "data_type": "string",
+                    "example_values": [
+                        "RegisteredDevice"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.registrationDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2019-09-26T03:42:15Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.sourceType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.trustType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Workplace"
+                    ]
+                },
+                {
                     "data_path": "action_result.summary",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "Successfully retrieved owned devices for user herman@phantomengineering.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        "Status: Successfully retrieved owned devices for user herman@phantomengineering2.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "render": {
@@ -2530,6 +2736,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.summary.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "Successfully retrieved group 104d4576-1544-48b5-bb7e-9f8f871aa824"
+                    ]
+                },
+                {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
@@ -2623,6 +2836,86 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.ageGroup",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.assignedLicenses.*.skuId",
+                    "data_type": "string",
+                    "example_values": [
+                        "189a915c-fe4f-4ffa-bde4-85b9628d07a0"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.assignedPlans.*.assignedDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-11-03T15:12:28Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.assignedPlans.*.capabilityStatus",
+                    "data_type": "string",
+                    "example_values": [
+                        "Deleted"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.assignedPlans.*.service",
+                    "data_type": "string",
+                    "example_values": [
+                        "AADPremiumService"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.assignedPlans.*.servicePlanId",
+                    "data_type": "string",
+                    "example_values": [
+                        "eec0eb4f-6444-4f95-aba0-50c24d67f998"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.city",
+                    "data_type": "string",
+                    "example_values": [
+                        "Palo Alto"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.companyName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.consentProvidedForMinor",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.country",
+                    "data_type": "string",
+                    "example_values": [
+                        "US"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.createdDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2016-06-09T18:33:27Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.creationType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deletedDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.department",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.displayName",
                     "data_type": "string",
                     "example_values": [
@@ -2630,6 +2923,34 @@
                     ],
                     "column_name": "Display Name",
                     "column_order": 0
+                },
+                {
+                    "data_path": "action_result.data.*.employeeHireDate",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.employeeId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.employeeOrgData",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.employeeType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.externalUserState",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.externalUserStateChangeDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.faxNumber",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.givenName",
@@ -2646,12 +2967,48 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.identities.*.issuer",
+                    "data_type": "string",
+                    "example_values": [
+                        "phantomengineering.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.identities.*.issuerAssignedId",
+                    "data_type": "string",
+                    "example_values": [
+                        "Herman@phantomengineering.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.identities.*.signInType",
+                    "data_type": "string",
+                    "example_values": [
+                        "userPrincipalName"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.isResourceAccount",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.jobTitle",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.legalAgeGroupClassification",
                     "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.mail",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.mailNickname",
+                    "data_type": "string",
+                    "example_values": [
+                        "Herman"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.mobilePhone",
@@ -2662,18 +3019,196 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.onPremisesDistinguishedName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesDomainName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute1",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute10",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute11",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute12",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute13",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute14",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute15",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute2",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute3",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute4",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute5",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute6",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute7",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute8",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute9",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesImmutableId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSamAccountName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSecurityIdentifier",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSyncEnabled",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesUserPrincipalName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.passwordPolicies",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.passwordProfile",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.postalCode",
+                    "data_type": "string",
+                    "example_values": [
+                        "94303"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.preferredDataLocation",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.preferredLanguage",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.provisionedPlans.*.capabilityStatus",
+                    "data_type": "string",
+                    "example_values": [
+                        "Enabled"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.provisionedPlans.*.provisioningStatus",
+                    "data_type": "string",
+                    "example_values": [
+                        "Success"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.provisionedPlans.*.service",
+                    "data_type": "string",
+                    "example_values": [
+                        "MicrosoftCommunicationsOnline"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.refreshTokensValidFromDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-08-08T13:00:58Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.showInAddressList",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.signInSessionsValidFromDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-08-08T13:00:58Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.state",
+                    "data_type": "string",
+                    "example_values": [
+                        "CA"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.streetAddress",
+                    "data_type": "string",
+                    "example_values": [
+                        "2479 E. Bayshore Rd."
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.surname",
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.usageLocation",
+                    "data_type": "string",
+                    "example_values": [
+                        "US"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.userPrincipalName",
                     "data_type": "string",
                     "example_values": [
                         "ews_retest@phantomengineering2.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.userType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Member"
                     ]
                 },
                 {
