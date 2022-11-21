@@ -598,12 +598,16 @@ class MSADGraphConnector(BaseConnector):
 
     def _handle_generate_token(self, param):
 
+        self.debug_print("Generating new token")
+
         action_result = self.add_action_result(ActionResult(dict(param)))
         ret_val = self._get_token(action_result)
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         self._state['admin_consent'] = True
+
+        self.debug_print("Token has been successfully generated")
 
         return action_result.set_status(phantom.APP_SUCCESS, "Token generated")
 
