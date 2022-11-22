@@ -15,7 +15,7 @@
     "utctime_updated": "2022-04-18T12:59:04.000000Z",
     "package_name": "phantom_msadgraph",
     "main_module": "msadgraph_connector.py",
-    "min_phantom_version": "5.2.0",
+    "min_phantom_version": "5.3.5",
     "fips_compliant": true,
     "latest_tested_versions": [
         "Cloud 2022-11-24, API Version: 1.0"
