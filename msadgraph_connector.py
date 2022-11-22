@@ -21,6 +21,7 @@ import os
 import pwd
 import sys
 import time
+import urllib.parse as urlparse
 
 import encryption_helper
 import phantom.app as phantom
@@ -31,9 +32,6 @@ from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 
 from msadgraph_consts import *
-
-import urllib.parse as urlparse
-
 
 TC_FILE = "oauth_task.out"
 SERVER_TOKEN_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token"
