@@ -22,6 +22,7 @@ import pwd
 import sys
 import time
 
+import encryption_helper
 import phantom.app as phantom
 import requests
 from bs4 import BeautifulSoup
@@ -31,12 +32,8 @@ from phantom.base_connector import BaseConnector
 
 from msadgraph_consts import *
 
-try:
-    import urllib.parse as urlparse
-except ImportError:
-    import urllib
+import urllib.parse as urlparse
 
-    import urlparse
 
 TC_FILE = "oauth_task.out"
 SERVER_TOKEN_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token"
@@ -64,6 +61,54 @@ def _handle_login_redirect(request, key):
     response['Location'] = url
     return response
 
+def _decrypt_state(state, salt):
+    """
+    Decrypts the state.
+    :param state: state dictionary
+    :param salt: salt used for decryption
+    :return: decrypted state
+    """
+    if not state.get("is_encrypted"):
+        return state
+
+    access_token = state.get("token", {}).get("access_token")
+    if access_token:
+        state["token"]["access_token"] = encryption_helper.decrypt(access_token, salt)
+
+    refresh_token = state.get("token", {}).get("refresh_token")
+    if refresh_token:
+        state["token"]["refresh_token"] = encryption_helper.decrypt(refresh_token, salt)
+
+    code = state.get("code")
+    if code:
+        state["code"] = encryption_helper.decrypt(code, salt)
+
+    return state
+
+
+def _encrypt_state(state, salt):
+    """
+    Encrypts the state.
+    :param state: state dictionary
+    :param salt: salt used for encryption
+    :return: encrypted state
+    """
+
+    access_token = state.get("token", {}).get("access_token")
+    if access_token:
+        state["token"]["access_token"] = encryption_helper.encrypt(access_token, salt)
+
+    refresh_token = state.get("token", {}).get("refresh_token")
+    if refresh_token:
+        state["token"]["refresh_token"] = encryption_helper.encrypt(refresh_token, salt)
+
+    code = state.get("code")
+    if code:
+        state["code"] = encryption_helper.encrypt(code, salt)
+
+    state["is_encrypted"] = True
+
+    return state
 
 def _load_app_state(asset_id, app_connector=None):
     """ This function is used to load the current state file.
@@ -94,10 +139,17 @@ def _load_app_state(asset_id, app_connector=None):
             state = json.loads(state_file_data)
     except Exception as e:
         if app_connector:
-            app_connector.debug_print('In _load_app_state: Exception: {0}'.format(str(e)))
+            app_connector.error_print('In _load_app_state: Exception: {0}'.format(str(e)))
 
     if app_connector:
         app_connector.debug_print('Loaded state: ', state)
+
+    try:
+        state = _decrypt_state(state, asset_id)
+    except Exception as e:
+        if app_connector:
+            app_connector.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERR, str(e)))
+        state = {}
 
     return state
 
@@ -117,7 +169,7 @@ def _save_app_state(state, asset_id, app_connector):
             app_connector.debug_print('In _save_app_state: Invalid asset_id')
         return {}
 
-    app_dir = os.path.split(__file__)[0]
+    app_dir = os.path.dirname(os.path.abspath(__file__))
     state_file = '{0}/{1}_state.json'.format(app_dir, asset_id)
 
     real_state_file_path = os.path.abspath(state_file)
@@ -125,6 +177,13 @@ def _save_app_state(state, asset_id, app_connector):
         if app_connector:
             app_connector.debug_print('In _save_app_state: Invalid asset_id')
         return {}
+
+    try:
+        state = _encrypt_state(state, asset_id)
+    except Exception as e:
+        if app_connector:
+            app_connector.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERR, str(e)))
+        return phantom.APP_ERROR
 
     if app_connector:
         app_connector.debug_print('Saving state: ', state)
@@ -134,7 +193,7 @@ def _save_app_state(state, asset_id, app_connector):
             state_file_obj.write(json.dumps(state))
     except Exception as e:
         if app_connector:
-            app_connector.debug_print('Unable to save state file: {0}'.format(str(e)))
+            app_connector.error_print('Unable to save state file: {0}'.format(str(e)))
 
     return phantom.APP_SUCCESS
 
@@ -272,29 +331,67 @@ class MSADGraphConnector(BaseConnector):
         self._refresh_token = None
         self._base_url = None
 
+    def load_state(self):
+        """
+        Load the contents of the state file to the state dictionary and decrypt it.
+        :return: loaded state
+        """
+        state = super().load_state()
+        if not isinstance(state, dict):
+            self.debug_print("Reseting the state file with the default format")
+            state = {
+                "app_version": self.get_app_json().get('app_version')
+            }
+            return state
+        try:
+            state = _decrypt_state(state, self.get_asset_id())
+        except Exception as e:
+            self.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERR, str(e)))
+            state = None
+
+        return state
+
+    def save_state(self, state):
+        """
+        Encrypt and save the current state dictionary to the the state file.
+        :param state: state dictionary
+        :return: status
+        """
+        try:
+            state = _encrypt_state(state, self.get_asset_id())
+        except Exception as e:
+            self.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERR, str(e)))
+            return phantom.APP_ERROR
+
+        return super().save_state(state)
+
     def _get_error_message_from_exception(self, e):
-        """ This function is used to get appropriate error message from the exception.
+        """
+        Get appropriate error message from the exception.
         :param e: Exception object
         :return: error message
         """
-        error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
-        error_code = "Error code unavailable"
+        error_code = None
+        error_msg = MS_AZURE_ERROR_MESSAGE_UNKNOWN
+
+        self.error_print("Traceback: ", e)
+
         try:
-            if e.args:
+            if hasattr(e, "args"):
                 if len(e.args) > 1:
                     error_code = e.args[0]
                     error_msg = e.args[1]
                 elif len(e.args) == 1:
-                    error_code = "Error code unavailable"
                     error_msg = e.args[0]
-            else:
-                error_code = "Error code unavailable"
-                error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
-        except:
-            error_code = "Error code unavailable"
-            error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
+        except Exception:
+            self.error_print("Exception occurred while getting error code and meesage")
 
-        return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+        if not error_code:
+            error_text = "Error Message: {}".format(error_msg)
+        else:
+            error_text = "Error Code: {}. Error Message: {}".format(error_code, error_msg)
+
+        return error_text
 
     def _format_params_to_query(self, parameters):
         """If you just pass with the params argument into the request, commas will be encoded to %2C
@@ -637,12 +734,8 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress(MS_OAUTH_URL_MSG)
         self.save_progress(redirect_uri)
 
-        if self._python_version < 3:
-            self._client_id = urllib.quote(self._client_id)
-            self._tenant = urllib.quote(self._tenant)
-        else:
-            self._client_id = urlparse.quote(self._client_id)
-            self._tenant = urlparse.quote(self._tenant)
+        self._client_id = urlparse.quote(self._client_id)
+        self._tenant = urlparse.quote(self._tenant)
 
         admin_consent_url_base = "https://login.microsoftonline.com/{0}/oauth2/v2.0/authorize".format(self._tenant)
 
@@ -1152,7 +1245,6 @@ class MSADGraphConnector(BaseConnector):
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
         self._access_token = resp_json[MS_AZURE_ACCESS_TOKEN_STRING]
         self._refresh_token = resp_json[MS_AZURE_REFRESH_TOKEN_STRING]
-        self.save_state(self._state)
 
         return phantom.APP_SUCCESS
 
@@ -1272,11 +1364,8 @@ class MSADGraphConnector(BaseConnector):
 
         self._state = self.load_state()
 
-        # Fetching the Python major version
-        try:
-            self._python_version = int(sys.version_info[0])
-        except:
-            return self.set_status(phantom.APP_ERROR, "Error occurred while getting the SOAR server's Python major version.")
+        if self._state is None:
+            return self.set_status(phantom.APP_ERROR, MS_AZURE_STATE_FILE_CORRUPT_ERR)
 
         # get the asset config
         config = self.get_config()
@@ -1294,7 +1383,6 @@ class MSADGraphConnector(BaseConnector):
 
         # Save the state, this data is saved across actions and app upgrades
         self.save_state(self._state)
-        _save_app_state(self._state, self.get_asset_id(), self)
         return phantom.APP_SUCCESS
 
 
