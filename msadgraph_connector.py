@@ -61,6 +61,7 @@ def _handle_login_redirect(request, key):
     response['Location'] = url
     return response
 
+
 def _decrypt_state(state, salt):
     """
     Decrypts the state.
@@ -110,6 +111,7 @@ def _encrypt_state(state, salt):
 
     return state
 
+
 def _load_app_state(asset_id, app_connector=None):
     """ This function is used to load the current state file.
 
@@ -148,7 +150,7 @@ def _load_app_state(asset_id, app_connector=None):
         state = _decrypt_state(state, asset_id)
     except Exception as e:
         if app_connector:
-            app_connector.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERR, str(e)))
+            app_connector.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERROR, str(e)))
         state = {}
 
     return state
@@ -182,7 +184,7 @@ def _save_app_state(state, asset_id, app_connector):
         state = _encrypt_state(state, asset_id)
     except Exception as e:
         if app_connector:
-            app_connector.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERR, str(e)))
+            app_connector.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERROR, str(e)))
         return phantom.APP_ERROR
 
     if app_connector:
@@ -346,7 +348,7 @@ class MSADGraphConnector(BaseConnector):
         try:
             state = _decrypt_state(state, self.get_asset_id())
         except Exception as e:
-            self.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERR, str(e)))
+            self.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERROR, str(e)))
             state = None
 
         return state
@@ -360,7 +362,7 @@ class MSADGraphConnector(BaseConnector):
         try:
             state = _encrypt_state(state, self.get_asset_id())
         except Exception as e:
-            self.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERR, str(e)))
+            self.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERROR, str(e)))
             return phantom.APP_ERROR
 
         return super().save_state(state)
@@ -577,7 +579,7 @@ class MSADGraphConnector(BaseConnector):
 
         phantom_base_url = resp_json.get('base_url').rstrip("/")
         if not phantom_base_url:
-            return action_result.set_status(phantom.APP_ERROR, MS_AZURE_BASE_URL_NOT_FOUND_MSG), None
+            return action_result.set_status(phantom.APP_ERROR, MS_AZURE_BASE_URL_NOT_FOUND_MESSAGE), None
         return phantom.APP_SUCCESS, phantom_base_url
 
     def _get_app_rest_url(self, action_result):
@@ -628,7 +630,7 @@ class MSADGraphConnector(BaseConnector):
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)), resp_json)
 
         try:
-            r = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params)
+            r = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params, timeout=DEFAULT_TIMEOUT)
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Error Connecting to server. Details: {0}"
@@ -678,7 +680,7 @@ class MSADGraphConnector(BaseConnector):
 
         # If token is expired, generate a new token
         msg = action_result.get_message()
-        if msg and any(failure_message in msg for failure_message in AUTH_FAILURE_MSGS):
+        if msg and any(failure_message in msg for failure_message in AUTH_FAILURE_MESSAGES):
             self.save_progress("bad token")
             ret_val = self._get_token(action_result)
 
@@ -722,7 +724,7 @@ class MSADGraphConnector(BaseConnector):
         ret_val, app_rest_url = self._get_app_rest_url(action_result)
 
         if phantom.is_fail(ret_val):
-            self.save_progress(MS_REST_URL_NOT_AVAILABLE_MSG.format(error=self.get_status()))
+            self.save_progress(MS_REST_URL_NOT_AVAILABLE_MESSAGE.format(error=self.get_status()))
             return self.set_status(phantom.APP_ERROR)
 
         # create the url that the oauth server should re-direct to after the auth is completed
@@ -731,7 +733,7 @@ class MSADGraphConnector(BaseConnector):
         redirect_uri = "{0}/result".format(app_rest_url)
         app_state['redirect_uri'] = redirect_uri
 
-        self.save_progress(MS_OAUTH_URL_MSG)
+        self.save_progress(MS_OAUTH_URL_MESSAGE)
         self.save_progress(redirect_uri)
 
         self._client_id = urlparse.quote(self._client_id)
@@ -762,7 +764,7 @@ class MSADGraphConnector(BaseConnector):
 
         self.save_progress('Please connect to the following URL from a different tab to continue the connectivity process')
         self.save_progress(url_to_show)
-        self.save_progress(MS_AZURE_AUTHORIZE_TROUBLESHOOT_MSG)
+        self.save_progress(MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE)
 
         time.sleep(5)
 
@@ -801,7 +803,7 @@ class MSADGraphConnector(BaseConnector):
         # The authentication seems to be done, let's see if it was successful
         self._state['admin_consent'] = self._state.get('admin_consent', False)
 
-        self.save_progress(MS_GENERATING_ACCESS_TOKEN_MSG)
+        self.save_progress(MS_GENERATING_ACCESS_TOKEN_MESSAGE)
         ret_val = self._get_token(action_result)
 
         if phantom.is_fail(ret_val):
@@ -1365,7 +1367,7 @@ class MSADGraphConnector(BaseConnector):
         self._state = self.load_state()
 
         if self._state is None:
-            return self.set_status(phantom.APP_ERROR, MS_AZURE_STATE_FILE_CORRUPT_ERR)
+            return self.set_status(phantom.APP_ERROR, MS_AZURE_STATE_FILE_CORRUPT_ERROR)
 
         # get the asset config
         config = self.get_config()

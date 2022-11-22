@@ -42,7 +42,7 @@ MS_AZURE_REFRESH_TOKEN_STRING = 'refresh_token'
 MS_AZURE_PHANTOM_BASE_URL = '{phantom_base_url}rest'
 MS_AZURE_PHANTOM_SYS_INFO_URL = '/system_info'
 MS_AZURE_PHANTOM_ASSET_INFO_URL = '/asset/{asset_id}'
-MS_AZURE_BASE_URL_NOT_FOUND_MSG = 'SOAR Base URL not found in System Settings. ' \
+MS_AZURE_BASE_URL_NOT_FOUND_MESSAGE = 'SOAR Base URL not found in System Settings. ' \
                                 'Please specify this value in System Settings.'
 MS_AZURE_HTML_ERROR = 'Bad Request Bad Request - Invalid URL HTTP Error 400. The request URL is invalid.'
 MS_AZURE_NEXT_LINK_STRING = 'odata.nextLink'
@@ -52,20 +52,22 @@ MS_AZURE_ERROR_MESSAGE_UNKNOWN = "Unknown error occurred. Please check the asset
 # For authorization code
 TC_FILE = "oauth_task.out"
 SERVER_TOKEN_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token"
-AUTH_FAILURE_MSGS = ("token is invalid", "token has expired", "ExpiredAuthenticationToken", "AuthenticationFailed")
-MS_REST_URL_NOT_AVAILABLE_MSG = 'Rest URL not available. Error: {error}'
-MS_OAUTH_URL_MSG = 'Using OAuth URL:\n'
-MS_AUTHORIZE_USER_MSG = 'Please authorize user in a separate tab using URL:'
-MS_GENERATING_ACCESS_TOKEN_MSG = 'Generating access token'
+AUTH_FAILURE_MESSAGES = ("token is invalid", "token has expired", "ExpiredAuthenticationToken", "AuthenticationFailed")
+MS_REST_URL_NOT_AVAILABLE_MESSAGE = 'Rest URL not available. Error: {error}'
+MS_OAUTH_URL_MESSAGE = 'Using OAuth URL:\n'
+MS_AUTHORIZE_USER_MESSAGE = 'Please authorize user in a separate tab using URL:'
+MS_GENERATING_ACCESS_TOKEN_MESSAGE = 'Generating access token'
 MS_TC_STATUS_SLEEP = 3
 MS_AZURE_CODE_GENERATION_SCOPE = 'offline_access Group.ReadWrite.All User.Read.All User.ReadWrite.All Directory.ReadWrite.All \
 Directory.AccessAsUser.All User.ManageIdentities.All GroupMember.ReadWrite.All RoleManagement.ReadWrite.Directory'
-MS_AZURE_AUTHORIZE_TROUBLESHOOT_MSG = 'If authorization URL fails to communicate with your SOAR instance, check whether you have:  '\
+MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE = 'If authorization URL fails to communicate with your SOAR instance, check whether you have:  '\
                                 ' 1. Specified the Web Redirect URL of your App -- The Redirect URL should be <POST URL>/result . '\
                                 ' 2. Configured the base URL of your SOAR Instance at Administration -> Company Settings -> Info'
 
 
-MS_AZURE_ENCRYPTION_ERR = "Error occurred while encrypting the state file"
-MS_AZURE_DECRYPTION_ERR = "Error occurred while decrypting the state file"
-MS_AZURE_STATE_FILE_CORRUPT_ERR = "Error occurred while loading the state file due to it's unexpected format. " \
+MS_AZURE_ENCRYPTION_ERROR = "Error occurred while encrypting the state file"
+MS_AZURE_DECRYPTION_ERROR = "Error occurred while decrypting the state file"
+MS_AZURE_STATE_FILE_CORRUPT_ERROR = "Error occurred while loading the state file due to it's unexpected format. " \
     "Resetting the state file with the default format. Please test the connectivity."
+
+DEFAULT_TIMEOUT = 30
