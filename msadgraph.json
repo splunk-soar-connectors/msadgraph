@@ -1039,9 +1039,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.deviceId",
-                    "data_type": "string",
-                    "column_name": "Device ID",
-                    "column_order": 0
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.deviceMetadata",
@@ -1057,9 +1055,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.displayName",
-                    "data_type": "string",
-                    "column_name": "Display Name",
-                    "column_order": 1
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.domainName",
@@ -1250,8 +1246,9 @@
                 }
             ],
             "render": {
-                "type": "table",
-                "title": "Owned Devices"
+                "type": "custom",
+                "title": "Owned Devices",
+                "view": "msadgraph_view.display_view"
             },
             "versions": "EQ(*)"
         },
