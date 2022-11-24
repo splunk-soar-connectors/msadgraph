@@ -69,7 +69,7 @@
         {
             "action": "list users",
             "description": "Get a list of users",
-            "verbose": "For more information on using the filter_string and select_string parameter, refer to https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter. By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter.",
+            "verbose": "For more information on using the filter_string and select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation. By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter.",
             "type": "investigate",
             "identifier": "list_users",
             "read_only": true,
@@ -931,7 +931,7 @@
         {
             "action": "list user devices",
             "description": "List devices for a specified user",
-            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter.",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
             "type": "investigate",
             "identifier": "list_user_devices",
             "read_only": true,
@@ -1255,7 +1255,7 @@
         {
             "action": "list user attributes",
             "description": "List attributes for all or a specified user",
-            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter.",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
             "type": "investigate",
             "identifier": "list_user_attributes",
             "read_only": true,
@@ -2222,7 +2222,7 @@
         {
             "action": "list groups",
             "description": "List groups in the organization",
-            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter.",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
             "type": "investigate",
             "identifier": "list_groups",
             "read_only": true,
@@ -2473,7 +2473,7 @@
         {
             "action": "get group",
             "description": "Get information about a group",
-            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter.",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
             "type": "investigate",
             "identifier": "get_group",
             "read_only": true,
@@ -2766,7 +2766,7 @@
         {
             "action": "list group members",
             "description": "List the members in a group",
-            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter.",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
             "type": "investigate",
             "identifier": "list_group_members",
             "read_only": true,
