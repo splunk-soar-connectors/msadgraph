@@ -1,7 +1,7 @@
 {
     "appid": "f2a239df-acb2-47d6-861c-726a435cfe76",
     "name": "MS Graph for Active Directory",
-    "description": "Connects to Microsoft Active Directory using MS Graph REST API services",
+    "description": "Connects to Microsoft Active Directory using MS Graph REST API services to support various generic and investigative actions",
     "type": "identity management",
     "product_vendor": "Microsoft",
     "logo": "logo_msadgraph.svg",
