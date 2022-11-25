@@ -732,12 +732,15 @@ class MSADGraphConnector(BaseConnector):
         parameters = dict()
         filter_string = param.get('filter_string')
         select_string = param.get('select_string')
+        expand_string = param.get('expand_string')
 
         if filter_string:
             parameters['$filter'] = filter_string
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+        if expand_string:
+            parameters['$expand'] = expand_string
 
         endpoint = f'/users?{self._format_params_to_query(parameters)}'
 
@@ -856,9 +859,13 @@ class MSADGraphConnector(BaseConnector):
 
         parameters = dict()
         select_string = param.get('select_string')
+        expand_string = param.get('expand_string')
+        
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+        if expand_string:
+            parameters['$expand'] = expand_string
 
         if user_id:
             endpoint = f'/users/{user_id}?{self._format_params_to_query(parameters)}'
@@ -961,10 +968,17 @@ class MSADGraphConnector(BaseConnector):
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         parameters = dict()
+        filter_string = param.get('filter_string')
         select_string = param.get('select_string')
+        expand_string = param.get('expand_string')
+        
+        if filter_string:
+            parameters['$filter'] = filter_string
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+        if expand_string:
+            parameters['$expand'] = expand_string
 
         endpoint = f'/groups?{self._format_params_to_query(parameters)}'
         ret_val = self._handle_pagination(action_result, endpoint)
@@ -988,9 +1002,13 @@ class MSADGraphConnector(BaseConnector):
 
         parameters = dict()
         select_string = param.get('select_string')
+        expand_string = param.get('expand_string')
+        
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+        if expand_string:
+            parameters['$expand'] = expand_string
 
         object_id = param['object_id']
 
@@ -1017,9 +1035,13 @@ class MSADGraphConnector(BaseConnector):
 
         parameters = dict()
         select_string = param.get('select_string')
+        expand_string = param.get('expand_string')
+        
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+        if expand_string:
+            parameters['$expand'] = expand_string
 
         endpoint = f'/groups/{object_id}/members?{self._format_params_to_query(parameters)}'
 
