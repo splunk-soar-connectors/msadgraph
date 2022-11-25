@@ -1105,7 +1105,7 @@ class MSADGraphConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_ERROR, "Unexpected details retrieved from the state file.")
         else:
             data['scope'] = 'https://graph.microsoft.com/.default'
-            data['grant_type'] = 'authorization_code'
+            data['grant_type'] = 'client_credentials'
             
 
         ret_val, resp_json = self._make_rest_call(req_url, action_result, headers=headers, data=data, method='post')
@@ -1117,8 +1117,8 @@ class MSADGraphConnector(BaseConnector):
             self._state['admin_consent'] = True
         
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
-        self._access_token = resp_json[MS_AZURE_ACCESS_TOKEN_STRING]
-        self._refresh_token = resp_json[MS_AZURE_REFRESH_TOKEN_STRING]
+        self._access_token = resp_json.get(MS_AZURE_ACCESS_TOKEN_STRING, None)
+        self._refresh_token = resp_json.get(MS_AZURE_REFRESH_TOKEN_STRING, None)
         self.save_state(self._state)
 
         return phantom.APP_SUCCESS
