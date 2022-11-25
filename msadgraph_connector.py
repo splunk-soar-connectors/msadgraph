@@ -548,7 +548,7 @@ class MSADGraphConnector(BaseConnector):
             ret_val = self._get_token(action_result)
 
             if phantom.is_fail(ret_val):
-                return action_result.get_status(), None
+                return RetVal(action_result.get_status(), None)
 
         headers.update({
                 'Authorization': f'Bearer {self._access_token}',
@@ -563,18 +563,17 @@ class MSADGraphConnector(BaseConnector):
         if msg and any(failure_message in msg for failure_message in AUTH_FAILURE_MESSAGES):
             self.save_progress("Token is invalid/expired. Hence, generating a new token.")
             ret_val = self._get_token(action_result)
+            if phantom.is_fail(ret_val):
+                return RetVal(ret_val, None)
 
             headers.update({'Authorization': f'Bearer {self._access_token}'})
 
             ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
 
         if phantom.is_fail(ret_val):
-            if method == 'get':
-                return RetVal(phantom.APP_ERROR, ret_val)
-            else:
-                return action_result.get_status()
+            return RetVal(ret_val, resp_json)
 
-        return phantom.APP_SUCCESS, resp_json
+        return RetVal(phantom.APP_SUCCESS, resp_json)
 
     def _handle_generate_token(self, param):
 
@@ -771,7 +770,7 @@ class MSADGraphConnector(BaseConnector):
 
         endpoint = f'/users/{user_id}'
 
-        ret_val = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
             return ret_val
@@ -794,7 +793,7 @@ class MSADGraphConnector(BaseConnector):
         }
 
         endpoint = f'/users/{user_id}'
-        ret_val = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -813,7 +812,7 @@ class MSADGraphConnector(BaseConnector):
         user_id = param['user_id']
         endpoint = f'/users/{user_id}/revokeSignInSessions'
 
-        ret_val = self._make_rest_call_helper(action_result, endpoint, method='post')
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='post')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -835,7 +834,7 @@ class MSADGraphConnector(BaseConnector):
         }
 
         endpoint = f'/users/{user_id}'
-        ret_val = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -894,7 +893,7 @@ class MSADGraphConnector(BaseConnector):
         }
 
         endpoint = f'/users/{user_id}'
-        ret_val = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -918,7 +917,7 @@ class MSADGraphConnector(BaseConnector):
         }
 
         endpoint = f'/groups/{object_id}/members/$ref'
-        ret_val = self._make_rest_call_helper(action_result, endpoint, json=data, method='post')
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='post')
 
         summary = action_result.update_summary({})
         if phantom.is_fail(ret_val):
@@ -942,7 +941,7 @@ class MSADGraphConnector(BaseConnector):
         user_id = param['user_id']
 
         endpoint = f'/groups/{object_id}/members/{user_id}/$ref'
-        ret_val = self._make_rest_call_helper(action_result, endpoint, method='delete')
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='delete')
 
         summary = action_result.update_summary({})
         if phantom.is_fail(ret_val):
