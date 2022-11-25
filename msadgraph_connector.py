@@ -558,26 +558,21 @@ class MSADGraphConnector(BaseConnector):
 
         ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
 
-        if phantom.is_fail(ret_val):
-            if method == 'get':
-                return RetVal(phantom.APP_ERROR, ret_val)
-            else:
-                return action_result.get_status()
-
         # If token is expired, generate a new token
         msg = action_result.get_message()
         if msg and any(failure_message in msg for failure_message in AUTH_FAILURE_MESSAGES):
-            self.save_progress("bad token")
+            self.save_progress("Token is invalid/expired. Hence, generating a new token.")
             ret_val = self._get_token(action_result)
 
             headers.update({'Authorization': f'Bearer {self._access_token}'})
 
             ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
-            if phantom.is_fail(ret_val):
-                if method == 'get':
-                    return RetVal(phantom.APP_ERROR, ret_val)
-                else:
-                    return action_result.get_status()
+
+        if phantom.is_fail(ret_val):
+            if method == 'get':
+                return RetVal(phantom.APP_ERROR, ret_val)
+            else:
+                return action_result.get_status()
 
         return phantom.APP_SUCCESS, resp_json
 
