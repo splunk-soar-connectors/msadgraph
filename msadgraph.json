@@ -100,6 +100,12 @@
                     "description": "Expand string to get a resource or collection referenced by a single relationship",
                     "data_type": "string",
                     "order": 2
+                },
+                "use_advanced_query": {
+                    "description": "Use advanced query capabilities",
+                    "data_type": "boolean",
+                    "default": false,
+                    "order": 3
                 }
             },
             "output": [
@@ -131,6 +137,14 @@
                     "example_value": [
                         "manager",
                         "memberOf"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.use_advanced_query",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -982,6 +996,12 @@
                     "description": "Expand string to get a resource or collection referenced by a single relationship",
                     "data_type": "string",
                     "order": 2
+                },
+                "use_advanced_query": {
+                    "description": "Use advanced query capabilities",
+                    "data_type": "boolean",
+                    "default": false,
+                    "order": 3
                 }
             },
             "output": [
@@ -1006,6 +1026,14 @@
                     "example_value": [
                         "manager",
                         "memberOf"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.use_advanced_query",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -1953,6 +1981,12 @@
                     "description": "Expand string to get a resource or collection referenced by a single relationship",
                     "data_type": "string",
                     "order": 2
+                },
+                "use_advanced_query": {
+                    "description": "Use advanced query capabilities",
+                    "data_type": "boolean",
+                    "default": false,
+                    "order": 3
                 }
             },
             "output": [
@@ -1983,6 +2017,14 @@
                     "data_type": "string",
                     "example_value": [
                         "members"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.use_advanced_query",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -2236,6 +2278,12 @@
                     "description": "Expand string to get a resource or collection referenced by a single relationship",
                     "data_type": "string",
                     "order": 2
+                },
+                "use_advanced_query": {
+                    "description": "Use advanced query capabilities",
+                    "data_type": "boolean",
+                    "default": false,
+                    "order": 3
                 }
             },
             "output": [
@@ -2269,6 +2317,14 @@
                     "data_type": "string",
                     "example_value": [
                         "members"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.use_advanced_query",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -2538,6 +2594,12 @@
                     "description": "Expand string to get a resource or collection referenced by a single relationship",
                     "data_type": "string",
                     "order": 2
+                },
+                "use_advanced_query": {
+                    "description": "Use advanced query capabilities",
+                    "data_type": "boolean",
+                    "default": false,
+                    "order": 3
                 }
             },
             "output": [
@@ -2571,6 +2633,14 @@
                     "data_type": "string",
                     "example_value": [
                         "manager"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.use_advanced_query",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {

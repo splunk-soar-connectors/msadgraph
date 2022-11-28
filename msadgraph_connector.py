@@ -722,11 +722,14 @@ class MSADGraphConnector(BaseConnector):
 
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
-
-        parameters = dict()
+        
         filter_string = param.get('filter_string')
         select_string = param.get('select_string')
         expand_string = param.get('expand_string')
+        use_advanced_query = param.get('use_advanced_query')
+        
+        headers = {}
+        parameters = {}
 
         if filter_string:
             parameters['$filter'] = filter_string
@@ -735,10 +738,13 @@ class MSADGraphConnector(BaseConnector):
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
         if expand_string:
             parameters['$expand'] = expand_string
+        if use_advanced_query:
+            headers['ConsistencyLevel'] = 'eventual'
+            parameters['$count'] = 'true'
 
         endpoint = f'/users?{self._format_params_to_query(parameters)}'
 
-        ret_val = self._handle_pagination(action_result, endpoint)
+        ret_val = self._handle_pagination(action_result, endpoint, headers=headers)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -848,25 +854,30 @@ class MSADGraphConnector(BaseConnector):
 
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
-
+        
         user_id = param.get('user_id')
-
-        parameters = dict()
         select_string = param.get('select_string')
         expand_string = param.get('expand_string')
+        use_advanced_query = param.get('use_advanced_query')
+        
+        headers = {}
+        parameters = {}
         
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
         if expand_string:
             parameters['$expand'] = expand_string
+        if use_advanced_query:
+            headers['ConsistencyLevel'] = 'eventual'
+            parameters['$count'] = 'true'
 
         if user_id:
             endpoint = f'/users/{user_id}?{self._format_params_to_query(parameters)}'
         else:
             endpoint = f'/users?{self._format_params_to_query(parameters)}'
 
-        ret_val = self._handle_pagination(action_result, endpoint)
+        ret_val = self._handle_pagination(action_result, endpoint, headers=headers)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -960,11 +971,14 @@ class MSADGraphConnector(BaseConnector):
 
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
-
-        parameters = dict()
+        
         filter_string = param.get('filter_string')
         select_string = param.get('select_string')
         expand_string = param.get('expand_string')
+        use_advanced_query = param.get('use_advanced_query')
+        
+        headers = {}
+        parameters = {}
         
         if filter_string:
             parameters['$filter'] = filter_string
@@ -973,9 +987,12 @@ class MSADGraphConnector(BaseConnector):
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
         if expand_string:
             parameters['$expand'] = expand_string
+        if use_advanced_query:
+            headers['ConsistencyLevel'] = 'eventual'
+            parameters['$count'] = 'true'
 
         endpoint = f'/groups?{self._format_params_to_query(parameters)}'
-        ret_val = self._handle_pagination(action_result, endpoint)
+        ret_val = self._handle_pagination(action_result, endpoint, headers=headers)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -993,22 +1010,28 @@ class MSADGraphConnector(BaseConnector):
 
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
-
-        parameters = dict()
+        
         select_string = param.get('select_string')
         expand_string = param.get('expand_string')
+        use_advanced_query = param.get('use_advanced_query')
+        
+        headers = {}
+        parameters = {}
         
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
         if expand_string:
             parameters['$expand'] = expand_string
+        if use_advanced_query:
+            headers['ConsistencyLevel'] = 'eventual'
+            parameters['$count'] = 'true'
 
         object_id = param['object_id']
 
         endpoint = f'/groups/{object_id}?{self._format_params_to_query(parameters)}'
 
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='get')
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='get', headers=headers)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -1027,19 +1050,25 @@ class MSADGraphConnector(BaseConnector):
 
         object_id = param['group_object_id']
 
-        parameters = dict()
         select_string = param.get('select_string')
         expand_string = param.get('expand_string')
+        use_advanced_query = param.get('use_advanced_query')
+        
+        headers = {}
+        parameters = {}
         
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
         if expand_string:
             parameters['$expand'] = expand_string
+        if use_advanced_query:
+            headers['ConsistencyLevel'] = 'eventual'
+            parameters['$count'] = 'true'
 
         endpoint = f'/groups/{object_id}/members?{self._format_params_to_query(parameters)}'
 
-        ret_val = self._handle_pagination(action_result, endpoint)
+        ret_val = self._handle_pagination(action_result, endpoint, headers=headers)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -1139,25 +1168,26 @@ class MSADGraphConnector(BaseConnector):
 
         return phantom.APP_SUCCESS
 
-    def _handle_pagination(self, action_result, endpoint, parameters=None):
+    def _handle_pagination(self, action_result, endpoint, headers=None, params=None):
         """
         This action is used to create an iterator that will paginate through responses from called methods.
 
         :param action_result: Object of ActionResult class
         :param endpoint: REST endpoint that needs to appended to the service address
-        :param **kwargs: Dictionary of Input parameters
+        :param headers: Dictionary of headers for the rest API calls
+        :param headers: Dictionary of params for the rest API calls
         """
         # maximum page size
         page_size = MS_AZURE_PAGE_SIZE
-        if isinstance(parameters, dict):
-            parameters.update({"$top": page_size})
+        if isinstance(params, dict):
+            params.update({"$top": page_size})
         else:
-            parameters = {"$top": page_size}
+            params = {"$top": page_size}
 
         while True:
 
             # make rest call
-            ret_val, response = self._make_rest_call_helper(action_result, endpoint, params=parameters, method='get')
+            ret_val, response = self._make_rest_call_helper(action_result, endpoint, headers=headers, params=params, method='get')
 
             if phantom.is_fail(ret_val):
                 return None
@@ -1173,7 +1203,7 @@ class MSADGraphConnector(BaseConnector):
             if response.get(MS_AZURE_NEXT_LINK_STRING):
                 parsed_url = urlparse.urlparse(response.get(MS_AZURE_NEXT_LINK_STRING))
                 try:
-                    parameters['$skiptoken'] = urlparse.parse_qs(parsed_url.query).get('$skiptoken')[0]
+                    params['$skiptoken'] = urlparse.parse_qs(parsed_url.query).get('$skiptoken')[0]
                 except Exception:
                     self.debug_print(f"odata.nextLink is {response.get(MS_AZURE_NEXT_LINK_STRING)}")
                     self.debug_print("Error occurred while extracting skiptoken from the odata.nextLink")
