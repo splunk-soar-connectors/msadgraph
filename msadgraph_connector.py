@@ -67,6 +67,7 @@ def _decrypt_state(state, salt):
     :param salt: salt used for decryption
     :return: decrypted state
     """
+
     if not state.get("is_encrypted"):
         return state
 
