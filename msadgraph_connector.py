@@ -593,7 +593,7 @@ class MSADGraphConnector(BaseConnector):
         # self.save_progress("Generating Authentication URL")
         app_state = {}
         action_result = self.add_action_result(ActionResult(param))
-        
+
         if not (self._admin_access_required and self._admin_access_granted):
 
             self.save_progress("Getting App REST endpoint URL")
@@ -622,7 +622,7 @@ class MSADGraphConnector(BaseConnector):
                 'redirect_uri': redirect_uri,
                 'state': self._asset_id,
             }
-            
+
             if self._admin_access_required:
                 # Create the url for fetching administrator consent
                 admin_consent_url_base = f"https://login.microsoftonline.com/{self._tenant}/adminconsent"
@@ -681,14 +681,14 @@ class MSADGraphConnector(BaseConnector):
                 self.save_progress("Authorization not received or not given")
                 self.save_progress("Test Connectivity Failed")
                 return action_result.set_status(phantom.APP_ERROR)
-            
+
             self._state.setdefault('admin_consent', False)
 
             if self._admin_access_required and not self._state.get('admin_consent'):
                 self.save_progress("Admin Consent not received or not given")
                 self.save_progress("Test Connectivity Failed")
                 return action_result.set_status(phantom.APP_ERROR)
-            
+
             if not self._admin_access_required and not self._state.get('code'):
                 self.save_progress("Authorization code not received or not given")
                 self.save_progress("Test Connectivity Failed")
@@ -722,12 +722,12 @@ class MSADGraphConnector(BaseConnector):
 
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
-        
+
         filter_string = param.get('filter_string')
         select_string = param.get('select_string')
         expand_string = param.get('expand_string')
         use_advanced_query = param.get('use_advanced_query')
-        
+
         headers = {}
         parameters = {}
 
@@ -854,15 +854,15 @@ class MSADGraphConnector(BaseConnector):
 
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
-        
+
         user_id = param.get('user_id')
         select_string = param.get('select_string')
         expand_string = param.get('expand_string')
         use_advanced_query = param.get('use_advanced_query')
-        
+
         headers = {}
         parameters = {}
-        
+
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
@@ -971,15 +971,15 @@ class MSADGraphConnector(BaseConnector):
 
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
-        
+
         filter_string = param.get('filter_string')
         select_string = param.get('select_string')
         expand_string = param.get('expand_string')
         use_advanced_query = param.get('use_advanced_query')
-        
+
         headers = {}
         parameters = {}
-        
+
         if filter_string:
             parameters['$filter'] = filter_string
         if select_string:
@@ -1010,14 +1010,14 @@ class MSADGraphConnector(BaseConnector):
 
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
-        
+
         select_string = param.get('select_string')
         expand_string = param.get('expand_string')
         use_advanced_query = param.get('use_advanced_query')
-        
+
         headers = {}
         parameters = {}
-        
+
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
@@ -1053,10 +1053,10 @@ class MSADGraphConnector(BaseConnector):
         select_string = param.get('select_string')
         expand_string = param.get('expand_string')
         use_advanced_query = param.get('use_advanced_query')
-        
+
         headers = {}
         parameters = {}
-        
+
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
@@ -1135,7 +1135,7 @@ class MSADGraphConnector(BaseConnector):
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-        
+
         if not self._admin_access_required:
             data['scope'] = MS_AZURE_CODE_GENERATION_SCOPE
             data['redirect_uri'] = self._state.get('redirect_uri')
@@ -1151,7 +1151,6 @@ class MSADGraphConnector(BaseConnector):
         else:
             data['scope'] = 'https://graph.microsoft.com/.default'
             data['grant_type'] = 'client_credentials'
-            
 
         ret_val, resp_json = self._make_rest_call(req_url, action_result, headers=headers, data=data, method='post')
 
@@ -1160,7 +1159,7 @@ class MSADGraphConnector(BaseConnector):
 
         if self._admin_access_required and self._admin_access_granted:
             self._state['admin_consent'] = True
-        
+
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
         self._access_token = resp_json.get(MS_AZURE_ACCESS_TOKEN_STRING, None)
         self._refresh_token = resp_json.get(MS_AZURE_REFRESH_TOKEN_STRING, None)
