@@ -17,46 +17,67 @@ and limitations under the License.
   <head></head>
   <body>
     <h2>Authentication</h2>
+      <h3>Microsoft Azure Application creation</h3>
       <p>This app requires creating a Microsoft Azure Application. To do so, navigate to <a href="https://portal.azure.com" target="_blank">https://portal.azure.com</a> in a browser and log in with a Microsoft account, then select <b>Azure Active Directory</b>.</p>
-
       <ol>
         <li>Go to <b>App Registrations</b> and click on <b>+ New registration</b>.</li>
-        <li>Give the app an appropriate name. The Redirect URI will be populated in a later step.</li>
+        <li>Give the app an appropriate name.</li>
         <li>Select a supported account type (configure the application to be multitenant).</li>
         <li>Click on the <b>Register</b>.</li>
         <ul>
           <li>Under <b>Certificates & secrets</b>, add <b>New client secret</b>. Note this key somewhere secure, as it cannot be retrieved after closing the window.</li>
           <li>Under <b>Redirect URIs</b> we will be updating the entry of https://phantom.local to reflect the actual redirect URI.  We will get this from the SOAR asset we create below in the section titled "Configure the MS Graph for Active Directory SOAR app Asset"
-          <li>Under <b>API Permissions</b>, click on <b>Add a permission</b>.</li>
-          <li>Go to <b>Microsoft Graph Permissions</b>, the following <b>Delegated Permissions</b> need to be added:
-            <ul>
-                <li>User.Read.All</li>
-                <li>User.ReadWrite.All</li>
-                <li>Directory.ReadWrite.All</li>
-                <li>Directory.AccessAsUser.All</li>
-                <li>User.ManageIdentities.All</li>
-                <li>Group.ReadWrite.All</li>
-                <li>GroupMember.ReadWrite.All</li>
-                <li>RoleManagement.ReadWrite.Directory</li>
-                <li>offline_access</li>
-            </ul>
-          </li>
-          <li> Click on the <b>Add permissions</b>.</li>
         </ul>
       </ol>
 
-      After making these changes, click on <b>Grant admin consent</b>.
+      <h3>Delegated Permissions configuration</h3>
+      <p>Use this procedure to provide non-admin permissions to the app. To do so, navigate to <a href="https://portal.azure.com" target="_blank">https://portal.azure.com</a> in a browser and log in with a Microsoft account, then navigate to the previously created app configuration.</p>
+      <ol>
+        <li>Under <b>API Permissions</b>, click on <b>Add a permission</b>.</li>
+        <li>Go to <b>Microsoft Graph Permissions</b>, the following <b>Delegated Permissions</b> need to be added:
+          <ul>
+              <li>User.ReadWrite.All</li>
+              <li>Directory.ReadWrite.All</li>
+              <li>Directory.AccessAsUser.All</li>
+              <li>User.ManageIdentities.All</li>
+              <li>Group.ReadWrite.All</li>
+              <li>GroupMember.ReadWrite.All</li>
+              <li>RoleManagement.ReadWrite.Directory</li>
+              <li>offline_access</li>
+          </ul>
+        </li>
+        <li> Click on the <b>Add permissions</b>.</li>
+        <li>After making these changes, click on <b>Grant admin consent</b>.</li>
+      </ol>
+
+      <h3>Application Permissions configuration</h3>
+      <p>Use this procedure to provide admin permissions to the app. To do so, navigate to <a href="https://portal.azure.com" target="_blank">https://portal.azure.com</a> in a browser and log in with a Microsoft account, then navigate to the previously created app configuration.</p>
+      <ol>
+        <li>Under <b>API Permissions</b>, click on <b>Add a permission</b>.</li>
+        <li>Go to <b>Microsoft Graph Permissions</b>, the following <b>Application Permissions</b> need to be added:
+          <ul>
+              <li>User.ReadWrite.All</li>
+              <li>Directory.ReadWrite.All</li>
+              <li>User.ManageIdentities.All</li>
+              <li>Group.ReadWrite.All</li>
+              <li>GroupMember.ReadWrite.All</li>
+              <li>RoleManagement.ReadWrite.Directory</li>
+          </ul>
+        </li>
+        <li> Click on the <b>Add permissions</b>.</li>
+        <li>After making these changes, click on <b>Grant admin consent</b>.</li>
+      </ol>
 
     <h2>Configure the MS Graph for Active Directory SOAR app Asset</h2>
-      When creating an asset for the <b>MS Graph for Active Directory</b> app, place the <b>Application ID</b> of the app created during the previous step in the <b>Client ID</b> field and place the password generated during the app creation process in the <b>Client Secret</b> field. Then, after filling out the <b>Tenant</b> field, click <b>SAVE</b>.
-      <br><br>
-      After saving, a new field will appear in the <b>Asset Settings</b> tab. Take the URL found in the <b>POST incoming for MS Graph to this location</b> field and place it in the <b>Redirect URIs</b> field mentioned in a previous step. To this URL, add <b>/result</b>. After doing so the URL should look something like:
-      <br><br>
-      <p>
-        https://&lt;phantom_host&gt;/rest/handler/msgraphforactivedirectory_f2a239df-acb2-47d6-861c-726a435cfe76/&lt;asset_name&gt;/result
-      </p>
+      <p>When creating an asset for the <b>MS Graph for Active Directory</b> app, place the <b>Application ID</b> of the app created during the previous step in the <b>Client ID</b> field and place the password generated during the app creation process in the <b>Client Secret</b> field. Then, after filling out the <b>Tenant</b> field, click <b>SAVE</b>.</p>
+      <p>After saving, a new field will appear in the <b>Asset Settings</b> tab. Take the URL found in the <b>POST incoming for MS Graph to this location</b> field and place it in the <b>Redirect URIs</b> field of the Azure Application configuration page. To this URL, add <b>/result</b>. After doing so the URL should look something like:</p>
+      <p>https://&lt;phantom_host&gt;/rest/handler/msgraphforactivedirectory_f2a239df-acb2-47d6-861c-726a435cfe76/&lt;asset_name&gt;/result</p>
       <br>
       Once again, click on Save.
+
+    <h2>Enable Application Permissions</h2>
+      <p>If you have received admin consent to use application permissions, make sure to check the <b>Admin Access Required</b> and <b>Admin Consent Already Provided</b> checkboxes on the asset.</p>
+
     <h2>User Permissions</h2>
     To complete the authorization process, this app needs permission to view assets, which is not granted by default. First, under <b>asset settings</b>, check which user is listed under <b>Select a user on behalf of which automated actions can be executed</b>. By default, the user will be <b>automation</b>, but this user can be changed by clicking <b>EDIT</b> at the bottom of the window. To give this user permission to view assets, follow these steps:
     <ul>
@@ -64,44 +85,38 @@ and limitations under the License.
         <li>In the <b>Add Role</b> wizard, give the role a name (e.g <b>Asset Viewer</b>), and provide a description. Subsequently, under <b>Available Users</b>, add the user assigned to the asset viewed earlier. Then click the <b>Permissions</b> tab.</li>
         <li>On the permission tab, under <b>Available Privileges</b>, give the role the <b>View Assets</b> privilege. Then click <b>SAVE</b>.</li>
     </ul>
-    <h2>Method to Run Test Connectivity</h2>
-    After setting up the asset and user, click the <b>TEST CONNECTIVITY</b> button. A window should pop up and display a URL. Navigate to this URL in a separate browser tab. This new tab will redirect to a Microsoft login page. Log in to a Microsoft account with administrator privileges to the Microsoft AD environment. After logging in, review the requested permissions listed, then click <b>Accept</b>. Finally, close that tab. The test connectivity window should show a success.
-      <br><br>
-      The app should now be ready to use.
+    <h2>Method to Run Test Connectivity (for delegated permissions)</h2>
+      <p>After setting up the asset and user, click the <b>TEST CONNECTIVITY</b> button. A window should pop up and display a URL. Navigate to this URL in a separate browser tab. This new tab will redirect to a Microsoft login page. Log in to a Microsoft account with administrator privileges to the Microsoft AD environment. After logging in, review the requested permissions listed, then click <b>Accept</b>. Finally, close that tab. The test connectivity window should show a success.</p>
+      <p>The app should now be ready to use.</p>
 
     <h2>State File Permissions</h2>
       Please check the permissions for the state file as mentioned below.
       <h4>State Filepath</h4>
       <ul>
-        <li>For Non-NRI Instance: /opt/phantom/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}_state.json</li>
-        <li>For NRI Instance: /&lt;PHANTOM_HOME_DIRECTORY&gt;/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}_state.json</li>
+        <li>For Root Install Instance: /opt/phantom/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}_state.json</li>
+        <li>For Non-Root Install Instance: /&lt;PHANTOM_HOME_DIRECTORY&gt;/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}_state.json</li>
       </ul>
       <h4>State File Permissions</h4>
       <ul>
         <li>File Rights: rw-rw-r-- (664) (The SOAR user should have read and write access for the state file)</li>
         <li>File Owner: appropriate SOAR user</li>
       </ul>
-      <h2>Port Information</h2>
-	<p>
-		The app uses HTTP/ HTTPS protocol for communicating with the Mattermost server. Below are the default ports used by Splunk SOAR.
-		<table>
-			<tr class=plain>
-				<th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Service Name</th>
-				<th>Transport Protocol</th>
-				<th>Port</th>
-			</tr>
-			<tr>
-				<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;http</td>
-				<td>tcp</td>
-				<td>80</td>
-			</tr>
-			<tr>
-				<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;https</td>
-				<td>tcp</td>
-				<td>443</td>
-			</tr>
-		</table>
-	</p>
+      <h2>Port Details</h2>
+      <p>
+        The app uses HTTP/ HTTPS protocol for communicating with the Microsoft Graph server. Below are the default ports used by the Splunk SOAR Connector.
+        <table>
+            <tr>
+                <th>Service Name</th>
+                <th>Transport Protocol</th>
+                <th>Port</th>
+            </tr>
+            <tr>
+                <td>https</td>
+                <td>tcp</td>
+                <td>443</td>
+            </tr>
+        </table>
+      </p>
 
   </body>
 </html>
