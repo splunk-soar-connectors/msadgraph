@@ -33,7 +33,6 @@ from phantom.base_connector import BaseConnector
 
 from msadgraph_consts import *
 
-TC_FILE = "oauth_task.out"
 SERVER_TOKEN_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token"
 MAX_END_OFFSET_VAL = 2147483646
 
@@ -60,6 +59,48 @@ def _handle_login_redirect(request, key):
     return response
 
 
+def _is_valid_asset_id(asset_id):
+    """ This function validates an asset id.
+    Must be an alphanumeric string of less than 128 characters.
+
+    :param asset_id: asset_id
+    :return: is_valid: Boolean True if valid, False if not.
+    """
+    if not isinstance(asset_id, str):
+        return False
+    if not asset_id.isalnum():
+        return False
+    if len(asset_id) > 128:
+        return False
+    return True
+
+
+def _get_auth_status_file_path(asset_id):
+    """ This function gets the path of the auth status file of an asset id.
+
+    :param asset_id: asset_id
+    :return: auth_status_file_path: Path object of the auth status file
+    """
+    if not _is_valid_asset_id(asset_id):
+        raise ValueError('Invalid asset id provided.')
+    current_file_path = pathlib.Path(__file__).resolve()
+    output_file_path = current_file_path.with_name(f'{asset_id}_oauth_task.out')
+    return output_file_path
+
+
+def _get_state_file_path(asset_id):
+    """ This function gets the path of the state file of an asset id.
+
+    :param asset_id: asset_id
+    :return: state_file_path: Path object of the state file
+    """
+    if not _is_valid_asset_id(asset_id):
+        raise ValueError('Invalid asset id provided.')
+    current_file_path = pathlib.Path(__file__).resolve()
+    output_file_path = current_file_path.with_name(f'{asset_id}_state.json')
+    return output_file_path
+
+
 def _load_app_state(asset_id, app_connector=None):
     """ This function is used to load the current state file.
 
@@ -69,24 +110,17 @@ def _load_app_state(asset_id, app_connector=None):
     """
 
     asset_id = str(asset_id)
-    if not asset_id or not asset_id.isalnum():
+    if not _is_valid_asset_id(asset_id):
         if app_connector:
             app_connector.debug_print('In _load_app_state: Invalid asset_id')
         return {}
 
-    app_dir = os.path.dirname(os.path.abspath(__file__))
-    state_file = f'{app_dir}/{asset_id}_state.json'
-    real_state_file_path = os.path.abspath(state_file)
-    if not os.path.dirname(real_state_file_path) == app_dir:
-        if app_connector:
-            app_connector.debug_print('In _load_app_state: Invalid asset_id')
-        return {}
+    state_file_path = _get_state_file_path(asset_id)
 
     state = {}
     try:
-        with open(real_state_file_path, 'r') as state_file_obj:
-            state_file_data = state_file_obj.read()
-            state = json.loads(state_file_data)
+        with open(state_file_path, 'r') as state_file:
+            state = json.load(state_file)
     except Exception as e:
         if app_connector:
             app_connector.debug_print(f'In _load_app_state: Exception: {str(e)}')
@@ -107,26 +141,19 @@ def _save_app_state(state, asset_id, app_connector):
     """
 
     asset_id = str(asset_id)
-    if not asset_id or not asset_id.isalnum():
+    if not _is_valid_asset_id(asset_id):
         if app_connector:
             app_connector.debug_print('In _save_app_state: Invalid asset_id')
         return {}
 
-    app_dir = os.path.split(__file__)[0]
-    state_file = f'{app_dir}/{asset_id}_state.json'
-
-    real_state_file_path = os.path.abspath(state_file)
-    if not os.path.dirname(real_state_file_path) == app_dir:
-        if app_connector:
-            app_connector.debug_print('In _save_app_state: Invalid asset_id')
-        return {}
+    state_file_path = _get_state_file_path(asset_id)
 
     if app_connector:
         app_connector.debug_print('Saving state: ', state)
 
     try:
-        with open(real_state_file_path, 'w+') as state_file_obj:
-            state_file_obj.write(json.dumps(state))
+        with open(state_file_path, 'w+') as state_file:
+            json.dump(state, state_file)
     except Exception as e:
         if app_connector:
             app_connector.debug_print(f'Unable to save state file: {str(e)}')
@@ -209,17 +236,14 @@ def _handle_rest_request(request, path_parts):
         return_val = _handle_login_response(request)
         asset_id = request.GET.get('state')
         if asset_id:
-            if not (isinstance(asset_id, str) and asset_id.isalnum() and len(asset_id) <= 128):
+            if not _is_valid_asset_id(asset_id):
                 return HttpResponse("Error: Invalid asset_id", content_type="text/plain", status=400)
-            app_dir = pathlib.Path(__file__).parent
-            auth_status_file_name = f'{asset_id}_{TC_FILE}'
-            auth_status_file_path = app_dir.joinpath(auth_status_file_name).resolve()
+            auth_status_file_path = _get_auth_status_file_path(asset_id)
             auth_status_file_path.touch(mode='0664', exist_ok=True)
             try:
                 uid = pwd.getpwnam('apache').pw_uid
                 gid = grp.getgrnam('phantom').gr_gid
                 os.chown(auth_status_file_path, uid, gid)
-                os.chmod(auth_status_file_path, '0664')
             except Exception:
                 pass
 
@@ -655,8 +679,7 @@ class MSADGraphConnector(BaseConnector):
 
             completed = False
 
-            app_dir = os.path.dirname(os.path.abspath(__file__))
-            auth_status_file_path = f"{app_dir}/{self._asset_id}_{TC_FILE}"
+            auth_status_file_path = _get_auth_status_file_path(self._asset_id)
 
             self.save_progress('Waiting for authorization to complete')
 
@@ -664,9 +687,9 @@ class MSADGraphConnector(BaseConnector):
 
                 self.send_progress('{0}'.format('.' * (i % 10)))
 
-                if os.path.isfile(auth_status_file_path):
+                if auth_status_file_path.is_file():
                     completed = True
-                    os.unlink(auth_status_file_path)
+                    auth_status_file_path.unlink()
                     break
 
                 time.sleep(MS_TC_STATUS_SLEEP)
