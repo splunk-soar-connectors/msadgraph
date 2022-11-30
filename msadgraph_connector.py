@@ -466,7 +466,7 @@ class MSADGraphConnector(BaseConnector):
 
         phantom_base_url = resp_json.get('base_url').rstrip("/")
         if not phantom_base_url:
-            return action_result.set_status(phantom.APP_ERROR, MS_AZURE_BASE_URL_NOT_FOUND_MSG), None
+            return action_result.set_status(phantom.APP_ERROR, MS_AZURE_BASE_URL_NOT_FOUND_MESSAGE), None
         return phantom.APP_SUCCESS, phantom_base_url
 
     def _get_app_rest_url(self, action_result):
@@ -577,6 +577,7 @@ class MSADGraphConnector(BaseConnector):
 
     def _handle_generate_token(self, param):
 
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
         ret_val = self._get_token(action_result)
         if (phantom.is_fail(ret_val)):
@@ -584,6 +585,7 @@ class MSADGraphConnector(BaseConnector):
 
         self._state['admin_consent'] = True
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS, "Token generated")
 
     def _handle_test_connectivity(self, param):
@@ -602,7 +604,7 @@ class MSADGraphConnector(BaseConnector):
             ret_val, app_rest_url = self._get_app_rest_url(action_result)
 
             if phantom.is_fail(ret_val):
-                self.save_progress(MS_REST_URL_NOT_AVAILABLE_MSG.format(error=self.get_status()))
+                self.save_progress(MS_REST_URL_NOT_AVAILABLE_MESSAGE.format(error=self.get_status()))
                 return self.set_status(phantom.APP_ERROR)
 
             # create the url that the oauth server should re-direct to after the auth is completed
@@ -611,7 +613,7 @@ class MSADGraphConnector(BaseConnector):
             redirect_uri = f"{app_rest_url}/result"
             app_state['redirect_uri'] = redirect_uri
 
-            self.save_progress(MS_OAUTH_URL_MSG)
+            self.save_progress(MS_OAUTH_URL_MESSAGE)
             self.save_progress(redirect_uri)
 
             self._client_id = urlparse.quote(self._client_id)
@@ -647,7 +649,7 @@ class MSADGraphConnector(BaseConnector):
 
             self.save_progress('Please connect to the following URL from a different tab to continue the connectivity process')
             self.save_progress(url_to_show)
-            self.save_progress(MS_AZURE_AUTHORIZE_TROUBLESHOOT_MSG)
+            self.save_progress(MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE)
 
             time.sleep(5)
 
@@ -694,7 +696,7 @@ class MSADGraphConnector(BaseConnector):
                 self.save_progress("Test Connectivity Failed")
                 return action_result.set_status(phantom.APP_ERROR)
 
-        self.save_progress(MS_GENERATING_ACCESS_TOKEN_MSG)
+        self.save_progress(MS_GENERATING_ACCESS_TOKEN_MESSAGE)
         ret_val = self._get_token(action_result)
 
         if phantom.is_fail(ret_val):
@@ -756,6 +758,7 @@ class MSADGraphConnector(BaseConnector):
         else:
             summary['num_users'] = action_result.get_data_size()
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_reset_password(self, param):
@@ -785,6 +788,7 @@ class MSADGraphConnector(BaseConnector):
         summary['status'] = f"Successfully reset password for {user_id}"
 
         # An empty response indicates success. No response body is returned.
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_enable_user(self, param):
@@ -808,6 +812,7 @@ class MSADGraphConnector(BaseConnector):
         summary['status'] = f"Successfully enabled user {user_id}"
 
         # An empty response indicates success. No response body is returned.
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_invalidate_tokens(self, param):
@@ -826,6 +831,7 @@ class MSADGraphConnector(BaseConnector):
         summary = action_result.update_summary({})
         summary['status'] = "Successfully disabled tokens"
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_disable_user(self, param):
@@ -848,6 +854,7 @@ class MSADGraphConnector(BaseConnector):
         summary = action_result.update_summary({})
         summary['status'] = f"Successfully disabled user {user_id}"
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_list_user_attributes(self, param):
@@ -888,6 +895,7 @@ class MSADGraphConnector(BaseConnector):
         else:
             summary['status'] = "Successfully retrieved user attributes"
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_set_user_attribute(self, param):
@@ -912,6 +920,7 @@ class MSADGraphConnector(BaseConnector):
         summary = action_result.update_summary({})
         summary['status'] = "Successfully updated user attribute"
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_add_user(self, param):
@@ -941,6 +950,7 @@ class MSADGraphConnector(BaseConnector):
         else:
             summary['status'] = "Successfully added user to group"
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_remove_user(self, param):
@@ -965,6 +975,7 @@ class MSADGraphConnector(BaseConnector):
         else:
             summary['status'] = "Successfully removed user from group"
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_list_groups(self, param):
@@ -1004,6 +1015,7 @@ class MSADGraphConnector(BaseConnector):
         else:
             summary['num_groups'] = action_result.get_data_size()
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_get_group(self, param):
@@ -1041,6 +1053,7 @@ class MSADGraphConnector(BaseConnector):
         summary = action_result.update_summary({})
         summary['status'] = f"Successfully retrieved group {object_id}"
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_list_group_members(self, param):
@@ -1076,6 +1089,7 @@ class MSADGraphConnector(BaseConnector):
         summary = action_result.update_summary({})
         summary['num_users'] = action_result.get_data_size()
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_list_directory_roles(self, param):
@@ -1096,6 +1110,7 @@ class MSADGraphConnector(BaseConnector):
         summary = action_result.update_summary({})
         summary['num_directory_roles'] = len(value)
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_validate_group(self, param):
@@ -1117,6 +1132,7 @@ class MSADGraphConnector(BaseConnector):
         for user in response.get('value', []):
             user_id_map[user['id']] = user['displayName']
 
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS, f"User is member of group: {ret_val}")
 
     def _get_token(self, action_result):
