@@ -18,6 +18,7 @@
 import grp
 import json
 import os
+import pathlib
 import pwd
 import sys
 import time
@@ -207,13 +208,13 @@ def _handle_rest_request(request, path_parts):
     if call_type == 'result':
         return_val = _handle_login_response(request)
         asset_id = request.GET.get('state')
-        if asset_id and asset_id.isalnum():
-            app_dir = os.path.dirname(os.path.abspath(__file__))
-            auth_status_file_path = f'{app_dir}/{asset_id}_{TC_FILE}'
-            real_auth_status_file_path = os.path.abspath(auth_status_file_path)
-            if not os.path.dirname(real_auth_status_file_path) == app_dir:
+        if asset_id:
+            if not (isinstance(asset_id, str) and asset_id.isalnum() and len(asset_id) <= 128):
                 return HttpResponse("Error: Invalid asset_id", content_type="text/plain", status=400)
-            open(auth_status_file_path, 'w').close()
+            app_dir = pathlib.Path(__file__).parent
+            auth_status_file_name = f'{asset_id}_{TC_FILE}'
+            auth_status_file_path = app_dir.joinpath(auth_status_file_name).resolve()
+            auth_status_file_path.touch(mode='0664', exist_ok=True)
             try:
                 uid = pwd.getpwnam('apache').pw_uid
                 gid = grp.getgrnam('phantom').gr_gid
