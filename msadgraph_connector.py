@@ -21,22 +21,17 @@ import os
 import pwd
 import sys
 import time
+import urllib.parse as urlparse
 
+import encryption_helper
 import phantom.app as phantom
 import requests
-from bs4 import BeautifulSoup, UnicodeDammit
+from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 
 from msadgraph_consts import *
-
-try:
-    import urllib.parse as urlparse
-except ImportError:
-    import urllib
-
-    import urlparse
 
 TC_FILE = "oauth_task.out"
 SERVER_TOKEN_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token"
@@ -63,6 +58,57 @@ def _handle_login_redirect(request, key):
     response = HttpResponse(status=302)
     response['Location'] = url
     return response
+
+
+def _decrypt_state(state, salt):
+    """
+    Decrypts the state.
+    :param state: state dictionary
+    :param salt: salt used for decryption
+    :return: decrypted state
+    """
+
+    if not state.get("is_encrypted"):
+        return state
+
+    access_token = state.get("token", {}).get("access_token")
+    if access_token:
+        state["token"]["access_token"] = encryption_helper.decrypt(access_token, salt)
+
+    refresh_token = state.get("token", {}).get("refresh_token")
+    if refresh_token:
+        state["token"]["refresh_token"] = encryption_helper.decrypt(refresh_token, salt)
+
+    code = state.get("code")
+    if code:
+        state["code"] = encryption_helper.decrypt(code, salt)
+
+    return state
+
+
+def _encrypt_state(state, salt):
+    """
+    Encrypts the state.
+    :param state: state dictionary
+    :param salt: salt used for encryption
+    :return: encrypted state
+    """
+
+    access_token = state.get("token", {}).get("access_token")
+    if access_token:
+        state["token"]["access_token"] = encryption_helper.encrypt(access_token, salt)
+
+    refresh_token = state.get("token", {}).get("refresh_token")
+    if refresh_token:
+        state["token"]["refresh_token"] = encryption_helper.encrypt(refresh_token, salt)
+
+    code = state.get("code")
+    if code:
+        state["code"] = encryption_helper.encrypt(code, salt)
+
+    state["is_encrypted"] = True
+
+    return state
 
 
 def _load_app_state(asset_id, app_connector=None):
@@ -94,10 +140,17 @@ def _load_app_state(asset_id, app_connector=None):
             state = json.loads(state_file_data)
     except Exception as e:
         if app_connector:
-            app_connector.debug_print('In _load_app_state: Exception: {0}'.format(str(e)))
+            app_connector.error_print('In _load_app_state: Exception: {0}'.format(str(e)))
 
     if app_connector:
         app_connector.debug_print('Loaded state: ', state)
+
+    try:
+        state = _decrypt_state(state, asset_id)
+    except Exception as e:
+        if app_connector:
+            app_connector.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERROR, str(e)))
+        state = {}
 
     return state
 
@@ -117,7 +170,7 @@ def _save_app_state(state, asset_id, app_connector):
             app_connector.debug_print('In _save_app_state: Invalid asset_id')
         return {}
 
-    app_dir = os.path.split(__file__)[0]
+    app_dir = os.path.dirname(os.path.abspath(__file__))
     state_file = '{0}/{1}_state.json'.format(app_dir, asset_id)
 
     real_state_file_path = os.path.abspath(state_file)
@@ -125,6 +178,13 @@ def _save_app_state(state, asset_id, app_connector):
         if app_connector:
             app_connector.debug_print('In _save_app_state: Invalid asset_id')
         return {}
+
+    try:
+        state = _encrypt_state(state, asset_id)
+    except Exception as e:
+        if app_connector:
+            app_connector.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERROR, str(e)))
+        return phantom.APP_ERROR
 
     if app_connector:
         app_connector.debug_print('Saving state: ', state)
@@ -134,7 +194,7 @@ def _save_app_state(state, asset_id, app_connector):
             state_file_obj.write(json.dumps(state))
     except Exception as e:
         if app_connector:
-            app_connector.debug_print('Unable to save state file: {0}'.format(str(e)))
+            app_connector.error_print('Unable to save state file: {0}'.format(str(e)))
 
     return phantom.APP_SUCCESS
 
@@ -272,51 +332,67 @@ class MSADGraphConnector(BaseConnector):
         self._refresh_token = None
         self._base_url = None
 
-    def _handle_py_ver_compat_for_input_str(self, input_str):
+    def load_state(self):
         """
-        This method returns the encoded|original string based on the Python version.
-        :param input_str: Input string to be processed
-        :return: input_str (Processed input string based on following logic 'input_str - Python 3; encoded input_str - Python 2')
+        Load the contents of the state file to the state dictionary and decrypt it.
+        :return: loaded state
+        """
+        state = super().load_state()
+        if not isinstance(state, dict):
+            self.debug_print("Reseting the state file with the default format")
+            state = {
+                "app_version": self.get_app_json().get('app_version')
+            }
+            return state
+        try:
+            state = _decrypt_state(state, self.get_asset_id())
+        except Exception as e:
+            self.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERROR, str(e)))
+            state = None
+
+        return state
+
+    def save_state(self, state):
+        """
+        Encrypt and save the current state dictionary to the the state file.
+        :param state: state dictionary
+        :return: status
         """
         try:
-            if input_str and self._python_version < 3:
-                input_str = UnicodeDammit(input_str).unicode_markup.encode('utf-8')
-        except Exception:
-            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
+            state = _encrypt_state(state, self.get_asset_id())
+        except Exception as e:
+            self.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERROR, str(e)))
+            return phantom.APP_ERROR
 
-        return input_str
+        return super().save_state(state)
 
     def _get_error_message_from_exception(self, e):
-        """ This function is used to get appropriate error message from the exception.
+        """
+        Get appropriate error message from the exception.
         :param e: Exception object
         :return: error message
         """
-        error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
-        error_code = "Error code unavailable"
+        error_code = None
+        error_message = MS_AZURE_ERROR_MESSAGE_UNKNOWN
+
+        self.error_print("Traceback: ", e)
+
         try:
-            if e.args:
+            if hasattr(e, "args"):
                 if len(e.args) > 1:
                     error_code = e.args[0]
-                    error_msg = e.args[1]
+                    error_message = e.args[1]
                 elif len(e.args) == 1:
-                    error_code = "Error code unavailable"
-                    error_msg = e.args[0]
-            else:
-                error_code = "Error code unavailable"
-                error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
-        except:
-            error_code = "Error code unavailable"
-            error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
+                    error_message = e.args[0]
+        except Exception:
+            self.error_print("Exception occurred while getting error code and meesage")
 
-        try:
-            error_msg = self._handle_py_ver_compat_for_input_str(error_msg)
-        except TypeError:
-            error_msg = "Error occurred while connecting to the Microsoft Teams server."\
-                "Please check the asset configuration and|or the action parameters."
-        except:
-            error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
+        if not error_code:
+            error_text = "Error Message: {}".format(error_message)
+        else:
+            error_text = "Error Code: {}. Error Message: {}".format(error_code, error_message)
 
-        return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+        return error_text
 
     def _format_params_to_query(self, parameters):
         """If you just pass with the params argument into the request, commas will be encoded to %2C
@@ -379,7 +455,7 @@ class MSADGraphConnector(BaseConnector):
         message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code,
                                                                       error_text)
 
-        message = self._handle_py_ver_compat_for_input_str(message.replace('{', '{{').replace('}', '}}'))
+        message = message.replace('{', '{{').replace('}', '}}')
 
         if status_code == 400:
             message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code, MS_AZURE_HTML_ERROR)
@@ -406,18 +482,18 @@ class MSADGraphConnector(BaseConnector):
         if 200 <= response.status_code < 399:
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
-        error_message = self._handle_py_ver_compat_for_input_str(response.text.replace('{', '{{').replace('}', '}}'))
+        error_message = response.text.replace('{', '{{').replace('}', '}}')
         message = "Error from server. Status Code: {0} Data from server: {1}".format(response.status_code,
                                                                                      error_message)
 
         # Show only error message if available
         if isinstance(resp_json.get('error', {}), dict):
             if resp_json.get('error', {}).get('message'):
-                error_message = self._handle_py_ver_compat_for_input_str(resp_json['error']['message'])
+                error_message = resp_json['error']['message']
                 message = "Error from server. Status Code: {0} Data from server: {1}".format(response.status_code,
                                                                                              error_message)
         else:
-            error_message = self._handle_py_ver_compat_for_input_str(resp_json['error'])
+            error_message = resp_json['error']
             message = "Error from server. Status Code: {0} Data from server: {1}".format(response.status_code,
                                                                                          error_message)
 
@@ -463,7 +539,7 @@ class MSADGraphConnector(BaseConnector):
 
         # everything else is actually an error at this point
         message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
-            response.status_code, self._handle_py_ver_compat_for_input_str(response.text.replace('{', '{{').replace('}', '}}')))
+            response.status_code, response.text.replace('{', '{{').replace('}', '}}'))
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -502,7 +578,7 @@ class MSADGraphConnector(BaseConnector):
 
         phantom_base_url = resp_json.get('base_url').rstrip("/")
         if not phantom_base_url:
-            return action_result.set_status(phantom.APP_ERROR, MS_AZURE_BASE_URL_NOT_FOUND_MSG), None
+            return action_result.set_status(phantom.APP_ERROR, MS_AZURE_BASE_URL_NOT_FOUND_MESSAGE), None
         return phantom.APP_SUCCESS, phantom_base_url
 
     def _get_app_rest_url(self, action_result):
@@ -553,7 +629,7 @@ class MSADGraphConnector(BaseConnector):
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)), resp_json)
 
         try:
-            r = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params)
+            r = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params, timeout=DEFAULT_TIMEOUT)
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Error Connecting to server. Details: {0}"
@@ -620,12 +696,16 @@ class MSADGraphConnector(BaseConnector):
 
     def _handle_generate_token(self, param):
 
+        self.debug_print("Generating new token")
+
         action_result = self.add_action_result(ActionResult(dict(param)))
         ret_val = self._get_token(action_result)
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         self._state['admin_consent'] = True
+
+        self.debug_print("Token has been successfully generated")
 
         return action_result.set_status(phantom.APP_SUCCESS, "Token generated")
 
@@ -643,7 +723,7 @@ class MSADGraphConnector(BaseConnector):
         ret_val, app_rest_url = self._get_app_rest_url(action_result)
 
         if phantom.is_fail(ret_val):
-            self.save_progress(MS_REST_URL_NOT_AVAILABLE_MSG.format(error=self.get_status()))
+            self.save_progress(MS_REST_URL_NOT_AVAILABLE_MESSAGE.format(error=self.get_status()))
             return self.set_status(phantom.APP_ERROR)
 
         # create the url that the oauth server should re-direct to after the auth is completed
@@ -652,15 +732,11 @@ class MSADGraphConnector(BaseConnector):
         redirect_uri = "{0}/result".format(app_rest_url)
         app_state['redirect_uri'] = redirect_uri
 
-        self.save_progress(MS_OAUTH_URL_MSG)
+        self.save_progress(MS_OAUTH_URL_MESSAGE)
         self.save_progress(redirect_uri)
 
-        if self._python_version < 3:
-            self._client_id = urllib.quote(self._client_id)
-            self._tenant = urllib.quote(self._tenant)
-        else:
-            self._client_id = urlparse.quote(self._client_id)
-            self._tenant = urlparse.quote(self._tenant)
+        self._client_id = urlparse.quote(self._client_id)
+        self._tenant = urlparse.quote(self._tenant)
 
         admin_consent_url_base = "https://login.microsoftonline.com/{0}/oauth2/v2.0/authorize".format(self._tenant)
 
@@ -687,7 +763,7 @@ class MSADGraphConnector(BaseConnector):
 
         self.save_progress('Please connect to the following URL from a different tab to continue the connectivity process')
         self.save_progress(url_to_show)
-        self.save_progress(MS_AZURE_AUTHORIZE_TROUBLESHOOT_MSG)
+        self.save_progress(MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE)
 
         time.sleep(5)
 
@@ -726,7 +802,7 @@ class MSADGraphConnector(BaseConnector):
         # The authentication seems to be done, let's see if it was successful
         self._state['admin_consent'] = self._state.get('admin_consent', False)
 
-        self.save_progress(MS_GENERATING_ACCESS_TOKEN_MSG)
+        self.save_progress(MS_GENERATING_ACCESS_TOKEN_MESSAGE)
         ret_val = self._get_token(action_result)
 
         if phantom.is_fail(ret_val):
@@ -787,8 +863,8 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
-        temp_password = self._handle_py_ver_compat_for_input_str(param.get('temp_password', ''))
+        user_id = param['user_id']
+        temp_password = param.get('temp_password', '')
         force_change = param.get('force_change', True)
 
         data = {
@@ -816,7 +892,7 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        user_id = param['user_id']
 
         data = {
             "accountEnabled": True
@@ -839,7 +915,7 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        user_id = param['user_id']
         endpoint = '/users/{0}/revokeSignInSessions'.format(user_id)
 
         ret_val = self._make_rest_call_helper(action_result, endpoint, method='post')
@@ -857,7 +933,7 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        user_id = param['user_id']
 
         data = {
             "accountEnabled": False
@@ -879,10 +955,10 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param.get('user_id'))
+        user_id = param.get('user_id')
 
         parameters = dict()
-        select_string = self._handle_py_ver_compat_for_input_str(param.get('select_string'))
+        select_string = param.get('select_string')
         if select_string:
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
@@ -907,14 +983,40 @@ class MSADGraphConnector(BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
+    def _handle_list_user_devices(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        user_id = param['user_id']
+
+        parameters = dict()
+        select_string = param.get('select_string')
+        if select_string:
+            select_string = select_string.strip(',').split(',')
+            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+
+        endpoint = f'/users/{user_id}/ownedDevices'
+        endpoint += '?{}'.format(self._format_params_to_query(parameters))
+
+        ret_val = self._handle_pagination(action_result, endpoint)
+
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        summary = action_result.update_summary({})
+        summary['status'] = "Successfully retrieved owned devices for user {}".format(user_id)
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
     def _handle_set_user_attribute(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
-        attribute = self._handle_py_ver_compat_for_input_str(param['attribute'])
-        attribute_value = self._handle_py_ver_compat_for_input_str(param['attribute_value'])
+        user_id = param['user_id']
+        attribute = param['attribute']
+        attribute_value = param['attribute_value']
 
         data = {
             attribute: attribute_value
@@ -937,8 +1039,8 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        object_id = self._handle_py_ver_compat_for_input_str(param['group_object_id'])
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        object_id = param['group_object_id']
+        user_id = param['user_id']
 
         data = {
             '@odata.id': "https://{}/directoryObjects/{}".format(MSADGRAPH_API_REGION[config.get(MS_AZURE_URL, "Global")], user_id)
@@ -965,8 +1067,8 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        object_id = self._handle_py_ver_compat_for_input_str(param['group_object_id'])
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        object_id = param['group_object_id']
+        user_id = param['user_id']
 
         endpoint = '/groups/{}/members/{}/$ref'.format(object_id, user_id)
         ret_val = self._make_rest_call_helper(action_result, endpoint, method='delete')
@@ -1022,7 +1124,7 @@ class MSADGraphConnector(BaseConnector):
             select_string = select_string.strip(',').split(',')
             parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
 
-        object_id = self._handle_py_ver_compat_for_input_str(param['object_id'])
+        object_id = param['object_id']
 
         endpoint = '/groups/{}'.format(object_id)
         endpoint += '?{}'.format(self._format_params_to_query(parameters))
@@ -1044,7 +1146,7 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        object_id = self._handle_py_ver_compat_for_input_str(param['group_object_id'])
+        object_id = param['group_object_id']
 
         parameters = dict()
         select_string = param.get('select_string')
@@ -1090,8 +1192,8 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        object_id = self._handle_py_ver_compat_for_input_str(param['group_object_id'])
-        user_id = self._handle_py_ver_compat_for_input_str(param['user_id'])
+        object_id = param['group_object_id']
+        user_id = param['user_id']
 
         endpoint = '/users/{}/memberOf?$filter=id eq \'{}\''.format(user_id, object_id)
         ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='get')
@@ -1144,7 +1246,6 @@ class MSADGraphConnector(BaseConnector):
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
         self._access_token = resp_json[MS_AZURE_ACCESS_TOKEN_STRING]
         self._refresh_token = resp_json[MS_AZURE_REFRESH_TOKEN_STRING]
-        self.save_state(self._state)
 
         return phantom.APP_SUCCESS
 
@@ -1249,6 +1350,9 @@ class MSADGraphConnector(BaseConnector):
         elif action_id == 'generate_token':
             ret_val = self._handle_generate_token(param)
 
+        elif action_id == 'list_user_devices':
+            ret_val = self._handle_list_user_devices(param)
+
         return ret_val
 
     def initialize(self):
@@ -1261,17 +1365,14 @@ class MSADGraphConnector(BaseConnector):
 
         self._state = self.load_state()
 
-        # Fetching the Python major version
-        try:
-            self._python_version = int(sys.version_info[0])
-        except:
-            return self.set_status(phantom.APP_ERROR, "Error occurred while getting the SOAR server's Python major version.")
+        if self._state is None:
+            return self.set_status(phantom.APP_ERROR, MS_AZURE_STATE_FILE_CORRUPT_ERROR)
 
         # get the asset config
         config = self.get_config()
 
-        self._tenant = self._handle_py_ver_compat_for_input_str(config[MS_AZURE_CONFIG_TENANT])
-        self._client_id = self._handle_py_ver_compat_for_input_str(config[MS_AZURE_CONFIG_CLIENT_ID])
+        self._tenant = config[MS_AZURE_CONFIG_TENANT]
+        self._client_id = config[MS_AZURE_CONFIG_CLIENT_ID]
         self._client_secret = config[MS_AZURE_CONFIG_CLIENT_SECRET]
         self._access_token = self._state.get(MS_AZURE_TOKEN_STRING, {}).get(MS_AZURE_ACCESS_TOKEN_STRING)
         self._refresh_token = self._state.get(MS_AZURE_TOKEN_STRING, {}).get(MS_AZURE_REFRESH_TOKEN_STRING)
@@ -1283,7 +1384,6 @@ class MSADGraphConnector(BaseConnector):
 
         # Save the state, this data is saved across actions and app upgrades
         self.save_state(self._state)
-        _save_app_state(self._state, self.get_asset_id(), self)
         return phantom.APP_SUCCESS
 
 
