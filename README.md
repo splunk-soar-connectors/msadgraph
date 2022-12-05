@@ -2,13 +2,13 @@
 # MS Graph for Active Directory
 
 Publisher: Splunk  
-Connector Version: 1\.0\.5  
+Connector Version: 1\.1\.0  
 Product Vendor: Microsoft  
 Product Name: MS Graph for Active Directory  
 Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 5\.2\.0  
+Minimum Product Version: 5\.3\.5  
 
-Connects to Microsoft Active Directory using MS Graph REST API services
+Connects to Microsoft Active Directory using MS Graph REST API services to support various generic and investigative actions
 
 [comment]: # " File: README.md"
 [comment]: # "  Copyright (c) 2022 Splunk Inc."
@@ -68,7 +68,7 @@ mentioned in a previous step. To this URL, add **/result** . After doing so the 
 something like:  
   
 
-https://\<phantom_host>/rest/handler/msgraphforactivedirectory_f2a239df-acb2-47d6-861c-726a435cfe76/\<asset_name>/result
+https://\<splunk_soar_host>/rest/handler/msgraphforactivedirectory_f2a239df-acb2-47d6-861c-726a435cfe76/\<asset_name>/result
 
   
 Once again, click on Save.
@@ -144,6 +144,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in a Microsoft AD environment  
 [enable user](#action-enable-user) - Enable a user  
 [disable user](#action-disable-user) - Disable a user  
+[list user devices](#action-list-user-devices) - List devices for a specified user  
 [list user attributes](#action-list-user-attributes) - List attributes for all or a specified user  
 [set user attribute](#action-set-user-attribute) - Set an attribute for a user  
 [remove user](#action-remove-user) - Remove a user from a specified group  
@@ -173,7 +174,7 @@ Get a list of users
 Type: **investigate**  
 Read only: **True**
 
-For more information on using the filter\_string and select\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\. By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\.
+For more information on using the filter\_string and select\_string parameter, refer to <a href='https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter' target='\_blank'>this</a> documentation\. By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
@@ -351,13 +352,89 @@ action\_result\.message | string |
 summary\.total\_objects | numeric | 
 summary\.total\_objects\_successful | numeric |   
 
+## action: 'list user devices'
+List devices for a specified user
+
+Type: **investigate**  
+Read only: **True**
+
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to <a href='https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter' target='\_blank'>this</a> documentation\.
+
+#### Action Parameters
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**user\_id** |  required  | User ID \- can be user principal name or object ID | string |  `user id` 
+**select\_string** |  optional  | Select string to get additional user properties\. Separate multiple values with commas | string | 
+
+#### Action Output
+DATA PATH | TYPE | CONTAINS
+--------- | ---- | --------
+action\_result\.status | string | 
+action\_result\.parameter\.select\_string | string | 
+action\_result\.parameter\.user\_id | string |  `user id` 
+action\_result\.data\.\*\.\@odata\.type | string | 
+action\_result\.data\.\*\.accountEnabled | boolean | 
+action\_result\.data\.\*\.alternativeSecurityIds\.\*\.identityProvider | string | 
+action\_result\.data\.\*\.alternativeSecurityIds\.\*\.key | string | 
+action\_result\.data\.\*\.alternativeSecurityIds\.\*\.type | numeric | 
+action\_result\.data\.\*\.approximateLastSignInDateTime | string | 
+action\_result\.data\.\*\.complianceExpirationDateTime | string | 
+action\_result\.data\.\*\.createdDateTime | string | 
+action\_result\.data\.\*\.deletedDateTime | string | 
+action\_result\.data\.\*\.deviceCategory | string | 
+action\_result\.data\.\*\.deviceId | string | 
+action\_result\.data\.\*\.deviceMetadata | string | 
+action\_result\.data\.\*\.deviceOwnership | string | 
+action\_result\.data\.\*\.deviceVersion | numeric | 
+action\_result\.data\.\*\.displayName | string | 
+action\_result\.data\.\*\.domainName | string | 
+action\_result\.data\.\*\.enrollmentProfileName | string | 
+action\_result\.data\.\*\.enrollmentType | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute1 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute10 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute11 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute12 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute13 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute14 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute15 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute2 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute3 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute4 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute5 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute6 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute7 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute8 | string | 
+action\_result\.data\.\*\.extensionAttributes\.extensionAttribute9 | string | 
+action\_result\.data\.\*\.externalSourceName | string | 
+action\_result\.data\.\*\.id | string | 
+action\_result\.data\.\*\.isCompliant | boolean | 
+action\_result\.data\.\*\.isManaged | boolean | 
+action\_result\.data\.\*\.isRooted | string | 
+action\_result\.data\.\*\.managementType | string | 
+action\_result\.data\.\*\.manufacturer | string | 
+action\_result\.data\.\*\.mdmAppId | string | 
+action\_result\.data\.\*\.model | string | 
+action\_result\.data\.\*\.onPremisesLastSyncDateTime | string | 
+action\_result\.data\.\*\.onPremisesSyncEnabled | boolean | 
+action\_result\.data\.\*\.operatingSystem | string | 
+action\_result\.data\.\*\.operatingSystemVersion | string | 
+action\_result\.data\.\*\.profileType | string | 
+action\_result\.data\.\*\.registrationDateTime | string | 
+action\_result\.data\.\*\.sourceType | string | 
+action\_result\.data\.\*\.trustType | string | 
+action\_result\.summary | string | 
+action\_result\.summary\.status | string | 
+action\_result\.message | string | 
+summary\.total\_objects | numeric | 
+summary\.total\_objects\_successful | numeric |   
+
 ## action: 'list user attributes'
 List attributes for all or a specified user
 
 Type: **investigate**  
 Read only: **True**
 
-By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to <a href='https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter' target='\_blank'>this</a> documentation\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
@@ -555,7 +632,7 @@ List groups in the organization
 Type: **investigate**  
 Read only: **True**
 
-By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to <a href='https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter' target='\_blank'>this</a> documentation\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
@@ -610,7 +687,7 @@ Get information about a group
 Type: **investigate**  
 Read only: **True**
 
-By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to <a href='https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter' target='\_blank'>this</a> documentation\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
@@ -659,6 +736,7 @@ action\_result\.data\.\*\.securityIdentifier | string |
 action\_result\.data\.\*\.theme | string | 
 action\_result\.data\.\*\.visibility | string | 
 action\_result\.summary\.display\_name | string | 
+action\_result\.summary\.status | string | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 
 summary\.total\_objects\_successful | numeric |   
@@ -669,7 +747,7 @@ List the members in a group
 Type: **investigate**  
 Read only: **True**
 
-By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter\.
+By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter\. For more information on using the select\_string parameter, refer to <a href='https\://docs\.microsoft\.com/en\-us/graph/query\-parameters\#select\-parameter' target='\_blank'>this</a> documentation\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
@@ -685,16 +763,80 @@ action\_result\.parameter\.group\_object\_id | string |  `group object id`
 action\_result\.parameter\.select\_string | string | 
 action\_result\.data\.\*\.\@odata\.type | string | 
 action\_result\.data\.\*\.accountEnabled | boolean | 
+action\_result\.data\.\*\.ageGroup | string | 
+action\_result\.data\.\*\.assignedLicenses\.\*\.skuId | string | 
+action\_result\.data\.\*\.assignedPlans\.\*\.assignedDateTime | string | 
+action\_result\.data\.\*\.assignedPlans\.\*\.capabilityStatus | string | 
+action\_result\.data\.\*\.assignedPlans\.\*\.service | string | 
+action\_result\.data\.\*\.assignedPlans\.\*\.servicePlanId | string | 
+action\_result\.data\.\*\.city | string | 
+action\_result\.data\.\*\.companyName | string | 
+action\_result\.data\.\*\.consentProvidedForMinor | string | 
+action\_result\.data\.\*\.country | string | 
+action\_result\.data\.\*\.createdDateTime | string | 
+action\_result\.data\.\*\.creationType | string | 
+action\_result\.data\.\*\.deletedDateTime | string | 
+action\_result\.data\.\*\.department | string | 
 action\_result\.data\.\*\.displayName | string | 
+action\_result\.data\.\*\.employeeHireDate | string | 
+action\_result\.data\.\*\.employeeId | string | 
+action\_result\.data\.\*\.employeeOrgData | string | 
+action\_result\.data\.\*\.employeeType | string | 
+action\_result\.data\.\*\.externalUserState | string | 
+action\_result\.data\.\*\.externalUserStateChangeDateTime | string | 
+action\_result\.data\.\*\.faxNumber | string | 
 action\_result\.data\.\*\.givenName | string | 
 action\_result\.data\.\*\.id | string |  `user id` 
+action\_result\.data\.\*\.identities\.\*\.issuer | string | 
+action\_result\.data\.\*\.identities\.\*\.issuerAssignedId | string | 
+action\_result\.data\.\*\.identities\.\*\.signInType | string | 
+action\_result\.data\.\*\.isResourceAccount | string | 
 action\_result\.data\.\*\.jobTitle | string | 
+action\_result\.data\.\*\.legalAgeGroupClassification | string | 
 action\_result\.data\.\*\.mail | string | 
+action\_result\.data\.\*\.mailNickname | string | 
 action\_result\.data\.\*\.mobilePhone | string | 
 action\_result\.data\.\*\.officeLocation | string | 
+action\_result\.data\.\*\.onPremisesDistinguishedName | string | 
+action\_result\.data\.\*\.onPremisesDomainName | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute1 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute10 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute11 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute12 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute13 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute14 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute15 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute2 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute3 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute4 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute5 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute6 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute7 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute8 | string | 
+action\_result\.data\.\*\.onPremisesExtensionAttributes\.extensionAttribute9 | string | 
+action\_result\.data\.\*\.onPremisesImmutableId | string | 
+action\_result\.data\.\*\.onPremisesLastSyncDateTime | string | 
+action\_result\.data\.\*\.onPremisesSamAccountName | string | 
+action\_result\.data\.\*\.onPremisesSecurityIdentifier | string | 
+action\_result\.data\.\*\.onPremisesSyncEnabled | string | 
+action\_result\.data\.\*\.onPremisesUserPrincipalName | string | 
+action\_result\.data\.\*\.passwordPolicies | string | 
+action\_result\.data\.\*\.passwordProfile | string | 
+action\_result\.data\.\*\.postalCode | string | 
+action\_result\.data\.\*\.preferredDataLocation | string | 
 action\_result\.data\.\*\.preferredLanguage | string | 
+action\_result\.data\.\*\.provisionedPlans\.\*\.capabilityStatus | string | 
+action\_result\.data\.\*\.provisionedPlans\.\*\.provisioningStatus | string | 
+action\_result\.data\.\*\.provisionedPlans\.\*\.service | string | 
+action\_result\.data\.\*\.refreshTokensValidFromDateTime | string | 
+action\_result\.data\.\*\.showInAddressList | string | 
+action\_result\.data\.\*\.signInSessionsValidFromDateTime | string | 
+action\_result\.data\.\*\.state | string | 
+action\_result\.data\.\*\.streetAddress | string | 
 action\_result\.data\.\*\.surname | string | 
+action\_result\.data\.\*\.usageLocation | string | 
 action\_result\.data\.\*\.userPrincipalName | string | 
+action\_result\.data\.\*\.userType | string | 
 action\_result\.summary\.num\_members | numeric |  `user id` 
 action\_result\.summary\.num\_users | numeric | 
 action\_result\.message | string | 

@@ -52,5 +52,7 @@ def display_view(provides, all_app_runs, context):
         return_page = "msadgraph_get_group.html"
     if provides == "list group members":
         return_page = "msadgraph_list_group_members.html"
+    if provides == "list user devices":
+        return_page = "msadgraph_list_user_devices.html"
 
     return return_page
