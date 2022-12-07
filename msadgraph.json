@@ -1,7 +1,7 @@
 {
     "appid": "f2a239df-acb2-47d6-861c-726a435cfe76",
     "name": "MS Graph for Active Directory",
-    "description": "Connects to Microsoft Active Directory using MS Graph REST API services",
+    "description": "Connects to Microsoft Active Directory using MS Graph REST API services to support various generic and investigative actions",
     "type": "identity management",
     "product_vendor": "Microsoft",
     "logo": "logo_msadgraph.svg",
@@ -10,20 +10,20 @@
     "product_version_regex": ".*",
     "publisher": "Splunk",
     "contributors": [
-      {
-        "name": "Mathieu A. Cormier"
-      }
+        {
+            "name": "Mathieu A. Cormier"
+        }
     ],
     "license": "Copyright (c) 2022 Splunk Inc.",
-    "app_version": "1.0.5",
+    "app_version": "1.2.0",
     "python_version": "3",
     "utctime_updated": "2022-04-18T12:59:04.000000Z",
     "package_name": "phantom_msadgraph",
     "main_module": "msadgraph_connector.py",
-    "min_phantom_version": "5.3.0",
+    "min_phantom_version": "5.3.5",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud 2022-03-24, API Version: 1.0"
+        "Cloud 2022-12-5, API Version: 1.0"
     ],
     "app_wizard_version": "1.0.0",
     "rest_handler": "msadgraph_connector._handle_rest_request",
@@ -33,6 +33,18 @@
             "data_type": "string",
             "required": true,
             "order": 0
+        },
+        "client_id": {
+            "description": "Application ID",
+            "data_type": "string",
+            "required": true,
+            "order": 2
+        },
+        "client_secret": {
+            "description": "Client Secret",
+            "data_type": "password",
+            "required": true,
+            "order": 3
         },
         "region": {
             "data_type": "string",
@@ -46,18 +58,6 @@
                 "Germany",
                 "China (21Vianet)"
             ]
-        },
-        "client_id": {
-            "description": "Application ID",
-            "data_type": "string",
-            "required": true,
-            "order": 2
-        },
-        "client_secret": {
-            "description": "Client Secret",
-            "data_type": "password",
-            "required": true,
-            "order": 3
         },
         "admin_access_required": {
             "description": "Admin Access Required",
@@ -132,14 +132,14 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.expand_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "manager",
                         "memberOf"
                     ]
@@ -366,8 +366,7 @@
                     "data_path": "action_result.data.*.otherMails",
                     "data_type": "string",
                     "example_values": [
-                        "user.test@outlook.com",
-                        "user@test.us"
+                        "user.test@outlook.com"
                     ],
                     "contains": [
                         "email"
@@ -673,7 +672,6 @@
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
-                        "Successfully reset user password",
                         "Status: Successfully reset user password"
                     ]
                 },
@@ -749,7 +747,9 @@
                 {
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
-                    "example_value": "https://graph.microsoft.com/v1.0/$metadata#Edm.Boolean"
+                    "example_values": [
+                        "https://graph.microsoft.com/v1.0/$metadata#Edm.Boolean"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.odata.metadata",
@@ -976,6 +976,330 @@
             "versions": "EQ(*)"
         },
         {
+            "action": "list user devices",
+            "description": "List devices for a specified user",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
+            "type": "investigate",
+            "identifier": "list_user_devices",
+            "read_only": true,
+            "parameters": {
+                "user_id": {
+                    "description": "User ID - can be user principal name or object ID",
+                    "data_type": "string",
+                    "primary": true,
+                    "required": true,
+                    "order": 0,
+                    "contains": [
+                        "user id"
+                    ]
+                },
+                "select_string": {
+                    "description": "Select string to get additional user properties. Separate multiple values with commas",
+                    "data_type": "string",
+                    "order": 1
+                }
+            },
+            "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.select_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "displayName"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.user_id",
+                    "data_type": "string",
+                    "example_values": [
+                        "user@test.onmicrosoft.com"
+                    ],
+                    "contains": [
+                        "user id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.@odata.type",
+                    "data_type": "string",
+                    "example_values": [
+                        "#microsoft.graph.device"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.accountEnabled",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.alternativeSecurityIds.*.identityProvider",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.alternativeSecurityIds.*.key",
+                    "data_type": "string",
+                    "example_values": [
+                        "WAA1ADAAOQA6ADwAUwBIAEEAMQAtAFQAUAAtAFAAVQBCAEsARQBZAD4AOQA5AEEARQAwADgAOABDAEUANAA1ADgAMABCADcAQgBGAEEARQA2ADEAQQBCADYANAA3ADYANgA5ADUAOAAzAEQANABFAEYARQA5ADYAOAAyAHkAcQBSAEIANwBrAGEAMQA4AEoATAByACsAegB4AE8AYwB6AE8AYgBNAFEANQBZAEgAbgB0AFQAdgBOAG0AbgA5AEQAZQA2AFgAVQBUAGgAcwBFAD0A"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.alternativeSecurityIds.*.type",
+                    "data_type": "numeric",
+                    "example_values": [
+                        2
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.approximateLastSignInDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2019-09-26T03:42:15Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.complianceExpirationDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.createdDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2019-09-26T03:42:15Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.deletedDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deviceCategory",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deviceId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deviceMetadata",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deviceOwnership",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deviceVersion",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.data.*.displayName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.domainName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.enrollmentProfileName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.enrollmentType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute1",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute10",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute11",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute12",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute13",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute14",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute15",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute2",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute3",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute4",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute5",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute6",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute7",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute8",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.extensionAttributes.extensionAttribute9",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.externalSourceName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.isCompliant",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.isManaged",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.isRooted",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.managementType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.manufacturer",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.mdmAppId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.model",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSyncEnabled",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.operatingSystem",
+                    "data_type": "string",
+                    "example_values": [
+                        "Windows"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.operatingSystemVersion",
+                    "data_type": "string",
+                    "example_values": [
+                        "10.0.18362.0"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.profileType",
+                    "data_type": "string",
+                    "example_values": [
+                        "RegisteredDevice"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.registrationDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2019-09-26T03:42:15Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.sourceType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.trustType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Workplace"
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "Successfully retrieved owned devices for user test@user.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        "Status: Successfully retrieved owned devices for user test@user.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                }
+            ],
+            "render": {
+                "type": "custom",
+                "title": "Owned Devices",
+                "view": "msadgraph_view.display_view"
+            },
+            "versions": "EQ(*)"
+        },
+        {
             "action": "list user attributes",
             "description": "List attributes for all or a specified user",
             "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.",
@@ -1021,14 +1345,14 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.expand_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "manager",
                         "memberOf"
                     ]
@@ -1054,7 +1378,9 @@
                 {
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
-                    "example_value": "https://graph.microsoft.com/v1.0/$metadata#users/$entity"
+                    "example_values": [
+                        "https://graph.microsoft.com/v1.0/$metadata#users/$entity"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.accountEnabled",
@@ -1149,7 +1475,7 @@
                     "data_path": "action_result.data.*.displayName",
                     "data_type": "string",
                     "example_values": [
-                        "Luke Skywalker"
+                        "Test User"
                     ]
                 },
                 {
@@ -1167,7 +1493,9 @@
                 {
                     "data_path": "action_result.data.*.id",
                     "data_type": "string",
-                    "example_value": "7d55d7e6-cf5a-4dd2-a176-57a3c33b7fa9",
+                    "example_values": [
+                        "7d55d7e6-cf5a-4dd2-a176-57a3c33b7fa9"
+                    ],
                     "contains": [
                         "user id"
                     ]
@@ -1175,17 +1503,23 @@
                 {
                     "data_path": "action_result.data.*.identities.*.issuer",
                     "data_type": "string",
-                    "example_value": "phantomengineering2.onmicrosoft.com"
+                    "example_values": [
+                        "test.onmicrosoft.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.identities.*.issuerAssignedId",
                     "data_type": "string",
-                    "example_value": "test2@phantomengineering2.onmicrosoft.com"
+                    "example_values": [
+                        "test2@user.onmicrosoft.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.identities.*.signInType",
                     "data_type": "string",
-                    "example_value": "userPrincipalName"
+                    "example_values": [
+                        "userPrincipalName"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.immutableId",
@@ -1227,8 +1561,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.mobilePhone",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.objectId",
@@ -1247,7 +1580,9 @@
                 {
                     "data_path": "action_result.data.*.odata.metadata",
                     "data_type": "string",
-                    "example_value": "https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#directoryObjects/@Element"
+                    "example_values": [
+                        "https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#directoryObjects/@Element"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.odata.type",
@@ -1258,8 +1593,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.officeLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesDistinguishedName",
@@ -1385,7 +1719,7 @@
                     "data_path": "action_result.data.*.thumbnailPhoto@odata.mediaEditLink",
                     "data_type": "string",
                     "example_values": [
-                        "directoryObjects/59f51194-1998-4932-a8ac-468e59374edc/Microsoft.DirectoryServices.User/thumbnailPhoto"
+                        "directoryObjects/59f12345-1998-4932-a8ac-468e59374edc/Microsoft.DirectoryServices.User/thumbnailPhoto"
                     ]
                 },
                 {
@@ -1540,18 +1874,18 @@
                 },
                 {
                     "data_path": "action_result.data.*.classification",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.createdDateTime",
                     "data_type": "string",
-                    "example_value": "2021-03-25T18:40:53Z"
+                    "example_values": [
+                        "2021-03-25T18:40:53Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.deletedDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.deletionTimestamp",
@@ -1577,8 +1911,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.expirationDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.id",
@@ -1592,8 +1925,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.isAssignableToRole",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.lastDirSyncTime",
@@ -1626,13 +1958,11 @@
                 },
                 {
                     "data_path": "action_result.data.*.membershipRule",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.membershipRuleProcessingState",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.objectType",
@@ -1657,8 +1987,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesNetBiosName",
@@ -1674,18 +2003,15 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesSyncEnabled",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredDataLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredLanguage",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.proxyAddresses",
@@ -1697,7 +2023,9 @@
                 {
                     "data_path": "action_result.data.*.renewedDateTime",
                     "data_type": "string",
-                    "example_value": "2021-03-25T18:40:53Z"
+                    "example_values": [
+                        "2021-03-25T18:40:53Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.securityEnabled",
@@ -1710,17 +2038,20 @@
                 {
                     "data_path": "action_result.data.*.securityIdentifier",
                     "data_type": "string",
-                    "example_value": "S-1-12-1-294681889-1319597617-672379543-28952017"
+                    "example_values": [
+                        "S-1-12-1-294681889-1319597617-672379543-28952017"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.theme",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.visibility",
                     "data_type": "string",
-                    "example_value": "Private"
+                    "example_values": [
+                        "Private"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.status",
@@ -2013,14 +2344,14 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.expand_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "members"
                     ]
                 },
@@ -2034,18 +2365,18 @@
                 },
                 {
                     "data_path": "action_result.data.*.classification",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.createdDateTime",
                     "data_type": "string",
-                    "example_value": "2021-03-25T18:40:53Z"
+                    "example_values": [
+                        "2021-03-25T18:40:53Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.deletedDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.deletionTimestamp",
@@ -2075,8 +2406,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.expirationDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.id",
@@ -2090,8 +2420,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.isAssignableToRole",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.lastDirSyncTime",
@@ -2124,13 +2453,11 @@
                 },
                 {
                     "data_path": "action_result.data.*.membershipRule",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.membershipRuleProcessingState",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.objectType",
@@ -2155,8 +2482,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesNetBiosName",
@@ -2172,18 +2498,15 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesSyncEnabled",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredDataLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredLanguage",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.proxyAddresses",
@@ -2195,7 +2518,9 @@
                 {
                     "data_path": "action_result.data.*.renewedDateTime",
                     "data_type": "string",
-                    "example_value": "2021-03-25T18:40:53Z"
+                    "example_values": [
+                        "2021-03-25T18:40:53Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.securityEnabled",
@@ -2208,17 +2533,20 @@
                 {
                     "data_path": "action_result.data.*.securityIdentifier",
                     "data_type": "string",
-                    "example_value": "S-1-12-1-294681889-1319597617-672379543-28952017"
+                    "example_values": [
+                        "S-1-12-1-294681889-1319597617-672379543-28952017"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.theme",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.visibility",
                     "data_type": "string",
-                    "example_value": "Private"
+                    "example_values": [
+                        "Private"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.num_groups",
@@ -2313,14 +2641,14 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.expand_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "members"
                     ]
                 },
@@ -2335,22 +2663,24 @@
                 {
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
-                    "example_value": "https://graph.microsoft.com/v1.0/$metadata#groups(id,displayName)/$entity"
+                    "example_values": [
+                        "https://graph.microsoft.com/v1.0/$metadata#groups(id,displayName)/$entity"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.classification",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.createdDateTime",
                     "data_type": "string",
-                    "example_value": "2020-08-05T11:59:49Z"
+                    "example_values": [
+                        "2020-08-05T11:59:49Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.deletedDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.deletionTimestamp",
@@ -2378,8 +2708,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.expirationDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.id",
@@ -2395,8 +2724,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.isAssignableToRole",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.lastDirSyncTime",
@@ -2431,13 +2759,11 @@
                 },
                 {
                     "data_path": "action_result.data.*.membershipRule",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.membershipRuleProcessingState",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.objectType",
@@ -2469,8 +2795,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesNetBiosName",
@@ -2486,18 +2811,15 @@
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesSyncEnabled",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredDataLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredLanguage",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.proxyAddresses",
@@ -2509,7 +2831,9 @@
                 {
                     "data_path": "action_result.data.*.renewedDateTime",
                     "data_type": "string",
-                    "example_value": "2020-08-05T11:59:49Z"
+                    "example_values": [
+                        "2020-08-05T11:59:49Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.securityEnabled",
@@ -2524,23 +2848,30 @@
                 {
                     "data_path": "action_result.data.*.securityIdentifier",
                     "data_type": "string",
-                    "example_value": "S-1-12-1-909260723-1083662375-1952945031-2402852259"
+                    "example_values": [
+                        "S-1-12-1-909260723-1083662375-1952945031-2402852259"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.theme",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.visibility",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.summary.display_name",
                     "data_type": "string",
                     "example_values": [
                         "o365group"
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "Successfully retrieved group 104d4576-1544-48b5-bb7e-9f8f871aa824"
                     ]
                 },
                 {
@@ -2629,14 +2960,14 @@
                 {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "displayName"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.expand_string",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "manager"
                     ]
                 },
@@ -2651,12 +2982,96 @@
                 {
                     "data_path": "action_result.data.*.@odata.type",
                     "data_type": "string",
-                    "example_value": "#microsoft.graph.user"
+                    "example_values": [
+                        "#microsoft.graph.user"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.accountEnabled",
                     "data_type": "boolean",
-                    "example_value": true
+                    "example_values": [
+                        true
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.ageGroup",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.assignedLicenses.*.skuId",
+                    "data_type": "string",
+                    "example_values": [
+                        "189a915c-fe4f-4ffa-bde4-85b9628d07a0"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.assignedPlans.*.assignedDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-11-03T15:12:28Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.assignedPlans.*.capabilityStatus",
+                    "data_type": "string",
+                    "example_values": [
+                        "Deleted"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.assignedPlans.*.service",
+                    "data_type": "string",
+                    "example_values": [
+                        "AADPremiumService"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.assignedPlans.*.servicePlanId",
+                    "data_type": "string",
+                    "example_values": [
+                        "eec0eb4f-6444-4f95-aba0-50c24d67f998"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.city",
+                    "data_type": "string",
+                    "example_values": [
+                        "Palo Alto"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.companyName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.consentProvidedForMinor",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.country",
+                    "data_type": "string",
+                    "example_values": [
+                        "US"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.createdDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2016-06-09T18:33:27Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.creationType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.deletedDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.department",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.displayName",
@@ -2668,9 +3083,36 @@
                     "column_order": 0
                 },
                 {
+                    "data_path": "action_result.data.*.employeeHireDate",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.employeeId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.employeeOrgData",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.employeeType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.externalUserState",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.externalUserStateChangeDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.faxNumber",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.givenName",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.id",
@@ -2683,39 +3125,249 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.jobTitle",
+                    "data_path": "action_result.data.*.identities.*.issuer",
                     "data_type": "string",
-                    "example_value": ""
+                    "example_values": [
+                        "test.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.identities.*.issuerAssignedId",
+                    "data_type": "string",
+                    "example_values": [
+                        "test@user.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.identities.*.signInType",
+                    "data_type": "string",
+                    "example_values": [
+                        "userPrincipalName"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.isResourceAccount",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.jobTitle",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.legalAgeGroupClassification",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.mail",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.mailNickname",
                     "data_type": "string",
-                    "example_value": ""
+                    "example_values": [
+                        "User"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.mobilePhone",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.officeLocation",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesDistinguishedName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesDomainName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute1",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute10",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute11",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute12",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute13",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute14",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute15",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute2",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute3",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute4",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute5",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute6",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute7",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute8",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesExtensionAttributes.extensionAttribute9",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesImmutableId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesLastSyncDateTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSamAccountName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSecurityIdentifier",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesSyncEnabled",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.onPremisesUserPrincipalName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.passwordPolicies",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.passwordProfile",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.postalCode",
                     "data_type": "string",
-                    "example_value": ""
+                    "example_values": [
+                        "94303"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.preferredDataLocation",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.preferredLanguage",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.provisionedPlans.*.capabilityStatus",
                     "data_type": "string",
-                    "example_value": ""
+                    "example_values": [
+                        "Enabled"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.provisionedPlans.*.provisioningStatus",
+                    "data_type": "string",
+                    "example_values": [
+                        "Success"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.provisionedPlans.*.service",
+                    "data_type": "string",
+                    "example_values": [
+                        "MicrosoftCommunicationsOnline"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.refreshTokensValidFromDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-08-08T13:00:58Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.showInAddressList",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.signInSessionsValidFromDateTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-08-08T13:00:58Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.state",
+                    "data_type": "string",
+                    "example_values": [
+                        "CA"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.streetAddress",
+                    "data_type": "string",
+                    "example_values": [
+                        "2479 E. Bayshore Rd."
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.surname",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.usageLocation",
                     "data_type": "string",
-                    "example_value": ""
+                    "example_values": [
+                        "US"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.userPrincipalName",
                     "data_type": "string",
-                    "example_value": "ews_retest@phantomengineering2.onmicrosoft.com"
+                    "example_values": [
+                        "ews_retest@test.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.userType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Member"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.num_members",
@@ -2730,7 +3382,9 @@
                 {
                     "data_path": "action_result.summary.num_users",
                     "data_type": "numeric",
-                    "example_value": 3
+                    "example_values": [
+                        3
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -2827,7 +3481,9 @@
                 {
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
-                    "example_value": "https://graph.microsoft.com/v1.0/$metadata#directoryObjects"
+                    "example_values": [
+                        "https://graph.microsoft.com/v1.0/$metadata#directoryObjects"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.user_in_group",
@@ -2836,145 +3492,156 @@
                 {
                     "data_path": "action_result.data.*.value.*.@odata.type",
                     "data_type": "string",
-                    "example_value": "#microsoft.graph.group"
+                    "example_values": [
+                        "#microsoft.graph.group"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.classification",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.createdDateTime",
                     "data_type": "string",
-                    "example_value": "2022-02-25T12:05:22Z"
+                    "example_values": [
+                        "2022-02-25T12:05:22Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.deletedDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.description",
                     "data_type": "string",
-                    "example_value": "Test group for MSGraph"
+                    "example_values": [
+                        "Test group for MSGraph"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.displayName",
                     "data_type": "string",
-                    "example_value": "Test group for MSGraph"
+                    "example_values": [
+                        "Test group for MSGraph"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.expirationDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.id",
                     "data_type": "string",
-                    "example_value": "49233413-24c6-4516-a9e1-4d5f87fe34fd",
+                    "example_values": [
+                        "49233413-24c6-4516-a9e1-4d5f87fe34fd"
+                    ],
                     "contains": [
                         "user id"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.isAssignableToRole",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.mail",
                     "data_type": "string",
-                    "example_value": "TestgroupforMSGraph@phantomengineering2.onmicrosoft.com"
+                    "example_values": [
+                        "test@user.onmicrosoft.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.mailEnabled",
                     "data_type": "boolean",
-                    "example_value": true
+                    "example_values": [
+                        true
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.mailNickname",
                     "data_type": "string",
-                    "example_value": "TestgroupforMSGraph"
+                    "example_values": [
+                        "TestgroupforMSGraph"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.membershipRule",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.membershipRuleProcessingState",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesDomainName",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesLastSyncDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesNetBiosName",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesSamAccountName",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesSecurityIdentifier",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.onPremisesSyncEnabled",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.preferredDataLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.preferredLanguage",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.renewedDateTime",
                     "data_type": "string",
-                    "example_value": "2022-02-25T12:05:22Z"
+                    "example_values": [
+                        "2022-02-25T12:05:22Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.securityEnabled",
                     "data_type": "boolean",
-                    "example_value": true
+                    "example_values": [
+                        true
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.securityIdentifier",
                     "data_type": "string",
-                    "example_value": "S-1-12-1-1227043859-1159079110-1598939561-4248108679"
+                    "example_values": [
+                        "S-1-12-1-1227043859-1159079110-1598939561-4248108679"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value.*.theme",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value.*.visibility",
                     "data_type": "string",
-                    "example_value": "Private"
+                    "example_values": [
+                        "Private"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.message",
                     "data_type": "string",
-                    "example_value": "User is member of group"
+                    "example_values": [
+                        "User is member of group"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.user_in_group",
@@ -3026,8 +3693,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.deletedDateTime",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.deletionTimestamp",
@@ -3187,7 +3853,7 @@
         "wheel": [
             {
                 "module": "Django",
-                "input_file": "wheels/py3/Django-3.2.13-py3-none-any.whl"
+                "input_file": "wheels/py3/Django-3.2.16-py3-none-any.whl"
             },
             {
                 "module": "asgiref",
@@ -3199,7 +3865,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/shared/certifi-2021.10.8-py2.py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.9.24-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -3211,7 +3877,7 @@
             },
             {
                 "module": "pytz",
-                "input_file": "wheels/shared/pytz-2021.3-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/pytz-2022.6-py2.py3-none-any.whl"
             },
             {
                 "module": "requests",
@@ -3219,11 +3885,11 @@
             },
             {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.1-py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
             },
             {
                 "module": "sqlparse",
-                "input_file": "wheels/py3/sqlparse-0.4.2-py3-none-any.whl"
+                "input_file": "wheels/py3/sqlparse-0.4.3-py3-none-any.whl"
             },
             {
                 "module": "typing_extensions",
@@ -3231,7 +3897,7 @@
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.8-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.13-py2.py3-none-any.whl"
             }
         ]
     },
@@ -3239,11 +3905,11 @@
         "wheel": [
             {
                 "module": "Django",
-                "input_file": "wheels/py3/Django-3.2.13-py3-none-any.whl"
+                "input_file": "wheels/py3/Django-3.2.16-py3-none-any.whl"
             },
             {
                 "module": "asgiref",
-                "input_file": "wheels/py3/asgiref-3.5.0-py3-none-any.whl"
+                "input_file": "wheels/py3/asgiref-3.5.2-py3-none-any.whl"
             },
             {
                 "module": "beautifulsoup4",
@@ -3251,7 +3917,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/shared/certifi-2021.10.8-py2.py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.9.24-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -3263,7 +3929,7 @@
             },
             {
                 "module": "pytz",
-                "input_file": "wheels/shared/pytz-2021.3-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/pytz-2022.6-py2.py3-none-any.whl"
             },
             {
                 "module": "requests",
@@ -3271,15 +3937,15 @@
             },
             {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.1-py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
             },
             {
                 "module": "sqlparse",
-                "input_file": "wheels/py3/sqlparse-0.4.2-py3-none-any.whl"
+                "input_file": "wheels/py3/sqlparse-0.4.3-py3-none-any.whl"
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.8-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.13-py2.py3-none-any.whl"
             }
         ]
     }

@@ -24,6 +24,7 @@ import sys
 import time
 import urllib.parse as urlparse
 
+import encryption_helper
 import phantom.app as phantom
 import requests
 from bs4 import BeautifulSoup
@@ -101,6 +102,57 @@ def _get_state_file_path(asset_id):
     return output_file_path
 
 
+def _decrypt_state(state, salt):
+    """
+    Decrypts the state.
+    :param state: state dictionary
+    :param salt: salt used for decryption
+    :return: decrypted state
+    """
+
+    if not state.get("is_encrypted"):
+        return state
+
+    access_token = state.get("token", {}).get("access_token")
+    if access_token:
+        state["token"]["access_token"] = encryption_helper.decrypt(access_token, salt)
+
+    refresh_token = state.get("token", {}).get("refresh_token")
+    if refresh_token:
+        state["token"]["refresh_token"] = encryption_helper.decrypt(refresh_token, salt)
+
+    code = state.get("code")
+    if code:
+        state["code"] = encryption_helper.decrypt(code, salt)
+
+    return state
+
+
+def _encrypt_state(state, salt):
+    """
+    Encrypts the state.
+    :param state: state dictionary
+    :param salt: salt used for encryption
+    :return: encrypted state
+    """
+
+    access_token = state.get("token", {}).get("access_token")
+    if access_token:
+        state["token"]["access_token"] = encryption_helper.encrypt(access_token, salt)
+
+    refresh_token = state.get("token", {}).get("refresh_token")
+    if refresh_token:
+        state["token"]["refresh_token"] = encryption_helper.encrypt(refresh_token, salt)
+
+    code = state.get("code")
+    if code:
+        state["code"] = encryption_helper.encrypt(code, salt)
+
+    state["is_encrypted"] = True
+
+    return state
+
+
 def _load_app_state(asset_id, app_connector=None):
     """ This function is used to load the current state file.
 
@@ -123,10 +175,17 @@ def _load_app_state(asset_id, app_connector=None):
             state = json.load(state_file)
     except Exception as e:
         if app_connector:
-            app_connector.debug_print(f'In _load_app_state: Exception: {str(e)}')
+            app_connector.error_print(f'In _load_app_state: Exception: {str(e)}')
 
     if app_connector:
         app_connector.debug_print('Loaded state: ', state)
+
+    try:
+        state = _decrypt_state(state, asset_id)
+    except Exception as e:
+        if app_connector:
+            app_connector.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERROR, str(e)))
+        state = {}
 
     return state
 
@@ -148,6 +207,13 @@ def _save_app_state(state, asset_id, app_connector):
 
     state_file_path = _get_state_file_path(asset_id)
 
+    try:
+        state = _encrypt_state(state, asset_id)
+    except Exception as e:
+        if app_connector:
+            app_connector.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERROR, str(e)))
+        return phantom.APP_ERROR
+
     if app_connector:
         app_connector.debug_print('Saving state: ', state)
 
@@ -156,7 +222,7 @@ def _save_app_state(state, asset_id, app_connector):
             json.dump(state, state_file)
     except Exception as e:
         if app_connector:
-            app_connector.debug_print(f'Unable to save state file: {str(e)}')
+            app_connector.error_print(f'Unable to save state file: {str(e)}')
 
     return phantom.APP_SUCCESS
 
@@ -239,7 +305,7 @@ def _handle_rest_request(request, path_parts):
             if not _is_valid_asset_id(asset_id):
                 return HttpResponse("Error: Invalid asset_id", content_type="text/plain", status=400)
             auth_status_file_path = _get_auth_status_file_path(asset_id)
-            auth_status_file_path.touch(mode='0664', exist_ok=True)
+            auth_status_file_path.touch(mode=664, exist_ok=True)
             try:
                 uid = pwd.getpwnam('apache').pw_uid
                 gid = grp.getgrnam('phantom').gr_gid
@@ -289,29 +355,67 @@ class MSADGraphConnector(BaseConnector):
         self._admin_access_required = None
         self._admin_access_granted = None
 
+    def load_state(self):
+        """
+        Load the contents of the state file to the state dictionary and decrypt it.
+        :return: loaded state
+        """
+        state = super().load_state()
+        if not isinstance(state, dict):
+            self.debug_print("Reseting the state file with the default format")
+            state = {
+                "app_version": self.get_app_json().get('app_version')
+            }
+            return state
+        try:
+            state = _decrypt_state(state, self.get_asset_id())
+        except Exception as e:
+            self.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERROR, str(e)))
+            state = None
+
+        return state
+
+    def save_state(self, state):
+        """
+        Encrypt and save the current state dictionary to the the state file.
+        :param state: state dictionary
+        :return: status
+        """
+        try:
+            state = _encrypt_state(state, self.get_asset_id())
+        except Exception as e:
+            self.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERROR, str(e)))
+            return phantom.APP_ERROR
+
+        return super().save_state(state)
+
     def _get_error_message_from_exception(self, e):
-        """ This function is used to get appropriate error message from the exception.
+        """
+        Get appropriate error message from the exception.
         :param e: Exception object
         :return: error message
         """
-        error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
-        error_code = "Error code unavailable"
+        error_code = None
+        error_message = MS_AZURE_ERROR_MESSAGE_UNKNOWN
+
+        self.error_print("Traceback: ", e)
+
         try:
-            if e.args:
+            if hasattr(e, "args"):
                 if len(e.args) > 1:
                     error_code = e.args[0]
-                    error_msg = e.args[1]
+                    error_message = e.args[1]
                 elif len(e.args) == 1:
-                    error_code = "Error code unavailable"
-                    error_msg = e.args[0]
-            else:
-                error_code = "Error code unavailable"
-                error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
+                    error_message = e.args[0]
         except Exception:
-            error_code = "Error code unavailable"
-            error_msg = "Unknown error occurred. Please check the asset configuration and|or action parameters."
+            self.error_print("Exception occurred while getting error code and meesage")
 
-        return f"Error Code: {error_code}. Error Message: {error_msg}"
+        if not error_code:
+            error_text = "Error Message: {}".format(error_message)
+        else:
+            error_text = "Error Code: {}. Error Message: {}".format(error_code, error_message)
+
+        return error_text
 
     def _format_params_to_query(self, parameters):
         """If you just pass with the params argument into the request, commas will be encoded to %2C
@@ -368,7 +472,7 @@ class MSADGraphConnector(BaseConnector):
             split_lines = error_text.split('\n')
             split_lines = [x.strip() for x in split_lines if x.strip()]
             error_text = '\n'.join(split_lines)
-        except Exception:
+        except:
             error_text = "Cannot parse error details"
 
         message = f"Status Code: {status_code}. Data from server:\n{error_text}\n"
@@ -407,9 +511,12 @@ class MSADGraphConnector(BaseConnector):
         if isinstance(resp_json.get('error', {}), dict):
             if resp_json.get('error', {}).get('message'):
                 error_message = resp_json['error']['message']
-                message = f"Error from server. Status Code: {response.status_code} Data from server: {error_message}"
+                message = "Error from server. Status Code: {0} Data from server: {1}".format(response.status_code,
+                                                                                             error_message)
+        else:
             error_message = resp_json['error']
-            message = f"Error from server. Status Code: {response.status_code} Data from server: {error_message}"
+            message = "Error from server. Status Code: {0} Data from server: {1}".format(response.status_code,
+                                                                                         error_message)
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -541,7 +648,7 @@ class MSADGraphConnector(BaseConnector):
             return RetVal(action_result.set_status(phantom.APP_ERROR, f"Invalid method: {method}"), resp_json)
 
         try:
-            r = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params)
+            r = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params, timeout=DEFAULT_TIMEOUT)
         except Exception as e:
             error_message = f"Error Connecting to server. Details: {self._get_error_message_from_exception(e)}"
             return RetVal(action_result.set_status(phantom.APP_ERROR, error_message), r)
@@ -604,7 +711,7 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
         ret_val = self._get_token(action_result)
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         self._state['admin_consent'] = True
@@ -919,6 +1026,32 @@ class MSADGraphConnector(BaseConnector):
             summary['status'] = "Successfully retrieved user attributes"
 
         self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
+        return action_result.set_status(phantom.APP_SUCCESS)
+
+    def _handle_list_user_devices(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        user_id = param['user_id']
+
+        parameters = dict()
+        select_string = param.get('select_string')
+        if select_string:
+            select_string = select_string.strip(',').split(',')
+            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+
+        endpoint = f'/users/{user_id}/ownedDevices'
+        endpoint += '?{}'.format(self._format_params_to_query(parameters))
+
+        ret_val = self._handle_pagination(action_result, endpoint)
+
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        summary = action_result.update_summary({})
+        summary['status'] = "Successfully retrieved owned devices for user {}".format(user_id)
+
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_set_user_attribute(self, param):
@@ -1242,7 +1375,7 @@ class MSADGraphConnector(BaseConnector):
                 parsed_url = urlparse.urlparse(response.get(MS_AZURE_NEXT_LINK_STRING))
                 try:
                     params['$skiptoken'] = urlparse.parse_qs(parsed_url.query).get('$skiptoken')[0]
-                except Exception:
+                except:
                     self.debug_print(f"odata.nextLink is {response.get(MS_AZURE_NEXT_LINK_STRING)}")
                     self.debug_print("Error occurred while extracting skiptoken from the odata.nextLink")
                     break
@@ -1308,6 +1441,9 @@ class MSADGraphConnector(BaseConnector):
         elif action_id == 'generate_token':
             ret_val = self._handle_generate_token(param)
 
+        elif action_id == 'list_user_devices':
+            ret_val = self._handle_list_user_devices(param)
+
         return ret_val
 
     def initialize(self):
@@ -1319,6 +1455,9 @@ class MSADGraphConnector(BaseConnector):
         """
 
         self._state = self.load_state()
+
+        if self._state is None:
+            return self.set_status(phantom.APP_ERROR, MS_AZURE_STATE_FILE_CORRUPT_ERROR)
 
         # get the asset config
         config = self.get_config()

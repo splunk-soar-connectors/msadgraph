@@ -49,6 +49,7 @@ MS_AZURE_BASE_URL_NOT_FOUND_MESSAGE = 'SOAR Base URL not found in System Setting
 MS_AZURE_HTML_ERROR = 'Bad Request Bad Request - Invalid URL HTTP Error 400. The request URL is invalid.'
 MS_AZURE_NEXT_LINK_STRING = 'odata.nextLink'
 MS_AZURE_PAGE_SIZE = 999
+MS_AZURE_ERROR_MESSAGE_UNKNOWN = "Unknown error occurred. Please check the asset configuration and|or action parameters."
 
 # For authorization code
 TC_FILE = "oauth_task.out"
@@ -71,3 +72,11 @@ Directory.AccessAsUser.All User.ManageIdentities.All GroupMember.ReadWrite.All R
 MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE = 'If authorization URL fails to communicate with your SOAR instance, check whether you have:  '\
                                 ' 1. Specified the Web Redirect URL of your App -- The Redirect URL should be <POST URL>/result . '\
                                 ' 2. Configured the base URL of your SOAR Instance at Administration -> Company Settings -> Info'
+
+
+MS_AZURE_ENCRYPTION_ERROR = "Error occurred while encrypting the state file"
+MS_AZURE_DECRYPTION_ERROR = "Error occurred while decrypting the state file"
+MS_AZURE_STATE_FILE_CORRUPT_ERROR = "Error occurred while loading the state file due to it's unexpected format. " \
+    "Resetting the state file with the default format. Please test the connectivity."
+
+DEFAULT_TIMEOUT = 30
