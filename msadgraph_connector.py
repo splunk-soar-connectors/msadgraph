@@ -198,7 +198,6 @@ def _save_app_state(state, asset_id, app_connector):
     :param app_connector: Object of app_connector class
     :return: status: phantom.APP_SUCCESS
     """
-
     asset_id = str(asset_id)
     if not _is_valid_asset_id(asset_id):
         if app_connector:
@@ -370,7 +369,8 @@ class MSADGraphConnector(BaseConnector):
         try:
             state = _decrypt_state(state, self.get_asset_id())
         except Exception as e:
-            self.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERROR, str(e)))
+            error_message = self._get_error_message_from_exception(e)
+            self.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERROR, error_message))
             state = None
 
         return state
@@ -384,10 +384,14 @@ class MSADGraphConnector(BaseConnector):
         try:
             state = _encrypt_state(state, self.get_asset_id())
         except Exception as e:
-            self.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERROR, str(e)))
+            error_message = self._get_error_message_from_exception(e)
+            self.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERROR, error_message))
             return phantom.APP_ERROR
 
         return super().save_state(state)
+
+    def _dump_error_log(self, error, message="Exception occurred."):
+        self.error_print(message, dump_object=error)
 
     def _get_error_message_from_exception(self, e):
         """
@@ -398,7 +402,7 @@ class MSADGraphConnector(BaseConnector):
         error_code = None
         error_message = MS_AZURE_ERROR_MESSAGE_UNKNOWN
 
-        self.error_print("Traceback: ", e)
+        self._dump_error_log(e)
 
         try:
             if hasattr(e, "args"):
@@ -680,13 +684,11 @@ class MSADGraphConnector(BaseConnector):
 
             if phantom.is_fail(ret_val):
                 return RetVal(action_result.get_status(), None)
-
         headers.update({
                 'Authorization': f'Bearer {self._access_token}',
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             })
-
         ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
 
         # If token is expired, generate a new token
@@ -826,9 +828,18 @@ class MSADGraphConnector(BaseConnector):
                 self.save_progress("Test Connectivity Failed")
                 return action_result.set_status(phantom.APP_ERROR)
 
+            if self._admin_access_required:
+                self.save_progress("Admin consent received")
+                self.save_progress(
+                    "Waiting for 30 seconds before generating token. If action fails with '403: AccessDenied' error, "
+                    "please check permissions and re-run the 'test connectivity' after some time.")
+                self.save_progress(
+                    "Admin consent is already received. You can mark 'Admin Consent Already Provided' to True, "
+                    "unless you make changes in the permissions.")
+                time.sleep(30)
+
         self.save_progress(MS_GENERATING_ACCESS_TOKEN_MESSAGE)
         ret_val = self._get_token(action_result)
-
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
@@ -1312,7 +1323,7 @@ class MSADGraphConnector(BaseConnector):
             data['scope'] = MS_AZURE_CODE_GENERATION_SCOPE
             data['redirect_uri'] = self._state.get('redirect_uri')
             auth_code = self._state.get('code', None)
-            if self._refresh_token:
+            if self._state.get(MS_AZURE_TOKEN_STRING, {}).get(MS_AZURE_REFRESH_TOKEN_STRING, None):
                 data['refresh_token'] = self._refresh_token
                 data['grant_type'] = 'refresh_token'
             elif auth_code:
@@ -1335,7 +1346,6 @@ class MSADGraphConnector(BaseConnector):
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
         self._access_token = resp_json.get(MS_AZURE_ACCESS_TOKEN_STRING, None)
         self._refresh_token = resp_json.get(MS_AZURE_REFRESH_TOKEN_STRING, None)
-        self.save_state(self._state)
 
         return phantom.APP_SUCCESS
 
@@ -1478,7 +1488,6 @@ class MSADGraphConnector(BaseConnector):
 
         # Save the state, this data is saved across actions and app upgrades
         self.save_state(self._state)
-        _save_app_state(self._state, self._asset_id, self)
         return phantom.APP_SUCCESS
 
 

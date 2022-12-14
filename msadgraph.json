@@ -332,8 +332,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.mobilePhone",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.objectType",
@@ -351,8 +350,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.officeLocation",
-                    "data_type": "string",
-                    "example_value": ""
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.onPremisesDistinguishedName",
