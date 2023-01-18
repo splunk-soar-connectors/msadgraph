@@ -34,7 +34,6 @@ from phantom.base_connector import BaseConnector
 
 from msadgraph_consts import *
 
-SERVER_TOKEN_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token"
 MAX_END_OFFSET_VAL = 2147483646
 
 
@@ -48,13 +47,13 @@ def _handle_login_redirect(request, key):
 
     asset_id = request.GET.get('asset_id')
     if not asset_id:
-        return HttpResponse('ERROR: Asset ID not found in URL', content_type="text/plain", status=400)
+        return HttpResponse('ERROR: Asset ID not found in URL', content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
     state = _load_app_state(asset_id)
     if not state:
-        return HttpResponse('ERROR: Invalid asset_id', content_type="text/plain", status=400)
+        return HttpResponse('ERROR: Invalid asset_id', content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
     url = state.get(key)
     if not url:
-        return HttpResponse(f'App state is invalid, {key} not found.', content_type="text/plain", status=400)
+        return HttpResponse(f'App state is invalid, {key} not found.', content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
     response = HttpResponse(status=302)
     response['Location'] = url
     return response
@@ -76,29 +75,20 @@ def _is_valid_asset_id(asset_id):
     return True
 
 
-def _get_auth_status_file_path(asset_id):
+def _get_file_path(asset_id, is_state_file=True):
     """ This function gets the path of the auth status file of an asset id.
 
     :param asset_id: asset_id
-    :return: auth_status_file_path: Path object of the auth status file
+    :param app_connector: Object of app_connector class
+    :param is_state_file: boolean parameter for state file
+    :return: file_path: Path object of the file
     """
-    if not _is_valid_asset_id(asset_id):
-        raise ValueError('Invalid asset id provided.')
     current_file_path = pathlib.Path(__file__).resolve()
-    output_file_path = current_file_path.with_name(f'{asset_id}_oauth_task.out')
-    return output_file_path
-
-
-def _get_state_file_path(asset_id):
-    """ This function gets the path of the state file of an asset id.
-
-    :param asset_id: asset_id
-    :return: state_file_path: Path object of the state file
-    """
-    if not _is_valid_asset_id(asset_id):
-        raise ValueError('Invalid asset id provided.')
-    current_file_path = pathlib.Path(__file__).resolve()
-    output_file_path = current_file_path.with_name(f'{asset_id}_state.json')
+    if is_state_file:
+        input_file = f'{asset_id}_state.json'
+    else:
+        input_file = f'{asset_id}_oauth_task.out'
+    output_file_path = current_file_path.with_name(input_file)
     return output_file_path
 
 
@@ -167,7 +157,7 @@ def _load_app_state(asset_id, app_connector=None):
             app_connector.debug_print('In _load_app_state: Invalid asset_id')
         return {}
 
-    state_file_path = _get_state_file_path(asset_id)
+    state_file_path = _get_file_path(asset_id)
 
     state = {}
     try:
@@ -204,7 +194,7 @@ def _save_app_state(state, asset_id, app_connector):
             app_connector.debug_print('In _save_app_state: Invalid asset_id')
         return {}
 
-    state_file_path = _get_state_file_path(asset_id)
+    state_file_path = _get_file_path(asset_id)
 
     try:
         state = _encrypt_state(state, asset_id)
@@ -235,7 +225,8 @@ def _handle_login_response(request):
 
     asset_id = request.GET.get('state')
     if not asset_id:
-        return HttpResponse(f'ERROR: Asset ID not found in URL\n{json.dumps(request.GET)}', content_type="text/plain", status=400)
+        return HttpResponse(f'ERROR: Asset ID not found in URL\n{json.dumps(request.GET)}',
+                            content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
 
     # Check for error in URL
     error = request.GET.get('error')
@@ -246,14 +237,15 @@ def _handle_login_response(request):
         message = f'Error: {error}'
         if error_description:
             message = f'{message} Details: {error_description}'
-        return HttpResponse(f'Server returned {message}', content_type="text/plain", status=400)
+        return HttpResponse(f'Server returned {message}', content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
 
     code = request.GET.get('code')
     admin_consent = request.GET.get('admin_consent')
 
     # If none of the code or admin_consent is available
     if not (code or admin_consent):
-        return HttpResponse(f'Error while authenticating\n{json.dumps(request.GET)}', content_type="text/plain", status=400)
+        return HttpResponse(f'Error while authenticating\n{json.dumps(request.GET)}',
+                            content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
 
     state = _load_app_state(asset_id)
 
@@ -270,7 +262,8 @@ def _handle_login_response(request):
         # If admin_consent is True
         if admin_consent:
             return HttpResponse('Admin Consent received. Please close this window.', content_type="text/plain")
-        return HttpResponse('Admin Consent declined. Please close this window and try again later.', content_type="text/plain", status=400)
+        return HttpResponse('Admin Consent declined. Please close this window and try again later.',
+                            content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
 
     # If value of admin_consent is not available, value of code is available
     state['code'] = code
@@ -288,7 +281,7 @@ def _handle_rest_request(request, path_parts):
     """
 
     if len(path_parts) < 2:
-        return HttpResponse('error: True, message: Invalid REST endpoint request', content_type="text/plain", status=400)
+        return HttpResponse('error: True, message: Invalid REST endpoint request', content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
 
     call_type = path_parts[1]
 
@@ -302,8 +295,8 @@ def _handle_rest_request(request, path_parts):
         asset_id = request.GET.get('state')
         if asset_id:
             if not _is_valid_asset_id(asset_id):
-                return HttpResponse("Error: Invalid asset_id", content_type="text/plain", status=400)
-            auth_status_file_path = _get_auth_status_file_path(asset_id)
+                return HttpResponse("Error: Invalid asset_id", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
+            auth_status_file_path = _get_file_path(asset_id, is_state_file=False)
             auth_status_file_path.touch(mode=664, exist_ok=True)
             try:
                 uid = pwd.getpwnam('apache').pw_uid
@@ -313,7 +306,7 @@ def _handle_rest_request(request, path_parts):
                 pass
 
         return return_val
-    return HttpResponse('error: Invalid endpoint', content_type="text/plain", status=404)
+    return HttpResponse('error: Invalid endpoint', content_type="text/plain", status=MS_AZURE_NOT_FOUND_CODE)
 
 
 def _get_dir_name_from_app_name(app_name):
@@ -412,7 +405,7 @@ class MSADGraphConnector(BaseConnector):
                 elif len(e.args) == 1:
                     error_message = e.args[0]
         except Exception:
-            self.error_print("Exception occurred while getting error code and meesage")
+            self.error_print("Exception occurred while getting error code and message")
 
         if not error_code:
             error_text = "Error Message: {}".format(error_message)
@@ -479,12 +472,12 @@ class MSADGraphConnector(BaseConnector):
         except:
             error_text = "Cannot parse error details"
 
-        message = f"Status Code: {status_code}. Data from server:\n{error_text}\n"
+        message = MS_AZURE_RESPONSE_ERROR_MESSAGE.format(status_code=status_code, error_text=error_text)
 
         message = message.replace('{', '{{').replace('}', '}}')
 
-        if status_code == 400:
-            message = f"Status Code: {status_code}. Data from server:\n{MS_AZURE_HTML_ERROR}\n"
+        if status_code == MS_AZURE_BAD_REQUEST_CODE:
+            message = MS_AZURE_RESPONSE_ERROR_MESSAGE.format(status_code=status_code, error_text=MS_AZURE_HTML_ERROR)
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -509,18 +502,16 @@ class MSADGraphConnector(BaseConnector):
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
         error_message = response.text.replace('{', '{{').replace('}', '}}')
-        message = f"Error from server. Status Code: {response.status_code} Data from server: {error_message}"
+        message = MS_AZURE_RESPONSE_ERROR_MESSAGE.format(status_code=response.status_code, error_text=error_message)
 
         # Show only error message if available
         if isinstance(resp_json.get('error', {}), dict):
             if resp_json.get('error', {}).get('message'):
                 error_message = resp_json['error']['message']
-                message = "Error from server. Status Code: {0} Data from server: {1}".format(response.status_code,
-                                                                                             error_message)
+                message = MS_AZURE_RESPONSE_ERROR_MESSAGE.format(status_code=response.status_code, error_text=error_message)
         else:
             error_message = resp_json['error']
-            message = "Error from server. Status Code: {0} Data from server: {1}".format(response.status_code,
-                                                                                         error_message)
+            message = MS_AZURE_RESPONSE_ERROR_MESSAGE.format(status_code=response.status_code, error_text=error_message)
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -564,7 +555,7 @@ class MSADGraphConnector(BaseConnector):
 
         # everything else is actually an error at this point
         response_content = response.text.replace('{', '{{').replace('}', '}}')
-        message = f"Can't process response from server. Status Code: {response.status_code} Data from server: {response_content}"
+        message = MS_AZURE_PROCESS_RESPONSE_ERROR_MESSAGE.format(status_code=response.status_code, content=response_content)
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -654,7 +645,7 @@ class MSADGraphConnector(BaseConnector):
         try:
             r = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params, timeout=DEFAULT_TIMEOUT)
         except Exception as e:
-            error_message = f"Error Connecting to server. Details: {self._get_error_message_from_exception(e)}"
+            error_message = f"Error connecting to server. Details: {self._get_error_message_from_exception(e)}"
             return RetVal(action_result.set_status(phantom.APP_ERROR, error_message), r)
 
         return self._process_response(r, action_result)
@@ -760,10 +751,10 @@ class MSADGraphConnector(BaseConnector):
 
             if self._admin_access_required:
                 # Create the url for fetching administrator consent
-                admin_consent_url_base = f"https://login.microsoftonline.com/{self._tenant}/adminconsent"
+                admin_consent_url_base = MS_AZURE_ADMIN_CONSENT_URL.format(tenant_id=self._tenant)
             else:
                 # Create the url authorization, this is the one pointing to the oauth server side
-                admin_consent_url_base = f"https://login.microsoftonline.com/{self._tenant}/oauth2/v2.0/authorize"
+                admin_consent_url_base = MS_AZURE_AUTHORIZE_URL.format(tenant_id=self._tenant)
                 query_params['scope'] = MS_AZURE_CODE_GENERATION_SCOPE
                 query_params['response_type'] = 'code'
 
@@ -784,11 +775,15 @@ class MSADGraphConnector(BaseConnector):
             self.save_progress(url_to_show)
             self.save_progress(MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE)
 
-            time.sleep(5)
+            time.sleep(MS_AZURE_WAIT_FOR_URL_SLEEP)
 
             completed = False
 
-            auth_status_file_path = _get_auth_status_file_path(self._asset_id)
+            if not _is_valid_asset_id(self._asset_id):
+                self.save_progress(self._asset_id)
+                return action_result.set_status(phantom.APP_ERROR, "Invalid asset id")
+
+            auth_status_file_path = _get_file_path(self._asset_id, is_state_file=False)
 
             self.save_progress('Waiting for authorization to complete')
 
@@ -805,6 +800,7 @@ class MSADGraphConnector(BaseConnector):
 
             if not completed:
                 self.save_progress("Authentication process does not seem to be completed. Timing out")
+                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILED)
                 return self.set_status(phantom.APP_ERROR)
 
             self.send_progress("")
@@ -812,20 +808,20 @@ class MSADGraphConnector(BaseConnector):
             # Load the state again, since the http request handlers would have saved the result of the admin consent
             self._state = _load_app_state(self._asset_id, self)
             if not self._state:
-                self.save_progress("Authorization not received or not given")
-                self.save_progress("Test Connectivity Failed")
+                self.save_progress(MS_AUTHORIZATION_ERROR_MESSAGE)
+                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILED)
                 return action_result.set_status(phantom.APP_ERROR)
 
             self._state.setdefault('admin_consent', False)
 
             if self._admin_access_required and not self._state.get('admin_consent'):
-                self.save_progress("Admin Consent not received or not given")
-                self.save_progress("Test Connectivity Failed")
+                self.save_progress(MS_AUTHORIZATION_ERROR_MESSAGE)
+                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILED)
                 return action_result.set_status(phantom.APP_ERROR)
 
             if not self._admin_access_required and not self._state.get('code'):
-                self.save_progress("Authorization code not received or not given")
-                self.save_progress("Test Connectivity Failed")
+                self.save_progress(MS_AUTHORIZATION_ERROR_MESSAGE)
+                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILED)
                 return action_result.set_status(phantom.APP_ERROR)
 
             if self._admin_access_required:
@@ -849,7 +845,7 @@ class MSADGraphConnector(BaseConnector):
 
         if phantom.is_fail(ret_val):
             self.save_progress("API to get users failed")
-            self.save_progress("Test Connectivity Failed")
+            self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILED)
             return self.set_status(phantom.APP_ERROR)
 
         value = response.get('value')
@@ -857,7 +853,7 @@ class MSADGraphConnector(BaseConnector):
         if value:
             self.save_progress("Got user info")
 
-        self.save_progress("Test Connectivity Passed")
+        self.save_progress(MS_AZURE_TEST_CONNECTIVITY_PASSED)
 
         return self.set_status(phantom.APP_SUCCESS)
 

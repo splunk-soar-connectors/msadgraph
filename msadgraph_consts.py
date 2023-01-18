@@ -51,9 +51,14 @@ MS_AZURE_NEXT_LINK_STRING = 'odata.nextLink'
 MS_AZURE_PAGE_SIZE = 999
 MS_AZURE_ERROR_MESSAGE_UNKNOWN = "Unknown error occurred. Please check the asset configuration and|or action parameters."
 
+# status codes
+MS_AZURE_BAD_REQUEST_CODE = 400
+MS_AZURE_NOT_FOUND_CODE = 404
+
 # For authorization code
-TC_FILE = "oauth_task.out"
 SERVER_TOKEN_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token"
+MS_AZURE_ADMIN_CONSENT_URL = "https://login.microsoftonline.com/{tenant_id}/adminconsent"
+MS_AZURE_AUTHORIZE_URL = "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize"
 AUTH_FAILURE_MESSAGES = (
     "token is invalid",
     "token has expired",
@@ -67,16 +72,21 @@ MS_OAUTH_URL_MESSAGE = 'Using OAuth URL:\n'
 MS_AUTHORIZE_USER_MESSAGE = 'Please authorize user in a separate tab using URL:'
 MS_GENERATING_ACCESS_TOKEN_MESSAGE = 'Generating access token'
 MS_TC_STATUS_SLEEP = 3
+MS_AZURE_WAIT_FOR_URL_SLEEP = 5
 MS_AZURE_CODE_GENERATION_SCOPE = 'offline_access Group.ReadWrite.All User.Read.All User.ReadWrite.All Directory.ReadWrite.All \
 Directory.AccessAsUser.All User.ManageIdentities.All GroupMember.ReadWrite.All RoleManagement.ReadWrite.Directory'
 MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE = 'If authorization URL fails to communicate with your SOAR instance, check whether you have:  '\
                                 ' 1. Specified the Web Redirect URL of your App -- The Redirect URL should be <POST URL>/result . '\
                                 ' 2. Configured the base URL of your SOAR Instance at Administration -> Company Settings -> Info'
 
-
+MS_AZURE_TEST_CONNECTIVITY_FAILED = "Test Connectivity Failed"
+MS_AZURE_TEST_CONNECTIVITY_PASSED = "Test Connectivity Passed"
 MS_AZURE_ENCRYPTION_ERROR = "Error occurred while encrypting the state file"
 MS_AZURE_DECRYPTION_ERROR = "Error occurred while decrypting the state file"
 MS_AZURE_STATE_FILE_CORRUPT_ERROR = "Error occurred while loading the state file due to it's unexpected format. " \
     "Resetting the state file with the default format. Please test the connectivity."
+MS_AZURE_RESPONSE_ERROR_MESSAGE = "Error from server. Status Code: {status_code}. Data from server: \n{error_text}\n"
+MS_AZURE_PROCESS_RESPONSE_ERROR_MESSAGE = "Can't process response from server. Status Code: {status_code} Data from server: {content}"
+MS_AUTHORIZATION_ERROR_MESSAGE = "Authorization not received or not given"
 
 DEFAULT_TIMEOUT = 30
