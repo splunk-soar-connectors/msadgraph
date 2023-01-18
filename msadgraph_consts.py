@@ -12,7 +12,7 @@
 # the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
-TC_STATUS_SLEEP = 2
+
 PHANTOM_SYS_INFO_URL = "{base_url}rest/system_info"
 PHANTOM_ASSET_INFO_URL = "{base_url}rest/asset/{asset_id}"
 
@@ -79,7 +79,7 @@ MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE = 'If authorization URL fails to communi
                                 ' 1. Specified the Web Redirect URL of your App -- The Redirect URL should be <POST URL>/result . '\
                                 ' 2. Configured the base URL of your SOAR Instance at Administration -> Company Settings -> Info'
 
-MS_AZURE_TEST_CONNECTIVITY_FAILED = "Test Connectivity Failed"
+MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE = "Test Connectivity Failed"
 MS_AZURE_TEST_CONNECTIVITY_PASSED = "Test Connectivity Passed"
 MS_AZURE_ENCRYPTION_ERROR = "Error occurred while encrypting the state file"
 MS_AZURE_DECRYPTION_ERROR = "Error occurred while decrypting the state file"
@@ -87,6 +87,8 @@ MS_AZURE_STATE_FILE_CORRUPT_ERROR = "Error occurred while loading the state file
     "Resetting the state file with the default format. Please test the connectivity."
 MS_AZURE_RESPONSE_ERROR_MESSAGE = "Error from server. Status Code: {status_code}. Data from server: \n{error_text}\n"
 MS_AZURE_PROCESS_RESPONSE_ERROR_MESSAGE = "Can't process response from server. Status Code: {status_code} Data from server: {content}"
-MS_AUTHORIZATION_ERROR_MESSAGE = "Authorization not received or not given"
+MS_ADMIN_CONSENT_ERROR_MESSAGE = "Admin consent not received"
+MS_AUTHORIZATION_ERROR_MESSAGE = "Authorization code not received or not given"
+MS_STATE_FILE_ERROR_MESSAGE = "Unable to load state file"
 
 DEFAULT_TIMEOUT = 30

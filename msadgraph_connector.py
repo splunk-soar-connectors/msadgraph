@@ -414,27 +414,6 @@ class MSADGraphConnector(BaseConnector):
 
         return error_text
 
-    def _format_params_to_query(self, parameters):
-        """If you just pass with the params argument into the request, commas will be encoded to %2C
-           (Requests also uses the urlencode method on a dictionary)
-           The API uses literal commas and %2C differently. %2C would be for when the actual field has a comma, and
-           ',' is for creating a list in the query.
-           For example: ?propertyName=isTure,floor&propertyValue=false,Balcony%2Cupper
-           %1A is the code for substitute character, which seemed fitting and unused, though urlencode will
-           encode this into %251A.
-        """
-        for k, v in parameters.items():
-            try:
-                if "%1A" in v:
-                    self.debug_print("Check the _format_params_to_query method")
-                self.debug_print(v)
-                v.replace("%2C", "%1A")
-            except TypeError:
-                # v is a boolean or something
-                pass
-
-        return urlparse.urlencode(parameters).replace("%2C", ",").replace("%252C", "%2C").replace("%20", " ").replace("%2B", "+")
-
     def _process_empty_response(self, response, action_result):
         """ This function is used to process empty response.
 
@@ -780,7 +759,6 @@ class MSADGraphConnector(BaseConnector):
             completed = False
 
             if not _is_valid_asset_id(self._asset_id):
-                self.save_progress(self._asset_id)
                 return action_result.set_status(phantom.APP_ERROR, "Invalid asset id")
 
             auth_status_file_path = _get_file_path(self._asset_id, is_state_file=False)
@@ -800,7 +778,7 @@ class MSADGraphConnector(BaseConnector):
 
             if not completed:
                 self.save_progress("Authentication process does not seem to be completed. Timing out")
-                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILED)
+                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
                 return self.set_status(phantom.APP_ERROR)
 
             self.send_progress("")
@@ -808,20 +786,20 @@ class MSADGraphConnector(BaseConnector):
             # Load the state again, since the http request handlers would have saved the result of the admin consent
             self._state = _load_app_state(self._asset_id, self)
             if not self._state:
-                self.save_progress(MS_AUTHORIZATION_ERROR_MESSAGE)
-                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILED)
+                self.save_progress(MS_STATE_FILE_ERROR_MESSAGE)
+                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
                 return action_result.set_status(phantom.APP_ERROR)
 
             self._state.setdefault('admin_consent', False)
 
             if self._admin_access_required and not self._state.get('admin_consent'):
-                self.save_progress(MS_AUTHORIZATION_ERROR_MESSAGE)
-                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILED)
+                self.save_progress(MS_ADMIN_CONSENT_ERROR_MESSAGE)
+                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
                 return action_result.set_status(phantom.APP_ERROR)
 
             if not self._admin_access_required and not self._state.get('code'):
                 self.save_progress(MS_AUTHORIZATION_ERROR_MESSAGE)
-                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILED)
+                self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
                 return action_result.set_status(phantom.APP_ERROR)
 
             if self._admin_access_required:
@@ -845,7 +823,7 @@ class MSADGraphConnector(BaseConnector):
 
         if phantom.is_fail(ret_val):
             self.save_progress("API to get users failed")
-            self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILED)
+            self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
             return self.set_status(phantom.APP_ERROR)
 
         value = response.get('value')
@@ -873,17 +851,16 @@ class MSADGraphConnector(BaseConnector):
         if filter_string:
             parameters['$filter'] = filter_string
         if select_string:
-            select_string = select_string.strip(',').split(',')
-            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+            select_string = [param_value.strip() for param_value in select_string.split(",")]
+            select_string = list(filter(None, select_string))
+            parameters['$select'] = ','.join(param_value for param_value in select_string)
         if expand_string:
             parameters['$expand'] = expand_string
         if use_advanced_query:
             headers['ConsistencyLevel'] = 'eventual'
             parameters['$count'] = 'true'
 
-        endpoint = f'/users?{self._format_params_to_query(parameters)}'
-
-        ret_val = self._handle_pagination(action_result, endpoint, headers=headers)
+        ret_val = self._handle_pagination(action_result, '/users', headers=headers, params=parameters)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -916,7 +893,7 @@ class MSADGraphConnector(BaseConnector):
 
         endpoint = f'/users/{user_id}'
 
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
+        ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
             return ret_val
@@ -940,7 +917,7 @@ class MSADGraphConnector(BaseConnector):
         }
 
         endpoint = f'/users/{user_id}'
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
+        ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -960,7 +937,7 @@ class MSADGraphConnector(BaseConnector):
         user_id = param['user_id']
         endpoint = f'/users/{user_id}/revokeSignInSessions'
 
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='post')
+        ret_val, _ = self._make_rest_call_helper(action_result, endpoint, method='post')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -983,7 +960,7 @@ class MSADGraphConnector(BaseConnector):
         }
 
         endpoint = f'/users/{user_id}'
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
+        ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -1008,8 +985,9 @@ class MSADGraphConnector(BaseConnector):
         parameters = {}
 
         if select_string:
-            select_string = select_string.strip(',').split(',')
-            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+            select_string = [param_value.strip() for param_value in select_string.split(",")]
+            select_string = list(filter(None, select_string))
+            parameters['$select'] = ','.join(param_value for param_value in select_string)
         if expand_string:
             parameters['$expand'] = expand_string
         if use_advanced_query:
@@ -1017,11 +995,11 @@ class MSADGraphConnector(BaseConnector):
             parameters['$count'] = 'true'
 
         if user_id:
-            endpoint = f'/users/{user_id}?{self._format_params_to_query(parameters)}'
+            endpoint = f'/users/{user_id}'
         else:
-            endpoint = f'/users?{self._format_params_to_query(parameters)}'
+            endpoint = '/users'
 
-        ret_val = self._handle_pagination(action_result, endpoint, headers=headers)
+        ret_val = self._handle_pagination(action_result, endpoint, headers=headers, params=parameters)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -1042,16 +1020,16 @@ class MSADGraphConnector(BaseConnector):
 
         user_id = param['user_id']
 
-        parameters = dict()
+        parameters = {}
         select_string = param.get('select_string')
         if select_string:
-            select_string = select_string.strip(',').split(',')
-            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+            select_string = [param_value.strip() for param_value in select_string.split(",")]
+            select_string = list(filter(None, select_string))
+            parameters['$select'] = ','.join(param_value for param_value in select_string)
 
         endpoint = f'/users/{user_id}/ownedDevices'
-        endpoint += '?{}'.format(self._format_params_to_query(parameters))
 
-        ret_val = self._handle_pagination(action_result, endpoint)
+        ret_val = self._handle_pagination(action_result, endpoint, params=parameters)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -1075,7 +1053,7 @@ class MSADGraphConnector(BaseConnector):
         }
 
         endpoint = f'/users/{user_id}'
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
+        ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method='patch')
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -1100,7 +1078,7 @@ class MSADGraphConnector(BaseConnector):
         }
 
         endpoint = f'/groups/{object_id}/members/$ref'
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=data, method='post')
+        ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method='post')
 
         summary = action_result.update_summary({})
         if phantom.is_fail(ret_val):
@@ -1125,16 +1103,14 @@ class MSADGraphConnector(BaseConnector):
         user_id = param['user_id']
 
         endpoint = f'/groups/{object_id}/members/{user_id}/$ref'
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='delete')
+        ret_val, _ = self._make_rest_call_helper(action_result, endpoint, method='delete')
 
         summary = action_result.update_summary({})
         if phantom.is_fail(ret_val):
             message = action_result.get_message()
             if 'does not exist or one of its queried' in message:
                 summary['status'] = "User not in group"
-                return action_result.get_status()
-            else:
-                return action_result.get_status()
+            return action_result.get_status()
         else:
             summary['status'] = "Successfully removed user from group"
 
@@ -1157,16 +1133,16 @@ class MSADGraphConnector(BaseConnector):
         if filter_string:
             parameters['$filter'] = filter_string
         if select_string:
-            select_string = select_string.strip(',').split(',')
-            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+            select_string = [param_value.strip() for param_value in select_string.split(",")]
+            select_string = list(filter(None, select_string))
+            parameters['$select'] = ','.join(param_value for param_value in select_string)
         if expand_string:
             parameters['$expand'] = expand_string
         if use_advanced_query:
             headers['ConsistencyLevel'] = 'eventual'
             parameters['$count'] = 'true'
 
-        endpoint = f'/groups?{self._format_params_to_query(parameters)}'
-        ret_val = self._handle_pagination(action_result, endpoint, headers=headers)
+        ret_val = self._handle_pagination(action_result, '/groups', headers=headers, params=parameters)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -1194,8 +1170,9 @@ class MSADGraphConnector(BaseConnector):
         parameters = {}
 
         if select_string:
-            select_string = select_string.strip(',').split(',')
-            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+            select_string = [param_value.strip() for param_value in select_string.split(",")]
+            select_string = list(filter(None, select_string))
+            parameters['$select'] = ','.join(param_value for param_value in select_string)
         if expand_string:
             parameters['$expand'] = expand_string
         if use_advanced_query:
@@ -1204,9 +1181,9 @@ class MSADGraphConnector(BaseConnector):
 
         object_id = param['object_id']
 
-        endpoint = f'/groups/{object_id}?{self._format_params_to_query(parameters)}'
+        endpoint = f'/groups/{object_id}'
 
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='get', headers=headers)
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method='get', headers=headers, params=parameters)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -1234,17 +1211,18 @@ class MSADGraphConnector(BaseConnector):
         parameters = {}
 
         if select_string:
-            select_string = select_string.strip(',').split(',')
-            parameters['$select'] = ','.join(param_value for param_value in select_string if param_value != '')
+            select_string = [param_value.strip() for param_value in select_string.split(",")]
+            select_string = list(filter(None, select_string))
+            parameters['$select'] = ','.join(param_value for param_value in select_string)
         if expand_string:
             parameters['$expand'] = expand_string
         if use_advanced_query:
             headers['ConsistencyLevel'] = 'eventual'
             parameters['$count'] = 'true'
 
-        endpoint = f'/groups/{object_id}/members?{self._format_params_to_query(parameters)}'
+        endpoint = f'/groups/{object_id}/members'
 
-        ret_val = self._handle_pagination(action_result, endpoint, headers=headers)
+        ret_val = self._handle_pagination(action_result, endpoint, headers=headers, params=parameters)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -1290,7 +1268,7 @@ class MSADGraphConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
-        user_id_map = dict()
+        user_id_map = {}
 
         for user in response.get('value', []):
             user_id_map[user['id']] = user['displayName']
@@ -1352,7 +1330,7 @@ class MSADGraphConnector(BaseConnector):
         :param action_result: Object of ActionResult class
         :param endpoint: REST endpoint that needs to appended to the service address
         :param headers: Dictionary of headers for the rest API calls
-        :param headers: Dictionary of params for the rest API calls
+        :param params: Dictionary of params for the rest API calls
         """
         # maximum page size
         page_size = MS_AZURE_PAGE_SIZE
