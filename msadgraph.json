@@ -9,16 +9,21 @@
     "product_name": "MS Graph for Active Directory",
     "product_version_regex": ".*",
     "publisher": "Splunk",
-    "license": "Copyright (c) 2022 Splunk Inc.",
-    "app_version": "1.1.0",
+    "contributors": [
+        {
+            "name": "Mathieu A. Cormier"
+        }
+    ],
+    "license": "Copyright (c) 2022-2023 Splunk Inc.",
+    "app_version": "1.2.0",
     "python_version": "3",
     "utctime_updated": "2022-04-18T12:59:04.000000Z",
     "package_name": "phantom_msadgraph",
     "main_module": "msadgraph_connector.py",
-    "min_phantom_version": "5.3.5",
+    "min_phantom_version": "5.4.0",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud 2022-11-24, API Version: 1.0"
+        "Cloud 2022-12-5, API Version: 1.0"
     ],
     "app_wizard_version": "1.0.0",
     "rest_handler": "msadgraph_connector._handle_rest_request",
@@ -53,6 +58,18 @@
                 "Germany",
                 "China (21Vianet)"
             ]
+        },
+        "admin_access_required": {
+            "description": "Admin Access Required",
+            "data_type": "boolean",
+            "default": false,
+            "order": 4
+        },
+        "admin_access_granted": {
+            "description": "Admin Consent Already Provided",
+            "data_type": "boolean",
+            "default": false,
+            "order": 5
         }
     },
     "actions": [
@@ -69,7 +86,7 @@
         {
             "action": "list users",
             "description": "Get a list of users",
-            "verbose": "For more information on using the filter_string and select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation. By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter.",
+            "verbose": "For more information on using the filter_string, select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters. By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter.",
             "type": "investigate",
             "identifier": "list_users",
             "read_only": true,
@@ -83,6 +100,17 @@
                     "description": "Select string to get additional user properties. Separate multiple values with commas",
                     "data_type": "string",
                     "order": 1
+                },
+                "expand_string": {
+                    "description": "Expand string to get a resource or collection referenced by a single relationship",
+                    "data_type": "string",
+                    "order": 2
+                },
+                "use_advanced_query": {
+                    "description": "Use advanced query capabilities",
+                    "data_type": "boolean",
+                    "default": false,
+                    "order": 3
                 }
             },
             "output": [
@@ -106,6 +134,22 @@
                     "data_type": "string",
                     "example_values": [
                         "displayName"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.expand_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "manager",
+                        "memberOf"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.use_advanced_query",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -742,6 +786,7 @@
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
+                        "Successfully invalidated tokens",
                         "Status: Successfully disabled tokens"
                     ]
                 },
@@ -1255,7 +1300,7 @@
         {
             "action": "list user attributes",
             "description": "List attributes for all or a specified user",
-            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.",
             "type": "investigate",
             "identifier": "list_user_attributes",
             "read_only": true,
@@ -1273,6 +1318,17 @@
                     "description": "Select string to get additional user properties. Separate multiple values with commas",
                     "data_type": "string",
                     "order": 1
+                },
+                "expand_string": {
+                    "description": "Expand string to get a resource or collection referenced by a single relationship",
+                    "data_type": "string",
+                    "order": 2
+                },
+                "use_advanced_query": {
+                    "description": "Use advanced query capabilities",
+                    "data_type": "boolean",
+                    "default": false,
+                    "order": 3
                 }
             },
             "output": [
@@ -1289,6 +1345,22 @@
                     "data_type": "string",
                     "example_values": [
                         "displayName"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.expand_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "manager",
+                        "memberOf"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.use_advanced_query",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -1684,6 +1756,7 @@
                     "data_path": "action_result.summary.status",
                     "data_type": "string",
                     "example_values": [
+                        "Successfully retrieved user attributes",
                         "Successfully retrieved attributes for user user@test.onmicrosoft.com"
                     ]
                 },
@@ -1691,6 +1764,7 @@
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
+                        "Status: Successfully retrieved user attributes",
                         "Status: Successfully retrieved attributes for user user@test.onmicrosoft.com, User enabled: False"
                     ]
                 },
@@ -2222,15 +2296,31 @@
         {
             "action": "list groups",
             "description": "List groups in the organization",
-            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.",
             "type": "investigate",
             "identifier": "list_groups",
             "read_only": true,
             "parameters": {
+                "filter_string": {
+                    "description": "Filter string to apply to group listing",
+                    "data_type": "string",
+                    "order": 0
+                },
                 "select_string": {
                     "description": "Select string to get additional group properties. Separate multiple values with commas",
                     "data_type": "string",
-                    "order": 0
+                    "order": 1
+                },
+                "expand_string": {
+                    "description": "Expand string to get a resource or collection referenced by a single relationship",
+                    "data_type": "string",
+                    "order": 2
+                },
+                "use_advanced_query": {
+                    "description": "Use advanced query capabilities",
+                    "data_type": "boolean",
+                    "default": false,
+                    "order": 3
                 }
             },
             "output": [
@@ -2243,10 +2333,32 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.filter_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "createdDateTime ge '2014-01-01T00:00:00Z'"
+                    ]
+                },
+                {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
                     "example_values": [
                         "displayName"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.expand_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "members"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.use_advanced_query",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -2473,7 +2585,7 @@
         {
             "action": "get group",
             "description": "Get information about a group",
-            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.",
             "type": "investigate",
             "identifier": "get_group",
             "read_only": true,
@@ -2492,6 +2604,17 @@
                     "description": "Select string to get additional group properties. Separate multiple values with commas",
                     "data_type": "string",
                     "order": 1
+                },
+                "expand_string": {
+                    "description": "Expand string to get a resource or collection referenced by a single relationship",
+                    "data_type": "string",
+                    "order": 2
+                },
+                "use_advanced_query": {
+                    "description": "Use advanced query capabilities",
+                    "data_type": "boolean",
+                    "default": false,
+                    "order": 3
                 }
             },
             "output": [
@@ -2518,6 +2641,21 @@
                     "data_type": "string",
                     "example_values": [
                         "displayName"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.expand_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "members"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.use_advanced_query",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -2766,7 +2904,7 @@
         {
             "action": "list group members",
             "description": "List the members in a group",
-            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
+            "verbose": "By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.",
             "type": "investigate",
             "identifier": "list_group_members",
             "read_only": true,
@@ -2785,6 +2923,17 @@
                     "description": "Select string to get additional properties. Separate multiple values with commas",
                     "data_type": "string",
                     "order": 1
+                },
+                "expand_string": {
+                    "description": "Expand string to get a resource or collection referenced by a single relationship",
+                    "data_type": "string",
+                    "order": 2
+                },
+                "use_advanced_query": {
+                    "description": "Use advanced query capabilities",
+                    "data_type": "boolean",
+                    "default": false,
+                    "order": 3
                 }
             },
             "output": [
@@ -2811,6 +2960,21 @@
                     "data_type": "string",
                     "example_values": [
                         "displayName"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.expand_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "manager"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.use_advanced_query",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -3699,7 +3863,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/py3/certifi-2022.9.24-py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.12.7-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -3711,7 +3875,7 @@
             },
             {
                 "module": "pytz",
-                "input_file": "wheels/shared/pytz-2022.6-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/pytz-2022.7.1-py2.py3-none-any.whl"
             },
             {
                 "module": "requests",
@@ -3731,7 +3895,7 @@
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.13-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.14-py2.py3-none-any.whl"
             }
         ]
     },
@@ -3743,7 +3907,7 @@
             },
             {
                 "module": "asgiref",
-                "input_file": "wheels/py3/asgiref-3.5.2-py3-none-any.whl"
+                "input_file": "wheels/py3/asgiref-3.6.0-py3-none-any.whl"
             },
             {
                 "module": "beautifulsoup4",
@@ -3751,7 +3915,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/py3/certifi-2022.9.24-py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.12.7-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -3763,7 +3927,7 @@
             },
             {
                 "module": "pytz",
-                "input_file": "wheels/shared/pytz-2022.6-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/pytz-2022.7.1-py2.py3-none-any.whl"
             },
             {
                 "module": "requests",
@@ -3779,7 +3943,7 @@
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.13-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.14-py2.py3-none-any.whl"
             }
         ]
     }
