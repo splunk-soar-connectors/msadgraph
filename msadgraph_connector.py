@@ -379,7 +379,6 @@ class MSADGraphConnector(BaseConnector):
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             self.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERROR, error_message))
-            return phantom.APP_ERROR
 
         return super().save_state(state)
 
@@ -448,7 +447,7 @@ class MSADGraphConnector(BaseConnector):
             split_lines = error_text.split('\n')
             split_lines = [x.strip() for x in split_lines if x.strip()]
             error_text = '\n'.join(split_lines)
-        except:
+        except Exception:
             error_text = "Cannot parse error details"
 
         message = MS_AZURE_RESPONSE_ERROR_MESSAGE.format(status_code=status_code, error_text=error_text)
@@ -662,8 +661,8 @@ class MSADGraphConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
 
         # If token is expired, generate a new token
-        msg = action_result.get_message()
-        if msg and any(failure_message in msg for failure_message in AUTH_FAILURE_MESSAGES):
+        message = action_result.get_message()
+        if message and any(failure_message in message for failure_message in AUTH_FAILURE_MESSAGES):
             self.save_progress("Token is invalid/expired. Hence, generating a new token.")
             ret_val = self._get_token(action_result)
             if phantom.is_fail(ret_val):
@@ -1359,7 +1358,7 @@ class MSADGraphConnector(BaseConnector):
                 parsed_url = urlparse.urlparse(response.get(MS_AZURE_NEXT_LINK_STRING))
                 try:
                     params['$skiptoken'] = urlparse.parse_qs(parsed_url.query).get('$skiptoken')[0]
-                except:
+                except Exception:
                     self.debug_print(f"odata.nextLink is {response.get(MS_AZURE_NEXT_LINK_STRING)}")
                     self.debug_print("Error occurred while extracting skiptoken from the odata.nextLink")
                     break
@@ -1441,6 +1440,10 @@ class MSADGraphConnector(BaseConnector):
         self._state = self.load_state()
 
         if self._state is None:
+            self.debug_print(MS_AZURE_STATE_FILE_CORRUPT_ERROR)
+            self._state = {
+                "app_version": self.get_app_json().get('app_version')
+            }
             return self.set_status(phantom.APP_ERROR, MS_AZURE_STATE_FILE_CORRUPT_ERROR)
 
         # get the asset config
