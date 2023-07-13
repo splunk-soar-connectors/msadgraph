@@ -364,7 +364,10 @@ class MSADGraphConnector(BaseConnector):
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             self.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERROR, error_message))
-            state = None
+            self.debug_print("Reseting the state file with the default format")
+            state = {
+                "app_version": self.get_app_json().get('app_version')
+            }
 
         return state
 
@@ -1438,13 +1441,6 @@ class MSADGraphConnector(BaseConnector):
         """
 
         self._state = self.load_state()
-
-        if self._state is None:
-            self.debug_print(MS_AZURE_STATE_FILE_CORRUPT_ERROR)
-            self._state = {
-                "app_version": self.get_app_json().get('app_version')
-            }
-            return self.set_status(phantom.APP_ERROR, MS_AZURE_STATE_FILE_CORRUPT_ERROR)
 
         # get the asset config
         config = self.get_config()
