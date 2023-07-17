@@ -787,6 +787,13 @@ class MSADGraphConnector(BaseConnector):
 
             # Load the state again, since the http request handlers would have saved the result of the admin consent
             self._state = _load_app_state(self._asset_id, self)
+
+            # Deleting the local state file because of it replicates with actual state file while installing the app
+            current_file_path = pathlib.Path(__file__).resolve()
+            input_file = f'{self._asset_id}_state.json'
+            state_file_path = current_file_path.with_name(input_file)
+            state_file_path.unlink()
+
             if not self._state:
                 self.save_progress(MS_STATE_FILE_ERROR_MESSAGE)
                 self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
