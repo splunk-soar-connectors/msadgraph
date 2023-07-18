@@ -23,7 +23,7 @@
     "min_phantom_version": "6.0.2",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud 2022-7-18, API Version: 1.0"
+        "Cloud 2023-7-18, API Version: 1.0"
     ],
     "app_wizard_version": "1.0.0",
     "rest_handler": "msadgraph_connector._handle_rest_request",
