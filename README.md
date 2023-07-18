@@ -126,7 +126,7 @@ After setting up the asset and user, click the **TEST CONNECTIVITY** button. A w
 and display a URL. Navigate to this URL in a separate browser tab. This new tab will redirect to a
 Microsoft login page. Log in to a Microsoft account with administrator privileges to the Microsoft
 AD environment. After logging in, review the requested permissions listed, then click **Accept** .
-Finally, close that tab. The test connectivity window should show a success.
+Finally, close that tab. The test connectivity window should show success.
 
 The app should now be ready to use.
 
@@ -172,7 +172,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 ### Supported Actions  
 [test connectivity](#action-test-connectivity) - Use supplied credentials to generate a token with MS Graph  
 [list users](#action-list-users) - Get a list of users  
-[reset password](#action-reset-password) - Reset or set a user's password in an Microsoft AD environment  
+[reset password](#action-reset-password) - Reset or set a user's password in a Microsoft AD environment  
 [disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in a Microsoft AD environment  
 [enable user](#action-enable-user) - Enable a user  
 [disable user](#action-disable-user) - Disable a user  
@@ -186,7 +186,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [list group members](#action-list-group-members) - List the members in a group  
 [validate group](#action-validate-group) - Returns true if a user is in a group; otherwise, false  
 [list directory roles](#action-list-directory-roles) - List the directory roles that are activated in the tenant  
-[generate token](#action-generate-token) - Generate a token or regenerates token when the token expires  
+[generate token](#action-generate-token) - Generate a token  
 
 ## action: 'test connectivity'
 Use supplied credentials to generate a token with MS Graph
@@ -293,7 +293,7 @@ summary.total_objects | numeric |  |   1
 summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'reset password'
-Reset or set a user's password in an Microsoft AD environment
+Reset or set a user's password in a Microsoft AD environment
 
 Type: **contain**  
 Read only: **False**
@@ -980,7 +980,7 @@ summary.total_objects | numeric |  |   1
 summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'generate token'
-Generate a token or regenerates token when the token expires
+Generate a token
 
 Type: **generic**  
 Read only: **False**
