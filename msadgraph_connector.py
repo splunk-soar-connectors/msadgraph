@@ -624,12 +624,12 @@ class MSADGraphConnector(BaseConnector):
             return RetVal(action_result.set_status(phantom.APP_ERROR, f"Invalid method: {method}"), resp_json)
 
         try:
-            r = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params, timeout=DEFAULT_TIMEOUT)
+            resp_json = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params, timeout=DEFAULT_TIMEOUT)
         except Exception as e:
             error_message = f"Error connecting to server. Details: {self._get_error_message_from_exception(e)}"
-            return RetVal(action_result.set_status(phantom.APP_ERROR, error_message), r)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, error_message), resp_json)
 
-        return self._process_response(r, action_result)
+        return self._process_response(resp_json, action_result)
 
     def _make_rest_call_helper(self, action_result, endpoint, verify=True, headers=None, params=None, data=None, json=None, method="get"):
         """ Function that helps setting REST call to the app.

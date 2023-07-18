@@ -23,7 +23,7 @@
     "min_phantom_version": "6.0.2",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud 2022-12-5, API Version: 1.0"
+        "Cloud 2022-7-18, API Version: 1.0"
     ],
     "app_wizard_version": "1.0.0",
     "rest_handler": "msadgraph_connector._handle_rest_request",
@@ -586,7 +586,7 @@
         },
         {
             "action": "reset password",
-            "description": "Reset or set a user's password in an Microsoft AD environment",
+            "description": "Reset or set a user's password in a Microsoft AD environment",
             "type": "contain",
             "identifier": "reset_password",
             "read_only": false,
@@ -3791,7 +3791,7 @@
         {
             "action": "generate token",
             "identifier": "generate_token",
-            "description": "Generate a token or regenerates token when the token expires",
+            "description": "Generate a token",
             "type": "generic",
             "read_only": false,
             "parameters": {},
