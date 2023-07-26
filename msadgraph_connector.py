@@ -364,7 +364,10 @@ class MSADGraphConnector(BaseConnector):
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             self.error_print("{}: {}".format(MS_AZURE_DECRYPTION_ERROR, error_message))
-            state = None
+            self.debug_print("Reseting the state file with the default format")
+            state = {
+                "app_version": self.get_app_json().get('app_version')
+            }
 
         return state
 
@@ -379,7 +382,6 @@ class MSADGraphConnector(BaseConnector):
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             self.error_print("{}: {}".format(MS_AZURE_ENCRYPTION_ERROR, error_message))
-            return phantom.APP_ERROR
 
         return super().save_state(state)
 
@@ -448,7 +450,7 @@ class MSADGraphConnector(BaseConnector):
             split_lines = error_text.split('\n')
             split_lines = [x.strip() for x in split_lines if x.strip()]
             error_text = '\n'.join(split_lines)
-        except:
+        except Exception:
             error_text = "Cannot parse error details"
 
         message = MS_AZURE_RESPONSE_ERROR_MESSAGE.format(status_code=status_code, error_text=error_text)
@@ -622,12 +624,12 @@ class MSADGraphConnector(BaseConnector):
             return RetVal(action_result.set_status(phantom.APP_ERROR, f"Invalid method: {method}"), resp_json)
 
         try:
-            r = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params, timeout=DEFAULT_TIMEOUT)
+            resp_json = request_func(endpoint, json=json, data=data, headers=headers, verify=verify, params=params, timeout=DEFAULT_TIMEOUT)
         except Exception as e:
             error_message = f"Error connecting to server. Details: {self._get_error_message_from_exception(e)}"
-            return RetVal(action_result.set_status(phantom.APP_ERROR, error_message), r)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, error_message), resp_json)
 
-        return self._process_response(r, action_result)
+        return self._process_response(resp_json, action_result)
 
     def _make_rest_call_helper(self, action_result, endpoint, verify=True, headers=None, params=None, data=None, json=None, method="get"):
         """ Function that helps setting REST call to the app.
@@ -662,8 +664,8 @@ class MSADGraphConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
 
         # If token is expired, generate a new token
-        msg = action_result.get_message()
-        if msg and any(failure_message in msg for failure_message in AUTH_FAILURE_MESSAGES):
+        message = action_result.get_message()
+        if message and any(failure_message in message for failure_message in AUTH_FAILURE_MESSAGES):
             self.save_progress("Token is invalid/expired. Hence, generating a new token.")
             ret_val = self._get_token(action_result)
             if phantom.is_fail(ret_val):
@@ -785,6 +787,13 @@ class MSADGraphConnector(BaseConnector):
 
             # Load the state again, since the http request handlers would have saved the result of the admin consent
             self._state = _load_app_state(self._asset_id, self)
+
+            # Deleting the local state file because of it replicates with actual state file while installing the app
+            current_file_path = pathlib.Path(__file__).resolve()
+            input_file = f'{self._asset_id}_state.json'
+            state_file_path = current_file_path.with_name(input_file)
+            state_file_path.unlink()
+
             if not self._state:
                 self.save_progress(MS_STATE_FILE_ERROR_MESSAGE)
                 self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
@@ -1359,7 +1368,7 @@ class MSADGraphConnector(BaseConnector):
                 parsed_url = urlparse.urlparse(response.get(MS_AZURE_NEXT_LINK_STRING))
                 try:
                     params['$skiptoken'] = urlparse.parse_qs(parsed_url.query).get('$skiptoken')[0]
-                except:
+                except Exception:
                     self.debug_print(f"odata.nextLink is {response.get(MS_AZURE_NEXT_LINK_STRING)}")
                     self.debug_print("Error occurred while extracting skiptoken from the odata.nextLink")
                     break
@@ -1439,9 +1448,6 @@ class MSADGraphConnector(BaseConnector):
         """
 
         self._state = self.load_state()
-
-        if self._state is None:
-            return self.set_status(phantom.APP_ERROR, MS_AZURE_STATE_FILE_CORRUPT_ERROR)
 
         # get the asset config
         config = self.get_config()

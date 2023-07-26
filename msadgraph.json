@@ -15,15 +15,15 @@
         }
     ],
     "license": "Copyright (c) 2022-2023 Splunk Inc.",
-    "app_version": "1.2.0",
+    "app_version": "1.3.0",
     "python_version": "3",
     "utctime_updated": "2022-04-18T12:59:04.000000Z",
     "package_name": "phantom_msadgraph",
     "main_module": "msadgraph_connector.py",
-    "min_phantom_version": "5.4.0",
+    "min_phantom_version": "6.0.2",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud 2022-12-5, API Version: 1.0"
+        "Cloud 2023-7-18, API Version: 1.0"
     ],
     "app_wizard_version": "1.0.0",
     "rest_handler": "msadgraph_connector._handle_rest_request",
@@ -123,6 +123,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.expand_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "manager"
+                    ]
+                },
+                {
                     "data_path": "action_result.parameter.filter_string",
                     "data_type": "string",
                     "example_values": [
@@ -134,14 +141,6 @@
                     "data_type": "string",
                     "example_values": [
                         "displayName"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.expand_string",
-                    "data_type": "string",
-                    "example_values": [
-                        "manager",
-                        "memberOf"
                     ]
                 },
                 {
@@ -310,7 +309,7 @@
                     "data_path": "action_result.data.*.mail",
                     "data_type": "string",
                     "example_values": [
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "email"
@@ -345,7 +344,7 @@
                     "data_path": "action_result.data.*.odata.type",
                     "data_type": "string",
                     "example_values": [
-                        "Microsoft.DirectoryServices.User"
+                        "test.DirectoryServices.User"
                     ]
                 },
                 {
@@ -444,15 +443,14 @@
                     "data_path": "action_result.data.*.proxyAddresses",
                     "data_type": "string",
                     "example_values": [
-                        "SMTP:user1@test.onmicrosoft.com"
+                        "SMTP:user1@test.com"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.refreshTokensValidFromDateTime",
                     "data_type": "string",
                     "example_values": [
-                        "2017-09-27T22:54:59Z",
-                        "2018-01-10T22:18:17Z"
+                        "2017-09-27T22:54:59Z"
                     ]
                 },
                 {
@@ -463,7 +461,7 @@
                     "data_path": "action_result.data.*.sipProxyAddress",
                     "data_type": "string",
                     "example_values": [
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "email"
@@ -498,7 +496,7 @@
                     "data_path": "action_result.data.*.thumbnailPhoto@odata.mediaEditLink",
                     "data_type": "string",
                     "example_values": [
-                        "directoryObjects/6132ca31-7a09-434f-a269-abe836d0c01e/Microsoft.DirectoryServices.User/thumbnailPhoto"
+                        "directoryObjects/6132ca31-7a09-434f-a269-abe836d0c01e/test.DirectoryServices.User/thumbnailPhoto"
                     ]
                 },
                 {
@@ -514,7 +512,7 @@
                     "column_name": "User Principal Name",
                     "column_order": 2,
                     "example_values": [
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "user id"
@@ -588,7 +586,7 @@
         },
         {
             "action": "reset password",
-            "description": "Reset or set a user's password in an Microsoft AD environment",
+            "description": "Reset or set a user's password in a Microsoft AD environment",
             "type": "contain",
             "identifier": "reset_password",
             "read_only": false,
@@ -647,7 +645,7 @@
                     "data_type": "string",
                     "example_values": [
                         "ee3dc4f2-70f9-446f-a19e-6b4e95ba030d",
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "user id"
@@ -730,7 +728,7 @@
                     "data_type": "string",
                     "example_values": [
                         "ee3dc4f2-70f9-446f-a19e-6b4e95ba030d",
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "user id"
@@ -746,7 +744,7 @@
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
                     "example_values": [
-                        "https://graph.microsoft.com/v1.0/$metadata#Edm.Boolean"
+                        "https://graph.test.com/v1.0/$metadata#Edm.Boolean"
                     ]
                 },
                 {
@@ -847,7 +845,7 @@
                     "data_path": "action_result.parameter.user_id",
                     "data_type": "string",
                     "example_values": [
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "user id"
@@ -863,14 +861,14 @@
                     "data_path": "action_result.summary.status",
                     "data_type": "string",
                     "example_values": [
-                        "Successfully enabled user user@test.onmicrosoft.com"
+                        "Successfully enabled user user@test.com"
                     ]
                 },
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
-                        "Status: Successfully enabled user user@test.onmicrosoft.com"
+                        "Status: Successfully enabled user user@test.com"
                     ]
                 },
                 {
@@ -927,7 +925,7 @@
                     "data_path": "action_result.parameter.user_id",
                     "data_type": "string",
                     "example_values": [
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "user id"
@@ -943,14 +941,14 @@
                     "data_path": "action_result.summary.status",
                     "data_type": "string",
                     "example_values": [
-                        "Successfully disabled user user@test.onmicrosoft.com"
+                        "Successfully disabled user user@test.com"
                     ]
                 },
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
-                        "Status: Successfully disabled user user@test.onmicrosoft.com"
+                        "Status: Successfully disabled user user@test.com"
                     ]
                 },
                 {
@@ -1017,7 +1015,7 @@
                     "data_path": "action_result.parameter.user_id",
                     "data_type": "string",
                     "example_values": [
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "user id"
@@ -1027,7 +1025,7 @@
                     "data_path": "action_result.data.*.@odata.type",
                     "data_type": "string",
                     "example_values": [
-                        "#microsoft.graph.device"
+                        "#test.graph.device"
                     ]
                 },
                 {
@@ -1265,14 +1263,14 @@
                     "data_path": "action_result.summary.status",
                     "data_type": "string",
                     "example_values": [
-                        "Successfully retrieved owned devices for user test@user.onmicrosoft.com"
+                        "Successfully retrieved owned devices for user test@user.test.com"
                     ]
                 },
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
-                        "Status: Successfully retrieved owned devices for user test@user.onmicrosoft.com"
+                        "Status: Successfully retrieved owned devices for user test@user.test.com"
                     ]
                 },
                 {
@@ -1341,18 +1339,17 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.expand_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "manager"
+                    ]
+                },
+                {
                     "data_path": "action_result.parameter.select_string",
                     "data_type": "string",
                     "example_values": [
                         "displayName"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.expand_string",
-                    "data_type": "string",
-                    "example_values": [
-                        "manager",
-                        "memberOf"
                     ]
                 },
                 {
@@ -1367,7 +1364,7 @@
                     "data_path": "action_result.parameter.user_id",
                     "data_type": "string",
                     "example_values": [
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "user id"
@@ -1377,7 +1374,7 @@
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
                     "example_values": [
-                        "https://graph.microsoft.com/v1.0/$metadata#users/$entity"
+                        "https://graph.test.com/v1.0/$metadata#users/$entity"
                     ]
                 },
                 {
@@ -1502,14 +1499,14 @@
                     "data_path": "action_result.data.*.identities.*.issuer",
                     "data_type": "string",
                     "example_values": [
-                        "test.onmicrosoft.com"
+                        "test.com"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.identities.*.issuerAssignedId",
                     "data_type": "string",
                     "example_values": [
-                        "test2@user.onmicrosoft.com"
+                        "test2@user.test.com"
                     ]
                 },
                 {
@@ -1586,7 +1583,7 @@
                     "data_path": "action_result.data.*.odata.type",
                     "data_type": "string",
                     "example_values": [
-                        "Microsoft.DirectoryServices.User"
+                        "test.DirectoryServices.User"
                     ]
                 },
                 {
@@ -1676,7 +1673,7 @@
                     "data_path": "action_result.data.*.proxyAddresses",
                     "data_type": "string",
                     "example_values": [
-                        "SMTP:test_shared_mailbox@test.onmicrosoft.com"
+                        "SMTP:test_shared_mailbox@test.com"
                     ]
                 },
                 {
@@ -1717,7 +1714,7 @@
                     "data_path": "action_result.data.*.thumbnailPhoto@odata.mediaEditLink",
                     "data_type": "string",
                     "example_values": [
-                        "directoryObjects/59f12345-1998-4932-a8ac-468e59374edc/Microsoft.DirectoryServices.User/thumbnailPhoto"
+                        "directoryObjects/59f12345-1998-4932-a8ac-468e59374edc/test.DirectoryServices.User/thumbnailPhoto"
                     ]
                 },
                 {
@@ -1731,7 +1728,7 @@
                     "data_path": "action_result.data.*.userPrincipalName",
                     "data_type": "string",
                     "example_values": [
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "user id"
@@ -1757,7 +1754,7 @@
                     "data_type": "string",
                     "example_values": [
                         "Successfully retrieved user attributes",
-                        "Successfully retrieved attributes for user user@test.onmicrosoft.com"
+                        "Successfully retrieved attributes for user user@test.com"
                     ]
                 },
                 {
@@ -1765,7 +1762,7 @@
                     "data_type": "string",
                     "example_values": [
                         "Status: Successfully retrieved user attributes",
-                        "Status: Successfully retrieved attributes for user user@test.onmicrosoft.com, User enabled: False"
+                        "Status: Successfully retrieved attributes for user user@test.com, User enabled: False"
                     ]
                 },
                 {
@@ -1858,7 +1855,7 @@
                     "data_path": "action_result.parameter.user_id",
                     "data_type": "string",
                     "example_values": [
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "user id"
@@ -1933,7 +1930,7 @@
                     "data_path": "action_result.data.*.mail",
                     "data_type": "string",
                     "example_values": [
-                        "Test-site@test.onmicrosoft.com"
+                        "Test-site@test.com"
                     ],
                     "contains": [
                         "email"
@@ -1973,7 +1970,7 @@
                     "data_path": "action_result.data.*.odata.type",
                     "data_type": "string",
                     "example_values": [
-                        "Microsoft.DirectoryServices.Group"
+                        "test.DirectoryServices.Group"
                     ]
                 },
                 {
@@ -2015,7 +2012,7 @@
                     "data_path": "action_result.data.*.proxyAddresses",
                     "data_type": "string",
                     "example_values": [
-                        "SMTP:test-h@test.onmicrosoft.com"
+                        "SMTP:test-h@test.com"
                     ]
                 },
                 {
@@ -2055,14 +2052,14 @@
                     "data_path": "action_result.summary.status",
                     "data_type": "string",
                     "example_values": [
-                        "Successfully enabled user user@test.onmicrosoft.com"
+                        "Successfully enabled user user@test.com"
                     ]
                 },
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
-                        "Status: Successfully enabled user user@test.onmicrosoft.com"
+                        "Status: Successfully enabled user user@test.com"
                     ]
                 },
                 {
@@ -2333,6 +2330,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.expand_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "members"
+                    ]
+                },
+                {
                     "data_path": "action_result.parameter.filter_string",
                     "data_type": "string",
                     "example_values": [
@@ -2344,13 +2348,6 @@
                     "data_type": "string",
                     "example_values": [
                         "displayName"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.expand_string",
-                    "data_type": "string",
-                    "example_values": [
-                        "members"
                     ]
                 },
                 {
@@ -2428,7 +2425,7 @@
                     "data_path": "action_result.data.*.mail",
                     "data_type": "string",
                     "example_values": [
-                        "Test-site@test.onmicrosoft.com"
+                        "Test-site@test.com"
                     ],
                     "contains": [
                         "email"
@@ -2468,7 +2465,7 @@
                     "data_path": "action_result.data.*.odata.type",
                     "data_type": "string",
                     "example_values": [
-                        "Microsoft.DirectoryServices.Group"
+                        "test.DirectoryServices.Group"
                     ]
                 },
                 {
@@ -2510,7 +2507,7 @@
                     "data_path": "action_result.data.*.proxyAddresses",
                     "data_type": "string",
                     "example_values": [
-                        "SMTP:test-h@test.onmicrosoft.com"
+                        "SMTP:test-h@test.com"
                     ]
                 },
                 {
@@ -2627,6 +2624,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.expand_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "members"
+                    ]
+                },
+                {
                     "data_path": "action_result.parameter.object_id",
                     "data_type": "string",
                     "example_values": [
@@ -2644,13 +2648,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.parameter.expand_string",
-                    "data_type": "string",
-                    "example_values": [
-                        "members"
-                    ]
-                },
-                {
                     "data_path": "action_result.parameter.use_advanced_query",
                     "data_type": "boolean",
                     "example_values": [
@@ -2662,7 +2659,7 @@
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
                     "example_values": [
-                        "https://graph.microsoft.com/v1.0/$metadata#groups(id,displayName)/$entity"
+                        "https://graph.test.com/v1.0/$metadata#groups(id,displayName)/$entity"
                     ]
                 },
                 {
@@ -2732,7 +2729,7 @@
                     "data_path": "action_result.data.*.mail",
                     "data_type": "string",
                     "example_values": [
-                        "bc7f9cabe@test.onmicrosoft.com"
+                        "bc7f9cabe@test.com"
                     ],
                     "contains": [
                         "email"
@@ -2781,7 +2778,7 @@
                     "data_path": "action_result.data.*.odata.type",
                     "data_type": "string",
                     "example_values": [
-                        "Microsoft.DirectoryServices.Group"
+                        "test.DirectoryServices.Group"
                     ]
                 },
                 {
@@ -2823,7 +2820,7 @@
                     "data_path": "action_result.data.*.proxyAddresses",
                     "data_type": "string",
                     "example_values": [
-                        "SMTP:bc7f9cabe@test.onmicrosoft.com"
+                        "SMTP:bc7f9cabe@test.com"
                     ]
                 },
                 {
@@ -2946,6 +2943,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.expand_string",
+                    "data_type": "string",
+                    "example_values": [
+                        "manager"
+                    ]
+                },
+                {
                     "data_path": "action_result.parameter.group_object_id",
                     "data_type": "string",
                     "example_values": [
@@ -2963,13 +2967,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.parameter.expand_string",
-                    "data_type": "string",
-                    "example_values": [
-                        "manager"
-                    ]
-                },
-                {
                     "data_path": "action_result.parameter.use_advanced_query",
                     "data_type": "boolean",
                     "example_values": [
@@ -2981,7 +2978,7 @@
                     "data_path": "action_result.data.*.@odata.type",
                     "data_type": "string",
                     "example_values": [
-                        "#microsoft.graph.user"
+                        "#test.graph.user"
                     ]
                 },
                 {
@@ -3126,14 +3123,14 @@
                     "data_path": "action_result.data.*.identities.*.issuer",
                     "data_type": "string",
                     "example_values": [
-                        "test.onmicrosoft.com"
+                        "test.com"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.identities.*.issuerAssignedId",
                     "data_type": "string",
                     "example_values": [
-                        "test@user.onmicrosoft.com"
+                        "test@user.test.com"
                     ]
                 },
                 {
@@ -3307,7 +3304,7 @@
                     "data_path": "action_result.data.*.provisionedPlans.*.service",
                     "data_type": "string",
                     "example_values": [
-                        "MicrosoftCommunicationsOnline"
+                        "testCommunicationsOnline"
                     ]
                 },
                 {
@@ -3357,7 +3354,7 @@
                     "data_path": "action_result.data.*.userPrincipalName",
                     "data_type": "string",
                     "example_values": [
-                        "ews_retest@test.onmicrosoft.com"
+                        "ews_retest@test.com"
                     ]
                 },
                 {
@@ -3468,7 +3465,7 @@
                     "data_path": "action_result.parameter.user_id",
                     "data_type": "string",
                     "example_values": [
-                        "user@test.onmicrosoft.com"
+                        "user@test.com"
                     ],
                     "contains": [
                         "user id"
@@ -3480,7 +3477,7 @@
                     "data_path": "action_result.data.*.@odata.context",
                     "data_type": "string",
                     "example_values": [
-                        "https://graph.microsoft.com/v1.0/$metadata#directoryObjects"
+                        "https://graph.test.com/v1.0/$metadata#directoryObjects"
                     ]
                 },
                 {
@@ -3491,7 +3488,7 @@
                     "data_path": "action_result.data.*.value.*.@odata.type",
                     "data_type": "string",
                     "example_values": [
-                        "#microsoft.graph.group"
+                        "#test.graph.group"
                     ]
                 },
                 {
@@ -3545,7 +3542,7 @@
                     "data_path": "action_result.data.*.value.*.mail",
                     "data_type": "string",
                     "example_values": [
-                        "test@user.onmicrosoft.com"
+                        "test@user.test.com"
                     ]
                 },
                 {
@@ -3744,7 +3741,7 @@
                     "data_path": "action_result.data.*.odata.type",
                     "data_type": "string",
                     "example_values": [
-                        "Microsoft.DirectoryServices.DirectoryRole"
+                        "test.DirectoryServices.DirectoryRole"
                     ]
                 },
                 {
@@ -3794,7 +3791,7 @@
         {
             "action": "generate token",
             "identifier": "generate_token",
-            "description": "Generate a token or regenerates token when the token expires",
+            "description": "Generate a token",
             "type": "generic",
             "read_only": false,
             "parameters": {},
@@ -3850,100 +3847,24 @@
     "pip_dependencies": {
         "wheel": [
             {
-                "module": "Django",
-                "input_file": "wheels/py3/Django-3.2.16-py3-none-any.whl"
-            },
-            {
-                "module": "asgiref",
-                "input_file": "wheels/py3/asgiref-3.4.1-py3-none-any.whl"
-            },
-            {
                 "module": "beautifulsoup4",
                 "input_file": "wheels/py3/beautifulsoup4-4.9.1-py3-none-any.whl"
             },
             {
-                "module": "certifi",
-                "input_file": "wheels/py3/certifi-2022.12.7-py3-none-any.whl"
-            },
-            {
-                "module": "chardet",
-                "input_file": "wheels/shared/chardet-3.0.4-py2.py3-none-any.whl"
-            },
-            {
-                "module": "idna",
-                "input_file": "wheels/shared/idna-2.10-py2.py3-none-any.whl"
-            },
-            {
-                "module": "pytz",
-                "input_file": "wheels/shared/pytz-2022.7.1-py2.py3-none-any.whl"
-            },
-            {
-                "module": "requests",
-                "input_file": "wheels/shared/requests-2.25.0-py2.py3-none-any.whl"
-            },
-            {
                 "module": "soupsieve",
                 "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
-            },
-            {
-                "module": "sqlparse",
-                "input_file": "wheels/py3/sqlparse-0.4.3-py3-none-any.whl"
-            },
-            {
-                "module": "typing_extensions",
-                "input_file": "wheels/py3/typing_extensions-4.1.1-py3-none-any.whl"
-            },
-            {
-                "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.14-py2.py3-none-any.whl"
             }
         ]
     },
     "pip39_dependencies": {
         "wheel": [
             {
-                "module": "Django",
-                "input_file": "wheels/py3/Django-3.2.16-py3-none-any.whl"
-            },
-            {
-                "module": "asgiref",
-                "input_file": "wheels/py3/asgiref-3.6.0-py3-none-any.whl"
-            },
-            {
                 "module": "beautifulsoup4",
                 "input_file": "wheels/py3/beautifulsoup4-4.9.1-py3-none-any.whl"
             },
             {
-                "module": "certifi",
-                "input_file": "wheels/py3/certifi-2022.12.7-py3-none-any.whl"
-            },
-            {
-                "module": "chardet",
-                "input_file": "wheels/shared/chardet-3.0.4-py2.py3-none-any.whl"
-            },
-            {
-                "module": "idna",
-                "input_file": "wheels/shared/idna-2.10-py2.py3-none-any.whl"
-            },
-            {
-                "module": "pytz",
-                "input_file": "wheels/shared/pytz-2022.7.1-py2.py3-none-any.whl"
-            },
-            {
-                "module": "requests",
-                "input_file": "wheels/shared/requests-2.25.0-py2.py3-none-any.whl"
-            },
-            {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
-            },
-            {
-                "module": "sqlparse",
-                "input_file": "wheels/py3/sqlparse-0.4.3-py3-none-any.whl"
-            },
-            {
-                "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.14-py2.py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.4.1-py3-none-any.whl"
             }
         ]
     }
