@@ -62,6 +62,7 @@ MS_AZURE_AUTHORIZE_URL = "https://login.microsoftonline.com/{tenant_id}/oauth2/v
 AUTH_FAILURE_MESSAGES = (
     "token is invalid",
     "token has expired",
+    "token is expired",
     "ExpiredAuthenticationToken",
     "AuthenticationFailed",
     "TokenExpired",
