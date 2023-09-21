@@ -6,7 +6,7 @@ Connector Version: 1.4.0
 Product Vendor: Microsoft  
 Product Name: MS Graph for Active Directory  
 Product Version Supported (regex): ".\*"  
-Minimum Product Version: 6.0.2  
+Minimum Product Version: 6.1.0  
 
 Connects to Microsoft Active Directory using MS Graph REST API services to support various generic and investigative actions
 
