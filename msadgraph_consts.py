@@ -59,15 +59,6 @@ MS_AZURE_NOT_FOUND_CODE = 404
 SERVER_TOKEN_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token"
 MS_AZURE_ADMIN_CONSENT_URL = "https://login.microsoftonline.com/{tenant_id}/adminconsent"
 MS_AZURE_AUTHORIZE_URL = "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize"
-AUTH_FAILURE_MESSAGES = (
-    "token is invalid",
-    "token has expired",
-    "token is expired",
-    "ExpiredAuthenticationToken",
-    "AuthenticationFailed",
-    "TokenExpired",
-    "InvalidAuthenticationToken"
-)
 MS_REST_URL_NOT_AVAILABLE_MESSAGE = 'Rest URL not available. Error: {error}'
 MS_OAUTH_URL_MESSAGE = 'Using OAuth URL:\n'
 MS_AUTHORIZE_USER_MESSAGE = 'Please authorize user in a separate tab using URL:'
