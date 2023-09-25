@@ -1,2 +1,2 @@
 **Unreleased**
-* Fix the token expiration issue [PAPP-31400]
+* Fixed the token expiration issue [PAPP-31400]
