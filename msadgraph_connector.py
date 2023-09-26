@@ -665,7 +665,8 @@ class MSADGraphConnector(BaseConnector):
 
         # If token is expired, generate a new token
         message = action_result.get_message()
-        if message and any(failure_message in message for failure_message in AUTH_FAILURE_MESSAGES):
+        self.debug_print(f"message: {message}")
+        if message and ('token' in message and 'expired' in message):
             self.save_progress("Token is invalid/expired. Hence, generating a new token.")
             ret_val = self._get_token(action_result)
             if phantom.is_fail(ret_val):
