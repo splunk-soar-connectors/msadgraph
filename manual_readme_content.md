@@ -1,17 +1,3 @@
-[comment]: # " File: README.md"
-[comment]: # "  Copyright (c) 2022-2023 Splunk Inc."
-[comment]: # ""
-[comment]: # "Licensed under the Apache License, Version 2.0 (the 'License');"
-[comment]: # "you may not use this file except in compliance with the License."
-[comment]: # "You may obtain a copy of the License at"
-[comment]: # ""
-[comment]: # "    http://www.apache.org/licenses/LICENSE-2.0"
-[comment]: # ""
-[comment]: # "Unless required by applicable law or agreed to in writing, software distributed under"
-[comment]: # "the License is distributed on an 'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,"
-[comment]: # "either express or implied. See the License for the specific language governing permissions"
-[comment]: # "and limitations under the License."
-[comment]: # ""
 ## Authentication
 
 ### Microsoft Azure Application creation
@@ -20,15 +6,15 @@ This app requires creating a Microsoft Azure Application. To do so, navigate to
 <https://portal.azure.com> in a browser and log in with a Microsoft account, then select **Azure
 Active Directory** .
 
-1.  Go to **App Registrations** and click on **+ New registration** .
-2.  Give the app an appropriate name.
-3.  Select a supported account type (configure the application to be multitenant).
-4.  Click on the **Register** .
-    -   Under **Certificates & secrets** , add **New client secret** . Note this key somewhere
-        secure, as it cannot be retrieved after closing the window.
-    -   Under **Redirect URIs** we will be updating the entry of https://phantom.local to reflect
-        the actual redirect URI. We will get this from the SOAR asset we create below in the section
-        titled "Configure the MS Graph for Active Directory SOAR app Asset"
+1. Go to **App Registrations** and click on **+ New registration** .
+1. Give the app an appropriate name.
+1. Select a supported account type (configure the application to be multitenant).
+1. Click on the **Register** .
+   - Under **Certificates & secrets** , add **New client secret** . Note this key somewhere
+     secure, as it cannot be retrieved after closing the window.
+   - Under **Redirect URIs** we will be updating the entry of https://phantom.local to reflect
+     the actual redirect URI. We will get this from the SOAR asset we create below in the section
+     titled "Configure the MS Graph for Active Directory SOAR app Asset"
 
 ### Delegated Permissions configuration
 
@@ -36,19 +22,19 @@ Use this procedure to provide non-admin permissions to the app. To do so, naviga
 <https://portal.azure.com> in a browser and log in with a Microsoft account, then navigate to the
 previously created app configuration.
 
-1.  Under **API Permissions** , click on **Add a permission** .
-2.  Go to **Microsoft Graph Permissions** , the following **Delegated Permissions** need to be
-    added:
-    -   User.ReadWrite.All
-    -   Directory.ReadWrite.All
-    -   Directory.AccessAsUser.All
-    -   User.ManageIdentities.All
-    -   Group.ReadWrite.All
-    -   GroupMember.ReadWrite.All
-    -   RoleManagement.ReadWrite.Directory
-    -   offline_access
-3.  Click on the **Add permissions** .
-4.  After making these changes, click on **Grant admin consent** .
+1. Under **API Permissions** , click on **Add a permission** .
+1. Go to **Microsoft Graph Permissions** , the following **Delegated Permissions** need to be
+   added:
+   - User.ReadWrite.All
+   - Directory.ReadWrite.All
+   - Directory.AccessAsUser.All
+   - User.ManageIdentities.All
+   - Group.ReadWrite.All
+   - GroupMember.ReadWrite.All
+   - RoleManagement.ReadWrite.Directory
+   - offline_access
+1. Click on the **Add permissions** .
+1. After making these changes, click on **Grant admin consent** .
 
 ### Application Permissions configuration
 
@@ -56,17 +42,17 @@ Use this procedure to provide admin permissions to the app. To do so, navigate t
 <https://portal.azure.com> in a browser and log in with a Microsoft account, then navigate to the
 previously created app configuration.
 
-1.  Under **API Permissions** , click on **Add a permission** .
-2.  Go to **Microsoft Graph Permissions** , the following **Application Permissions** need to be
-    added:
-    -   User.ReadWrite.All
-    -   Directory.ReadWrite.All
-    -   User.ManageIdentities.All
-    -   Group.ReadWrite.All
-    -   GroupMember.ReadWrite.All
-    -   RoleManagement.ReadWrite.Directory
-3.  Click on the **Add permissions** .
-4.  After making these changes, click on **Grant admin consent** .
+1. Under **API Permissions** , click on **Add a permission** .
+1. Go to **Microsoft Graph Permissions** , the following **Application Permissions** need to be
+   added:
+   - User.ReadWrite.All
+   - Directory.ReadWrite.All
+   - User.ManageIdentities.All
+   - Group.ReadWrite.All
+   - GroupMember.ReadWrite.All
+   - RoleManagement.ReadWrite.Directory
+1. Click on the **Add permissions** .
+1. After making these changes, click on **Grant admin consent** .
 
 #### Note: **reset password** action is not supported with Application permissions
 
@@ -84,7 +70,6 @@ should look something like:
 
 https://\<phantom_host>/rest/handler/msgraphforactivedirectory_f2a239df-acb2-47d6-861c-726a435cfe76/\<asset_name>/result
 
-  
 Once again, click on Save.
 
 ## Enable Application Permissions
@@ -100,13 +85,13 @@ user on behalf of which automated actions can be executed** . By default, the us
 **automation** , but this user can be changed by clicking **EDIT** at the bottom of the window. To
 give this user permission to view assets, follow these steps:
 
--   In the main drop-down menu, select **Administration** , then select the **User Management** ,
-    and under that tab, select **Roles** . Finally, click **+ ROLE** .
--   In the **Add Role** wizard, give the role a name (e.g **Asset Viewer** ), and provide a
-    description. Subsequently, under **Available Users** , add the user assigned to the asset viewed
-    earlier. Then click the **Permissions** tab.
--   On the permission tab, under **Available Privileges** , give the role the **View Assets**
-    privilege. Then click **SAVE** .
+- In the main drop-down menu, select **Administration** , then select the **User Management** ,
+  and under that tab, select **Roles** . Finally, click **+ ROLE** .
+- In the **Add Role** wizard, give the role a name (e.g **Asset Viewer** ), and provide a
+  description. Subsequently, under **Available Users** , add the user assigned to the asset viewed
+  earlier. Then click the **Permissions** tab.
+- On the permission tab, under **Available Privileges** , give the role the **View Assets**
+  privilege. Then click **SAVE** .
 
 ## Method to Run Test Connectivity (for delegated permissions)
 
@@ -124,16 +109,16 @@ Please check the permissions for the state file as mentioned below.
 
 #### State Filepath
 
--   For Root Install Instance:
-    /opt/phantom/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}\_state.json
--   For Non-Root Install Instance:
-    /\<PHANTOM_HOME_DIRECTORY>/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}\_state.json
+- For Root Install Instance:
+  /opt/phantom/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}\_state.json
+- For Non-Root Install Instance:
+  /\<PHANTOM_HOME_DIRECTORY>/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}\_state.json
 
 #### State File Permissions
 
--   File Rights: rw-rw-r-- (664) (The SOAR user should have read and write access for the state
-    file)
--   File Owner: appropriate SOAR user
+- File Rights: rw-rw-r-- (664) (The SOAR user should have read and write access for the state
+  file)
+- File Owner: appropriate SOAR user
 
 ## Port Details
 
@@ -142,4 +127,4 @@ default ports used by the Splunk SOAR Connector.
 
 | Service Name | Transport Protocol | Port |
 |--------------|--------------------|------|
-| https        | tcp                | 443  |
+| https | tcp | 443 |
