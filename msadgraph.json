@@ -14,7 +14,7 @@
             "name": "Mathieu A. Cormier"
         }
     ],
-    "license": "Copyright (c) 2022-2023 Splunk Inc.",
+    "license": "Copyright (c) 2022-2025 Splunk Inc.",
     "app_version": "1.4.0",
     "python_version": "3",
     "utctime_updated": "2022-04-18T12:59:04.000000Z",
@@ -2075,6 +2075,10 @@
                     "example_values": [
                         1
                     ]
+                },
+                {
+                    "data_path": "action_result.parameter.ph_0",
+                    "data_type": "ph"
                 }
             ],
             "render": {

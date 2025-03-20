@@ -1,6 +1,6 @@
 # File: msadgraph_consts.py
 #
-# Copyright (c) 2022-2023 Splunk Inc.
+# Copyright (c) 2022-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,33 +21,32 @@ MSADGRAPH_API_URLS = {
     "US Gov L4": "https://graph.microsoft.us",
     "US Gov L5 (DOD)": "https://dod-graph.microsoft.us",
     "Germany": "https://graph.microsoft.de",
-    "China (21Vianet)": "https://microsoftgraph.chinacloudapi.cn"
+    "China (21Vianet)": "https://microsoftgraph.chinacloudapi.cn",
 }
 MSADGRAPH_API_REGION = {
     "Global": "graph.microsoft.com/v1.0",
     "US Gov L4": "graph.microsoft.us",
     "US Gov L5 (DOD)": "dod-graph.microsoft.us",
     "Germany": "graph.microsoft.de",
-    "China (21Vianet)": "microsoftgraph.chinacloudapi.cn"
+    "China (21Vianet)": "microsoftgraph.chinacloudapi.cn",
 }
-MS_AZURE_CONFIG_TENANT = 'tenant_id'
-MS_AZURE_CONFIG_SUBSCRIPTION = 'subscription_id'
-MS_AZURE_CONFIG_CLIENT_ID = 'client_id'
-MS_AZURE_CONFIG_CLIENT_SECRET = 'client_secret'  # pragma: allowlist secret
-MS_AZURE_CONFIG_ADMIN_ACCESS_REQUIRED = 'admin_access_required'
-MS_AZURE_CONFIG_ADMIN_ACCESS_GRANTED = 'admin_access_granted'
+MS_AZURE_CONFIG_TENANT = "tenant_id"
+MS_AZURE_CONFIG_SUBSCRIPTION = "subscription_id"
+MS_AZURE_CONFIG_CLIENT_ID = "client_id"
+MS_AZURE_CONFIG_CLIENT_SECRET = "client_secret"  # pragma: allowlist secret
+MS_AZURE_CONFIG_ADMIN_ACCESS_REQUIRED = "admin_access_required"
+MS_AZURE_CONFIG_ADMIN_ACCESS_GRANTED = "admin_access_granted"
 MS_AZURE_URL = "region"
-MS_AZURE_CONFIG_ADMIN_ACCESS = 'admin_access'
-MS_AZURE_TOKEN_STRING = 'token'
-MS_AZURE_ACCESS_TOKEN_STRING = 'access_token'
-MS_AZURE_REFRESH_TOKEN_STRING = 'refresh_token'
-MS_AZURE_PHANTOM_BASE_URL = '{phantom_base_url}rest'
-MS_AZURE_PHANTOM_SYS_INFO_URL = '/system_info'
-MS_AZURE_PHANTOM_ASSET_INFO_URL = '/asset/{asset_id}'
-MS_AZURE_BASE_URL_NOT_FOUND_MESSAGE = 'SOAR Base URL not found in System Settings. ' \
-                                'Please specify this value in System Settings.'
-MS_AZURE_HTML_ERROR = 'Bad Request Bad Request - Invalid URL HTTP Error 400. The request URL is invalid.'
-MS_AZURE_NEXT_LINK_STRING = 'odata.nextLink'
+MS_AZURE_CONFIG_ADMIN_ACCESS = "admin_access"
+MS_AZURE_TOKEN_STRING = "token"
+MS_AZURE_ACCESS_TOKEN_STRING = "access_token"
+MS_AZURE_REFRESH_TOKEN_STRING = "refresh_token"
+MS_AZURE_PHANTOM_BASE_URL = "{phantom_base_url}rest"
+MS_AZURE_PHANTOM_SYS_INFO_URL = "/system_info"
+MS_AZURE_PHANTOM_ASSET_INFO_URL = "/asset/{asset_id}"
+MS_AZURE_BASE_URL_NOT_FOUND_MESSAGE = "SOAR Base URL not found in System Settings. Please specify this value in System Settings."
+MS_AZURE_HTML_ERROR = "Bad Request Bad Request - Invalid URL HTTP Error 400. The request URL is invalid."
+MS_AZURE_NEXT_LINK_STRING = "odata.nextLink"
 MS_AZURE_PAGE_SIZE = 999
 MS_AZURE_ERROR_MESSAGE_UNKNOWN = "Unknown error occurred. Please check the asset configuration and|or action parameters."
 
@@ -59,24 +58,28 @@ MS_AZURE_NOT_FOUND_CODE = 404
 SERVER_TOKEN_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token"
 MS_AZURE_ADMIN_CONSENT_URL = "https://login.microsoftonline.com/{tenant_id}/adminconsent"
 MS_AZURE_AUTHORIZE_URL = "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize"
-MS_REST_URL_NOT_AVAILABLE_MESSAGE = 'Rest URL not available. Error: {error}'
-MS_OAUTH_URL_MESSAGE = 'Using OAuth URL:\n'
-MS_AUTHORIZE_USER_MESSAGE = 'Please authorize user in a separate tab using URL:'
-MS_GENERATING_ACCESS_TOKEN_MESSAGE = 'Generating access token'
+MS_REST_URL_NOT_AVAILABLE_MESSAGE = "Rest URL not available. Error: {error}"
+MS_OAUTH_URL_MESSAGE = "Using OAuth URL:\n"
+MS_AUTHORIZE_USER_MESSAGE = "Please authorize user in a separate tab using URL:"
+MS_GENERATING_ACCESS_TOKEN_MESSAGE = "Generating access token"
 MS_TC_STATUS_SLEEP = 3
 MS_AZURE_WAIT_FOR_URL_SLEEP = 5
-MS_AZURE_CODE_GENERATION_SCOPE = 'offline_access Group.ReadWrite.All User.Read.All User.ReadWrite.All Directory.ReadWrite.All \
-Directory.AccessAsUser.All User.ManageIdentities.All GroupMember.ReadWrite.All RoleManagement.ReadWrite.Directory'
-MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE = 'If authorization URL fails to communicate with your SOAR instance, check whether you have:  '\
-                                ' 1. Specified the Web Redirect URL of your App -- The Redirect URL should be <POST URL>/result . '\
-                                ' 2. Configured the base URL of your SOAR Instance at Administration -> Company Settings -> Info'
+MS_AZURE_CODE_GENERATION_SCOPE = "offline_access Group.ReadWrite.All User.Read.All User.ReadWrite.All Directory.ReadWrite.All \
+Directory.AccessAsUser.All User.ManageIdentities.All GroupMember.ReadWrite.All RoleManagement.ReadWrite.Directory"
+MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE = (
+    "If authorization URL fails to communicate with your SOAR instance, check whether you have:  "
+    " 1. Specified the Web Redirect URL of your App -- The Redirect URL should be <POST URL>/result . "
+    " 2. Configured the base URL of your SOAR Instance at Administration -> Company Settings -> Info"
+)
 
 MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE = "Test Connectivity Failed"
 MS_AZURE_TEST_CONNECTIVITY_PASSED = "Test Connectivity Passed"
 MS_AZURE_ENCRYPTION_ERROR = "Error occurred while encrypting the state file"
 MS_AZURE_DECRYPTION_ERROR = "Error occurred while decrypting the state file"
-MS_AZURE_STATE_FILE_CORRUPT_ERROR = "Error occurred while loading the state file due to it's unexpected format. " \
+MS_AZURE_STATE_FILE_CORRUPT_ERROR = (
+    "Error occurred while loading the state file due to it's unexpected format. "
     "Resetting the state file with the default format. Please test the connectivity."
+)
 MS_AZURE_RESPONSE_ERROR_MESSAGE = "Error from server. Status Code: {status_code}. Data from server: \n{error_text}\n"
 MS_AZURE_PROCESS_RESPONSE_ERROR_MESSAGE = "Can't process response from server. Status Code: {status_code} Data from server: {content}"
 MS_ADMIN_CONSENT_ERROR_MESSAGE = "Admin consent not received"
