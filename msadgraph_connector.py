@@ -1030,6 +1030,12 @@ class MSADGraphConnector(BaseConnector):
         attribute = param["attribute"]
         attribute_value = param["attribute_value"]
 
+        if isinstance(attribute_value, str):
+            try:
+                attribute_value = json.loads(attribute_value)
+            except json.JSONDecodeError:
+                pass
+
         data = {attribute: attribute_value}
 
         endpoint = f"/users/{user_id}"
