@@ -39,6 +39,8 @@ def display_view(provides, all_app_runs, context):
                 continue
             results.append(ctx_result)
 
+    return_page = None
+
     if provides == "list users":
         return_page = "msadgraph_list_users.html"
     if provides == "list user attributes":
