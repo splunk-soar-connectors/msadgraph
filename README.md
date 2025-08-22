@@ -1,9 +1,9 @@
 # MS Graph for Active Directory
 
-Publisher: Splunk \
-Connector Version: 1.4.0 \
-Product Vendor: Microsoft \
-Product Name: MS Graph for Active Directory \
+Publisher: Splunk <br>
+Connector Version: 1.4.0 <br>
+Product Vendor: Microsoft <br>
+Product Name: MS Graph for Active Directory <br>
 Minimum Product Version: 6.1.0
 
 Connects to Microsoft Active Directory using MS Graph REST API services to support various generic and investigative actions
@@ -154,29 +154,29 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Use supplied credentials to generate a token with MS Graph \
-[list users](#action-list-users) - Get a list of users \
-[reset password](#action-reset-password) - Reset or set a user's password in a Microsoft AD environment \
-[disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in a Microsoft AD environment \
-[enable user](#action-enable-user) - Enable a user \
-[disable user](#action-disable-user) - Disable a user \
-[list user devices](#action-list-user-devices) - List devices for a specified user \
-[list user attributes](#action-list-user-attributes) - List attributes for all or a specified user \
-[set user attribute](#action-set-user-attribute) - Set an attribute for a user \
-[remove user](#action-remove-user) - Remove a user from a specified group \
-[add user](#action-add-user) - Add a user to a specified group \
-[list groups](#action-list-groups) - List groups in the organization \
-[get group](#action-get-group) - Get information about a group \
-[list group members](#action-list-group-members) - List the members in a group \
-[validate group](#action-validate-group) - Returns true if a user is in a group; otherwise, false \
-[list directory roles](#action-list-directory-roles) - List the directory roles that are activated in the tenant \
+[test connectivity](#action-test-connectivity) - Use supplied credentials to generate a token with MS Graph <br>
+[list users](#action-list-users) - Get a list of users <br>
+[reset password](#action-reset-password) - Reset or set a user's password in a Microsoft AD environment <br>
+[disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in a Microsoft AD environment <br>
+[enable user](#action-enable-user) - Enable a user <br>
+[disable user](#action-disable-user) - Disable a user <br>
+[list user devices](#action-list-user-devices) - List devices for a specified user <br>
+[list user attributes](#action-list-user-attributes) - List attributes for all or a specified user <br>
+[set user attribute](#action-set-user-attribute) - Set an attribute for a user <br>
+[remove user](#action-remove-user) - Remove a user from a specified group <br>
+[add user](#action-add-user) - Add a user to a specified group <br>
+[list groups](#action-list-groups) - List groups in the organization <br>
+[get group](#action-get-group) - Get information about a group <br>
+[list group members](#action-list-group-members) - List the members in a group <br>
+[validate group](#action-validate-group) - Returns true if a user is in a group; otherwise, false <br>
+[list directory roles](#action-list-directory-roles) - List the directory roles that are activated in the tenant <br>
 [generate token](#action-generate-token) - Generate a token
 
 ## action: 'test connectivity'
 
 Use supplied credentials to generate a token with MS Graph
 
-Type: **test** \
+Type: **test** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -191,7 +191,7 @@ No Output
 
 Get a list of users
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 For more information on using the filter_string, select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters. By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter.
@@ -286,7 +286,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Reset or set a user's password in a Microsoft AD environment
 
-Type: **contain** \
+Type: **contain** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -315,7 +315,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Invalidate all active refresh tokens for a user in a Microsoft AD environment
 
-Type: **contain** \
+Type: **contain** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -344,7 +344,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Enable a user
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -369,7 +369,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Disable a user
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -394,7 +394,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 List devices for a specified user
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.
@@ -473,7 +473,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 List attributes for all or a specified user
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.
@@ -572,7 +572,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Set an attribute for a user
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -634,7 +634,7 @@ action_result.parameter.ph_0 | ph | | |
 
 Remove a user from a specified group
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -661,7 +661,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Add a user to a specified group
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -688,7 +688,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 List groups in the organization
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.
@@ -752,7 +752,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Get information about a group
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.
@@ -819,7 +819,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 List the members in a group
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.
@@ -928,7 +928,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Returns true if a user is in a group; otherwise, false
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -984,7 +984,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 List the directory roles that are activated in the tenant
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 <p>Pagination is not implemented for this action as this endpoint does not support pagination. Here is the <b><a href='https://docs.microsoft.com/en-us/graph/paging' target='_blank'>Documentation</a></b> for the same.</p>
@@ -1016,7 +1016,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Generate a token
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
