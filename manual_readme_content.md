@@ -1,124 +1,263 @@
-## Authentication
+## Prerequisites
 
-### Microsoft Azure Application creation
+Before configuring this connector, ensure you have:
 
-This app requires creating a Microsoft Azure Application. To do so, navigate to
-<https://portal.azure.com> in a browser and log in with a Microsoft account, then select **Azure
-Active Directory** .
+- **Azure AD Administrator Access**: Global Administrator or Privileged Role Administrator role
+- **SOAR Platform Access**: Administrator privileges in Splunk SOAR
+- **Network Connectivity**: SOAR instance can reach `https://graph.microsoft.com` and `https://login.microsoftonline.com`
 
-1. Go to **App Registrations** and click on **+ New registration** .
-1. Give the app an appropriate name.
-1. Select a supported account type (configure the application to be multitenant).
-1. Click on the **Register** .
-   - Under **Certificates & secrets** , add **New client secret** . Note this key somewhere
-     secure, as it cannot be retrieved after closing the window.
-   - Under **Redirect URIs** we will be updating the entry of https://phantom.local to reflect
-     the actual redirect URI. We will get this from the SOAR asset we create below in the section
-     titled "Configure the MS Graph for Active Directory SOAR app Asset"
+## Azure AD Admin Role Requirements
 
-### Delegated Permissions configuration
+### Required Roles for Setup
 
-Use this procedure to provide non-admin permissions to the app. To do so, navigate to
-<https://portal.azure.com> in a browser and log in with a Microsoft account, then navigate to the
-previously created app configuration.
+The following Azure AD roles can perform the initial setup and grant admin consent:
 
-1. Under **API Permissions** , click on **Add a permission** .
-1. Go to **Microsoft Graph Permissions** , the following **Delegated Permissions** need to be
-   added:
-   - User.ReadWrite.All
-   - Directory.ReadWrite.All
-   - Directory.AccessAsUser.All
-   - User.ManageIdentities.All
-   - Group.ReadWrite.All
-   - GroupMember.ReadWrite.All
-   - RoleManagement.ReadWrite.Directory
-   - offline_access
-1. Click on the **Add permissions** .
-1. After making these changes, click on **Grant admin consent** .
+| **Role** | **Can Grant Admin Consent** | **Least Privilege Option** |
+|----------|----------------------------|---------------------------|
+| **Global Administrator** | Yes | Not recommended for production |
+| **Privileged Role Administrator** | Yes | **Recommended** |
+| **Cloud Application Administrator** | Limited | Only for apps they manage |
+| **Application Administrator** | Limited | Only for apps they manage |
 
-### Application Permissions configuration
+**Recommendation**: Use **Privileged Role Administrator** as it provides the necessary permissions without the broad access of Global Administrator.
 
-Use this procedure to provide admin permissions to the app. To do so, navigate to
-<https://portal.azure.com> in a browser and log in with a Microsoft account, then navigate to the
-previously created app configuration.
+### Operational Role Requirements
 
-1. Under **API Permissions** , click on **Add a permission** .
-1. Go to **Microsoft Graph Permissions** , the following **Application Permissions** need to be
-   added:
-   - User.ReadWrite.All
-   - Directory.ReadWrite.All
-   - User.ManageIdentities.All
-   - Group.ReadWrite.All
-   - GroupMember.ReadWrite.All
-   - RoleManagement.ReadWrite.Directory
-1. Click on the **Add permissions** .
-1. After making these changes, click on **Grant admin consent** .
+For ongoing operations, specific actions require different privilege levels:
 
-#### Note: **reset password** action is not supported with Application permissions
+- **Reset Password**: User Administrator role minimum
+- **Enable/Disable Users**: Privileged Authentication Administrator role minimum
+- **Manage Groups**: Groups Administrator role minimum
+- **Read-only Operations**: Directory Readers role sufficient
 
-## Configure the MS Graph for Active Directory SOAR app Asset
+## Configuration Overview
 
-When creating an asset for the **MS Graph for Active Directory** app, place the **Application ID**
-of the app created during the previous step in the **Client ID** field and place the password
-generated during the app creation process in the **Client Secret** field. Then, after filling out
-the **Tenant** field, click **SAVE** .
+The MS Graph for Active Directory connector supports two authentication modes:
 
-After saving, a new field will appear in the **Asset Settings** tab. Take the URL found in the
-**POST incoming for MS Graph to this location** field and place it in the **Redirect URIs** field of
-the Azure Application configuration page. To this URL, add **/result** . After doing so the URL
-should look something like:
+1. **Delegated Permissions** (Interactive): Acts on behalf of a signed-in user
+1. **Application Permissions** (Non-interactive): Acts with its own identity
 
-https://\<phantom_host>/rest/handler/msgraphforactivedirectory_f2a239df-acb2-47d6-861c-726a435cfe76/\<asset_name>/result
+## Step-by-Step Setup Guide
 
-Once again, click on Save.
+### Step 1: Create Azure Application Registration
 
-## Enable Application Permissions
+1. Navigate to [Azure Portal](https://portal.azure.com)
+1. Go to **Azure Active Directory** → **App registrations**
+1. Click **+ New registration**
+1. Configure the application:
+   - **Name**: `SOAR-MSGraph-Connector` (or your preferred name)
+   - **Supported account types**: Select appropriate option for your organization
+   - **Redirect URI**: Leave blank for now (will be configured later)
+1. Click **Register**
+1. **Save the Application (client) ID** - you'll need this for the SOAR asset configuration
 
-If you have received admin consent to use application permissions, make sure to check the **Admin
-Access Required** and **Admin Consent Already Provided** checkboxes on the asset.
+### Step 2: Create Client Secret
 
-## User Permissions
+1. In your app registration, go to **Certificates & secrets**
+1. Click **+ New client secret**
+1. Add a description and set expiration (24 months recommended)
+1. Click **Add**
+1. **Immediately copy and securely store the secret value** - it cannot be retrieved later
 
-To complete the authorization process, this app needs permission to view assets, which is not
-granted by default. First, under **asset settings** , check which user is listed under **Select a
-user on behalf of which automated actions can be executed** . By default, the user will be
-**automation** , but this user can be changed by clicking **EDIT** at the bottom of the window. To
-give this user permission to view assets, follow these steps:
+### Step 3: Configure API Permissions
 
-- In the main drop-down menu, select **Administration** , then select the **User Management** ,
-  and under that tab, select **Roles** . Finally, click **+ ROLE** .
-- In the **Add Role** wizard, give the role a name (e.g **Asset Viewer** ), and provide a
-  description. Subsequently, under **Available Users** , add the user assigned to the asset viewed
-  earlier. Then click the **Permissions** tab.
-- On the permission tab, under **Available Privileges** , give the role the **View Assets**
-  privilege. Then click **SAVE** .
+Choose **either** Delegated OR Application permissions based on your use case:
 
-## Method to Run Test Connectivity (for delegated permissions)
+#### Option A: Delegated Permissions (Recommended for most use cases)
 
-After setting up the asset and user, click the **TEST CONNECTIVITY** button. A window should pop up
-and display a URL. Navigate to this URL in a separate browser tab. This new tab will redirect to a
-Microsoft login page. Log in to a Microsoft account with administrator privileges to the Microsoft
-AD environment. After logging in, review the requested permissions listed, then click **Accept** .
-Finally, close that tab. The test connectivity window should show success.
+1. Go to **API permissions** → **+ Add a permission**
+1. Select **Microsoft Graph** → **Delegated permissions**
+1. Add the following permissions:
+   - `User.ReadWrite.All`
+   - `Directory.ReadWrite.All`
+   - `Directory.AccessAsUser.All`
+   - `User.ManageIdentities.All`
+   - `Group.ReadWrite.All`
+   - `GroupMember.ReadWrite.All`
+   - `RoleManagement.ReadWrite.Directory`
+   - `offline_access`
+1. Click **Add permissions**
+1. Click **Grant admin consent for [Your Organization]**
 
-The app should now be ready to use.
+#### Option B: Application Permissions (For automated scenarios)
+
+1. Go to **API permissions** → **+ Add a permission**
+1. Select **Microsoft Graph** → **Application permissions**
+1. Add the following permissions:
+   - `User.ReadWrite.All`
+   - `Directory.ReadWrite.All`
+   - `User.ManageIdentities.All`
+   - `Group.ReadWrite.All`
+   - `GroupMember.ReadWrite.All`
+   - `RoleManagement.ReadWrite.Directory`
+   - `User-PasswordProfile.ReadWrite.All`
+1. Click **Add permissions**
+1. Click **Grant admin consent for [Your Organization]**
+
+### Step 4: Configure SOAR Asset
+
+1. In Splunk SOAR, go to **Apps** → **MS Graph for Active Directory**
+1. Click **+ ASSET**
+1. Configure the asset with the following information:
+
+## Asset Configuration
+
+### Configuration Fields Explained
+
+| **SOAR Field** | **Azure Portal Equivalent** | **Description** | **Required** |
+|----------------|----------------------------|-----------------|--------------|
+| **Tenant** | Directory (tenant) ID | Your Azure AD tenant identifier | Yes |
+| **Application ID** | Application (client) ID | The app registration's unique identifier | Yes |
+| **Client Secret** | Client secret value | The secret created in Step 2 | Yes |
+| **Microsoft AD Region** | N/A | Select your Microsoft cloud environment | No (defaults to Global) |
+| **Admin Access Required** | N/A | Check if using Application permissions | No |
+| **Admin Consent Already Provided** | N/A | Check if admin consent was granted in Azure | No |
+
+### Region Options
+
+| **Region** | **Endpoint** | **Use Case** |
+|------------|--------------|--------------|
+| **Global** | `graph.microsoft.com` | Most organizations |
+| **US Gov L4** | `graph.microsoft.us` | US Government |
+| **US Gov L5 (DOD)** | `dod-graph.microsoft.us` | US Department of Defense |
+| **Germany** | `graph.microsoft.de` | Microsoft Cloud Germany |
+| **China (21Vianet)** | `microsoftgraph.chinacloudapi.cn` | Microsoft Cloud China |
+
+### Step 5: Update Redirect URI
+
+1. After saving the SOAR asset, note the **POST incoming for MS Graph to this location** URL
+1. Return to your Azure app registration
+1. Go to **Authentication** → **+ Add a platform** → **Web**
+1. Add the redirect URI: `[SOAR_URL]/result`
+   - Example: `https://<phantom_host>/rest/handler/msgraphforactivedirectory_f2a239df-acb2-47d6-861c-726a435cfe76/<asset_name>/result`
+1. Click **Configure**
+
+## Understanding Consent Types
+
+### Azure Admin Consent vs SOAR Test Connectivity
+
+There are **two different consent processes** that serve different purposes:
+
+#### 1. Azure Admin Consent
+
+- **Where**: Azure Portal → App registrations → API permissions
+- **Purpose**: Grants the application permission to access Microsoft Graph APIs
+- **Who**: Azure AD administrator (Global Admin or Privileged Role Admin)
+- **When**: During initial setup in Azure Portal
+- **What it grants**: API access permissions to the application
+
+#### 2. SOAR Test Connectivity Consent
+
+- **Where**: SOAR platform → Asset → Test Connectivity
+- **Purpose**: Establishes the authentication flow and obtains access tokens
+- **Who**: User with appropriate Azure AD permissions for the requested operations
+- **When**: During SOAR asset configuration and testing
+- **What it grants**: Actual authentication tokens for API calls
+
+**Both consents are required** for the connector to function properly.
+
+### Simplified Consent Flow
+
+The traditional three-step process can be optimized:
+
+#### Traditional Flow (Can be simplified)
+
+1. Admin grants consent in Azure Portal
+1. Uncheck "Admin Consent Already Provided" in SOAR
+1. Run Test Connectivity with functional account
+
+#### Optimized Flow (Recommended)
+
+1. Admin grants consent in Azure Portal
+1. **Check "Admin Consent Already Provided" in SOAR**
+1. Run Test Connectivity - it will use application permissions directly
+
+**Recommendation**: Use the optimized flow by checking "Admin Consent Already Provided" after granting consent in Azure Portal.
+
+## Permissions Reference
+
+### Action-Specific Permissions
+
+The following table shows the minimum required permissions for each action:
+
+| **Action** | **Minimum Delegated Permission** | **Minimum Application Permission** | **Azure AD Role Required** |
+|------------|----------------------------------|-----------------------------------|---------------------------|
+| **Test Connectivity** | `User.Read` | `User.Read.All` | Directory Readers |
+| **List Users** | `User.Read.All` | `User.Read.All` | Directory Readers |
+| **Reset Password** | `User.ReadWrite.All` | Not Supported | User Administrator |
+| **Disable Tokens** | `User.RevokeSessions.All` | `User.RevokeSessions.All` | Directory Readers |
+| **Enable/Disable User** | `User.ReadWrite.All` | `User.ReadWrite.All` | Privileged Authentication Administrator |
+| **List User Devices** | `User.Read` | Not Supported | Directory Readers |
+| **List User Attributes** | `User.Read.All` | `User.Read.All` | Directory Readers |
+| **Set User Attribute** | `User.ReadWrite.All` | `User.ReadWrite.All` | User Administrator |
+| **Add/Remove User (Group)** | `GroupMember.ReadWrite.All` | `GroupMember.ReadWrite.All` | Groups Administrator |
+| **List Groups** | `Group.Read.All` | `Group.Read.All` | Directory Readers |
+| **Get Group** | `Group.Read.All` | `Group.Read.All` | Directory Readers |
+| **List Group Members** | `GroupMember.Read.All` | `GroupMember.Read.All` | Directory Readers |
+| **Validate Group** | `User.Read.All` | `User.Read.All` | Directory Readers |
+| **List Directory Roles** | `RoleManagement.Read.Directory` | `RoleManagement.Read.Directory` | Directory Readers |
+
+### Full vs Minimum Permissions
+
+**Current Configuration** (Full permissions - maximum capability):
+
+- `User.ReadWrite.All`, `Directory.ReadWrite.All`, `User.ManageIdentities.All`
+- `Group.ReadWrite.All`, `GroupMember.ReadWrite.All`, `RoleManagement.ReadWrite.Directory`
+
+**Minimum Required** (For read-only operations):
+
+- `User.Read.All`, `Group.Read.All`, `GroupMember.Read.All`
+
+## Test Connectivity
+
+### For Delegated Permissions
+
+1. Click **TEST CONNECTIVITY** on the asset
+1. A popup will display a URL - click to open in a new tab
+1. Sign in with an account that has the necessary Azure AD permissions
+1. Review and accept the permission request
+1. Close the browser tab and return to SOAR
+1. The test should complete successfully
+
+### For Application Permissions
+
+1. Ensure **Admin Access Required** and **Admin Consent Already Provided** are checked
+1. Click **TEST CONNECTIVITY**
+1. The test will authenticate using the application's own identity
+1. No interactive login is required
+
+## User Permissions Setup
+
+To complete the authorization process, this app needs permission to view assets, which is not granted by default.
+
+1. **Check Asset User**
+
+   - Navigate to **Asset Settings > Advanced**
+   - Note the user listed under **Select a user on behalf of which automated actions can be executed**
+   - Default user is typically **automation**
+
+1. **Create Asset Viewer Role**
+
+   - Go to **Administration > User Management > Roles & Permissions > + ROLE**
+   - **Name**: "Asset Viewer" (or similar)
+   - **Users tab**: Add the user from step 1
+   - **Permissions tab**: Grant **View Assets** privilege
+   - Click **SAVE**
 
 ## State File Permissions
 
-Please check the permissions for the state file as mentioned below.
+The connector stores authentication tokens in a state file that requires proper permissions:
 
-#### State Filepath
+### File Locations
 
-- For Root Install Instance:
-  /opt/phantom/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}\_state.json
-- For Non-Root Install Instance:
-  /\<PHANTOM_HOME_DIRECTORY>/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}\_state.json
+- **Root Install**: `/opt/phantom/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}_state.json`
+- **Non-Root Install**: `/<PHANTOM_HOME_DIRECTORY>/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}_state.json`
 
-#### State File Permissions
+### Required Permissions
 
-- File Rights: rw-rw-r-- (664) (The SOAR user should have read and write access for the state
-  file)
-- File Owner: appropriate SOAR user
+- **File Rights**: `rw-rw-r--` (664) (The SOAR user should have read and write access for the state file)
+- **File Owner**: Appropriate SOAR user
+- **Access**: SOAR user must have read and write access
 
 ## Port Details
 
@@ -128,3 +267,11 @@ default ports used by the Splunk SOAR Connector.
 | Service Name | Transport Protocol | Port |
 |--------------|--------------------|------|
 | https | tcp | 443 |
+
+## Microsoft Documentation References
+
+- [Microsoft Graph Permissions Overview](https://learn.microsoft.com/en-us/graph/permissions-overview)
+- [Microsoft Graph Permissions Reference](https://learn.microsoft.com/en-us/graph/permissions-reference)
+- [Azure AD Built-in Roles](https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference)
+- [Microsoft Graph API Documentation](https://learn.microsoft.com/en-us/graph/)
+- [Application vs Delegated Permissions](https://learn.microsoft.com/en-us/graph/auth/auth-concepts#delegated-and-application-permissions)
