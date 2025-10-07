@@ -89,6 +89,8 @@ Choose **either** Delegated OR Application permissions based on your use case:
 1. Click **Add permissions**
 1. Click **Grant admin consent for [Your Organization]**
 
+#### Note: **reset password** and **disable user** action is required minimun User Administrator role to be run with Delegated permissions
+
 #### Option B: Application Permissions (For automated scenarios)
 
 1. Go to **API permissions** → **+ Add a permission**
@@ -103,6 +105,8 @@ Choose **either** Delegated OR Application permissions based on your use case:
    - `User-PasswordProfile.ReadWrite.All`
 1. Click **Add permissions**
 1. Click **Grant admin consent for [Your Organization]**
+
+#### Note: `User-PasswordProfile.ReadWrite.All` is required only for **reset password** action to be run with Application permissions
 
 ### Step 4: Configure SOAR Asset
 
@@ -194,10 +198,10 @@ The following table shows the minimum required permissions for each action:
 |------------|----------------------------------|-----------------------------------|---------------------------|
 | **Test Connectivity** | `User.Read` | `User.Read.All` | Directory Readers |
 | **List Users** | `User.Read.All` | `User.Read.All` | Directory Readers |
-| **Reset Password** | `User.ReadWrite.All` | Not Supported | User Administrator |
+| **Reset Password** | `User.ReadWrite.All` | `User-PasswordProfile.ReadWrite.All` | User Administrator |
 | **Disable Tokens** | `User.RevokeSessions.All` | `User.RevokeSessions.All` | Directory Readers |
 | **Enable/Disable User** | `User.ReadWrite.All` | `User.ReadWrite.All` | Privileged Authentication Administrator |
-| **List User Devices** | `User.Read` | Not Supported | Directory Readers |
+| **List User Devices** | `User.Read` | `Directory.Read.All` | Directory Readers |
 | **List User Attributes** | `User.Read.All` | `User.Read.All` | Directory Readers |
 | **Set User Attribute** | `User.ReadWrite.All` | `User.ReadWrite.All` | User Administrator |
 | **Add/Remove User (Group)** | `GroupMember.ReadWrite.All` | `GroupMember.ReadWrite.All` | Groups Administrator |
