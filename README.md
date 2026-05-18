@@ -85,6 +85,8 @@ Choose **either** Delegated OR Application permissions based on your use case:
    - `Group.ReadWrite.All`
    - `GroupMember.ReadWrite.All`
    - `RoleManagement.ReadWrite.Directory`
+   - `Policy.Read.All`
+   - `Policy.ReadWrite.ConditionalAccess`
    - `offline_access`
 1. Click **Add permissions**
 1. Click **Grant admin consent for [Your Organization]**
@@ -102,6 +104,8 @@ Choose **either** Delegated OR Application permissions based on your use case:
    - `Group.ReadWrite.All`
    - `GroupMember.ReadWrite.All`
    - `RoleManagement.ReadWrite.Directory`
+   - `Policy.Read.All`
+   - `Policy.ReadWrite.ConditionalAccess`
    - `User-PasswordProfile.ReadWrite.All`
 1. Click **Add permissions**
 1. Click **Grant admin consent for [Your Organization]**
@@ -210,6 +214,9 @@ The following table shows the minimum required permissions for each action:
 | **List Group Members** | `GroupMember.Read.All` | `GroupMember.Read.All` | Directory Readers |
 | **Validate Group** | `User.Read.All` | `User.Read.All` | Directory Readers |
 | **List Directory Roles** | `RoleManagement.Read.Directory` | `RoleManagement.Read.Directory` | Directory Readers |
+| **List Named Locations** | `Policy.Read.All` | `Policy.Read.All` | Conditional Access Administrator |
+| **Add CIDR to Named Location** | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | Conditional Access Administrator |
+| **Remove CIDR from Named Location** | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | Conditional Access Administrator |
 
 ### Full vs Minimum Permissions
 
@@ -217,6 +224,7 @@ The following table shows the minimum required permissions for each action:
 
 - `User.ReadWrite.All`, `Directory.ReadWrite.All`, `User.ManageIdentities.All`
 - `Group.ReadWrite.All`, `GroupMember.ReadWrite.All`, `RoleManagement.ReadWrite.Directory`
+- `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess`
 
 **Minimum Required** (For read-only operations):
 
@@ -321,6 +329,9 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [list group members](#action-list-group-members) - List the members in a group <br>
 [validate group](#action-validate-group) - Returns true if a user is in a group; otherwise, false <br>
 [list directory roles](#action-list-directory-roles) - List the directory roles that are activated in the tenant <br>
+[list named locations](#action-list-named-locations) - List named locations in Entra Conditional Access <br>
+[add cidr to named location](#action-add-cidr-to-named-location) - Add a CIDR range to an IP-based named location in Entra Conditional Access <br>
+[remove cidr from named location](#action-remove-cidr-from-named-location) - Remove a CIDR range from an IP-based named location in Entra Conditional Access <br>
 [generate token](#action-generate-token) - Generate a token
 
 ## action: 'test connectivity'
@@ -1163,6 +1174,99 @@ action_result.message | string | | Num directory roles: 9 |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
+## action: 'list named locations'
+
+List named locations in Entra Conditional Access
+
+Type: **investigate** <br>
+Read only: **True**
+
+For more information on using the filter and select parameters, refer to https://learn.microsoft.com/en-us/graph/filter-query-parameter and https://learn.microsoft.com/en-us/graph/query-parameters#select-parameter.
+
+#### Action Parameters
+
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**location_type** | optional | Type of named locations to return | string | |
+**filter** | optional | Optional OData filter, for example contains(displayName,'Blocked') | string | |
+**select** | optional | Optional select string to get specific properties. Separate multiple values with commas | string | |
+
+#### Action Output
+
+DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
+--------- | ---- | -------- | --------------
+action_result.status | string | | success failed |
+action_result.parameter.location_type | string | | all ip country |
+action_result.parameter.filter | string | | contains(displayName,'Blocked') |
+action_result.parameter.select | string | | id,displayName |
+action_result.data.\*.@odata.type | string | | #microsoft.graph.ipNamedLocation #microsoft.graph.countryNamedLocation |
+action_result.data.\*.id | string | `directory object id` | 0c0c6d27-93e7-4fd7-88a4-952c6d61a697 |
+action_result.data.\*.displayName | string | | Named locations to be blocked |
+action_result.data.\*.createdDateTime | string | `datetime` | 2021-03-23T04:59:25.8014022Z |
+action_result.data.\*.modifiedDateTime | string | `datetime` | 2021-03-23T08:05:02.1027085Z |
+action_result.data.\*.isTrusted | boolean | | True False |
+action_result.data.\*.ipRanges.\*.@odata.type | string | | #microsoft.graph.iPv6CidrRange #microsoft.graph.iPv4CidrRange |
+action_result.data.\*.ipRanges.\*.cidrAddress | string | `ip` `cidr` | 127.0.0.1/32 2001:8000::/20 |
+action_result.data.\*.countriesAndRegions.\* | string | | US CA |
+action_result.data.\*.countryLookupMethod | string | | clientIpAddress authenticatorAppGps |
+action_result.data.\*.includeUnknownCountriesAndRegions | boolean | | True False |
+action_result.summary.num_named_locations | numeric | | 2 |
+action_result.message | string | | Successfully listed named locations |
+summary.total_objects | numeric | | 1 |
+summary.total_objects_successful | numeric | | 1 |
+
+## action: 'add cidr to named location'
+
+Add a CIDR range to an IP-based named location in Entra Conditional Access
+
+Type: **contain** <br>
+Read only: **False**
+
+#### Action Parameters
+
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**cidr_range** | required | IPv4 or IPv6 CIDR range, for example 1.1.1.0/24 or 2001:db8::/32 | string | `ip` `cidr` |
+**location_id** | required | Object ID of the IP-based named location | string | `directory object id` |
+
+#### Action Output
+
+DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
+--------- | ---- | -------- | --------------
+action_result.status | string | | success failed |
+action_result.parameter.cidr_range | string | `ip` `cidr` | 1.1.1.0/24 2001:db8::/32 |
+action_result.parameter.location_id | string | `directory object id` | 0c0c6d27-93e7-4fd7-88a4-952c6d61a697 |
+action_result.summary.status | string | | Successfully added 1.1.1.0/24 CIDR already present |
+action_result.message | string | | Successfully added 1.1.1.0/24 CIDR already present in named location |
+summary.total_objects | numeric | | 1 |
+summary.total_objects_successful | numeric | | 1 |
+
+## action: 'remove cidr from named location'
+
+Remove a CIDR range from an IP-based named location in Entra Conditional Access
+
+Type: **correct** <br>
+Read only: **False**
+
+#### Action Parameters
+
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**cidr_range** | required | IPv4 or IPv6 CIDR range, for example 1.1.1.0/24 or 2001:db8::/32 | string | `ip` `cidr` |
+**location_id** | required | Object ID of the IP-based named location | string | `directory object id` |
+
+#### Action Output
+
+DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
+--------- | ---- | -------- | --------------
+action_result.status | string | | success failed |
+action_result.parameter.cidr_range | string | `ip` `cidr` | 1.1.1.0/24 2001:db8::/32 |
+action_result.parameter.location_id | string | `directory object id` | 0c0c6d27-93e7-4fd7-88a4-952c6d61a697 |
+action_result.summary.status | string | | Successfully removed 1.1.1.0/24 CIDR not present |
+action_result.message | string | | Successfully removed 1.1.1.0/24 CIDR not present in named location |
+summary.total_objects | numeric | | 1 |
+summary.total_objects_successful | numeric | | 1 |
+
 ## action: 'generate token'
 
 Generate a token
@@ -1189,7 +1293,7 @@ ______________________________________________________________________
 
 Auto-generated Splunk SOAR Connector documentation.
 
-Copyright 2025 Splunk Inc.
+Copyright 2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

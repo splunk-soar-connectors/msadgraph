@@ -75,6 +75,8 @@ Choose **either** Delegated OR Application permissions based on your use case:
    - `Group.ReadWrite.All`
    - `GroupMember.ReadWrite.All`
    - `RoleManagement.ReadWrite.Directory`
+   - `Policy.Read.All`
+   - `Policy.ReadWrite.ConditionalAccess`
    - `offline_access`
 1. Click **Add permissions**
 1. Click **Grant admin consent for [Your Organization]**
@@ -92,6 +94,8 @@ Choose **either** Delegated OR Application permissions based on your use case:
    - `Group.ReadWrite.All`
    - `GroupMember.ReadWrite.All`
    - `RoleManagement.ReadWrite.Directory`
+   - `Policy.Read.All`
+   - `Policy.ReadWrite.ConditionalAccess`
    - `User-PasswordProfile.ReadWrite.All`
 1. Click **Add permissions**
 1. Click **Grant admin consent for [Your Organization]**
@@ -200,6 +204,9 @@ The following table shows the minimum required permissions for each action:
 | **List Group Members** | `GroupMember.Read.All` | `GroupMember.Read.All` | Directory Readers |
 | **Validate Group** | `User.Read.All` | `User.Read.All` | Directory Readers |
 | **List Directory Roles** | `RoleManagement.Read.Directory` | `RoleManagement.Read.Directory` | Directory Readers |
+| **List Named Locations** | `Policy.Read.All` | `Policy.Read.All` | Conditional Access Administrator |
+| **Add CIDR to Named Location** | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | Conditional Access Administrator |
+| **Remove CIDR from Named Location** | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | Conditional Access Administrator |
 
 ### Full vs Minimum Permissions
 
@@ -207,6 +214,7 @@ The following table shows the minimum required permissions for each action:
 
 - `User.ReadWrite.All`, `Directory.ReadWrite.All`, `User.ManageIdentities.All`
 - `Group.ReadWrite.All`, `GroupMember.ReadWrite.All`, `RoleManagement.ReadWrite.Directory`
+- `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess`
 
 **Minimum Required** (For read-only operations):
 

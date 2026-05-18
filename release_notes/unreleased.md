@@ -1,1 +1,3 @@
 **Unreleased**
+
+* Added support for Entra Conditional Access named locations with `list named locations`, `add cidr to named location`, and `remove cidr from named location`; updated listing to support filtering by location type (`all`, `ip`, `country`) and to return both IP- and country-based named location details

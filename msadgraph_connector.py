@@ -1,6 +1,6 @@
 # File: msadgraph_connector.py
 #
-# Copyright (c) 2022-2025 Splunk Inc.
+# Copyright (c) 2022-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import pwd
 import sys
 import time
 import urllib.parse as urlparse
+from ipaddress import ip_network
 
 import encryption_helper
 import phantom.app as phantom
@@ -1232,6 +1233,152 @@ class MSADGraphConnector(BaseConnector):
         self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
 
+    def _handle_list_named_locations(self, param):
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        filter_string = param.get("filter")
+        location_type = param.get("location_type", "all")
+        select_string = param.get("select")
+
+        headers = {"ConsistencyLevel": "eventual"}
+        parameters = {"$count": "true"}
+
+        type_filter = None
+        if location_type == "ip":
+            type_filter = "isof('microsoft.graph.ipNamedLocation')"
+        elif location_type == "country":
+            type_filter = "isof('microsoft.graph.countryNamedLocation')"
+
+        if filter_string:
+            filter_string = filter_string.strip()
+            if filter_string and type_filter:
+                parameters["$filter"] = f"{type_filter} and ({filter_string})"
+            elif filter_string:
+                parameters["$filter"] = filter_string
+
+        if type_filter and not filter_string:
+            parameters["$filter"] = type_filter
+
+        if select_string:
+            select_values = [param_value.strip() for param_value in select_string.split(",")]
+            select_values = list(filter(None, select_values))
+            if select_values:
+                parameters["$select"] = ",".join(select_values)
+
+        endpoint = "/identity/conditionalAccess/namedLocations"
+        ret_val = self._handle_pagination(action_result, endpoint, headers=headers, params=parameters)
+
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        summary = action_result.update_summary({})
+        resp_data = action_result.get_data()
+        if resp_data and resp_data[action_result.get_data_size() - 1] == "Empty response":
+            summary["num_named_locations"] = action_result.get_data_size() - 1
+        else:
+            summary["num_named_locations"] = action_result.get_data_size()
+
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully listed named locations")
+
+    def _handle_add_cidr_to_named_location(self, param):
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        cidr_range = param["cidr_range"]
+        location_id = param["location_id"]
+
+        try:
+            network = ip_network(cidr_range, strict=False)
+        except ValueError as e:
+            return action_result.set_status(phantom.APP_ERROR, f"Invalid CIDR range: {e}")
+
+        cidr_type = "#microsoft.graph.iPv4CidrRange" if network.version == 4 else "#microsoft.graph.iPv6CidrRange"
+        normalized_cidr = str(network)
+
+        endpoint = f"/identity/conditionalAccess/namedLocations/{location_id}"
+        ret_val, existing_location = self._make_rest_call_helper(action_result, endpoint, method="get")
+
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        location_type = existing_location.get("@odata.type")
+        if location_type != "#microsoft.graph.ipNamedLocation":
+            return action_result.set_status(phantom.APP_ERROR, f"Named location {location_id} is not an IP-based named location")
+
+        current_ranges = existing_location.get("ipRanges", [])
+        if any(existing_range.get("cidrAddress") == normalized_cidr for existing_range in current_ranges):
+            summary = action_result.update_summary({})
+            summary["status"] = "CIDR already present"
+            self.save_progress(f"CIDR {normalized_cidr} already exists in named location {location_id}")
+            return action_result.set_status(phantom.APP_SUCCESS, "CIDR already present in named location")
+
+        updated_ranges = list(current_ranges)
+        updated_ranges.append({"@odata.type": cidr_type, "cidrAddress": normalized_cidr})
+
+        patch_body = {"@odata.type": "#microsoft.graph.ipNamedLocation", "ipRanges": updated_ranges}
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=patch_body, method="patch")
+
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        if response:
+            action_result.add_data(response)
+
+        summary = action_result.update_summary({})
+        summary["status"] = f"Successfully added {normalized_cidr}"
+
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
+        return action_result.set_status(phantom.APP_SUCCESS, f"Successfully added {normalized_cidr}")
+
+    def _handle_remove_cidr_from_named_location(self, param):
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        cidr_range = param["cidr_range"]
+        location_id = param["location_id"]
+
+        try:
+            network = ip_network(cidr_range, strict=False)
+        except ValueError as e:
+            return action_result.set_status(phantom.APP_ERROR, f"Invalid CIDR range: {e}")
+
+        normalized_cidr = str(network)
+        endpoint = f"/identity/conditionalAccess/namedLocations/{location_id}"
+        ret_val, existing_location = self._make_rest_call_helper(action_result, endpoint, method="get")
+
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        location_type = existing_location.get("@odata.type")
+        if location_type != "#microsoft.graph.ipNamedLocation":
+            return action_result.set_status(phantom.APP_ERROR, f"Named location {location_id} is not an IP-based named location")
+
+        current_ranges = existing_location.get("ipRanges", [])
+        updated_ranges = [existing_range for existing_range in current_ranges if existing_range.get("cidrAddress") != normalized_cidr]
+
+        if len(updated_ranges) == len(current_ranges):
+            summary = action_result.update_summary({})
+            summary["status"] = "CIDR not present"
+            self.save_progress(f"CIDR {normalized_cidr} not found in named location {location_id}")
+            return action_result.set_status(phantom.APP_SUCCESS, "CIDR not present in named location")
+
+        patch_body = {"@odata.type": "#microsoft.graph.ipNamedLocation", "ipRanges": updated_ranges}
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, json=patch_body, method="patch")
+
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        if response:
+            action_result.add_data(response)
+
+        summary = action_result.update_summary({})
+        summary["status"] = f"Successfully removed {normalized_cidr}"
+
+        self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
+        return action_result.set_status(phantom.APP_SUCCESS, f"Successfully removed {normalized_cidr}")
+
     def _handle_validate_group(self, param):
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
@@ -1394,6 +1541,15 @@ class MSADGraphConnector(BaseConnector):
 
         elif action_id == "list_directory_roles":
             ret_val = self._handle_list_directory_roles(param)
+
+        elif action_id == "list_named_locations":
+            ret_val = self._handle_list_named_locations(param)
+
+        elif action_id == "add_cidr_to_named_location":
+            ret_val = self._handle_add_cidr_to_named_location(param)
+
+        elif action_id == "remove_cidr_from_named_location":
+            ret_val = self._handle_remove_cidr_from_named_location(param)
 
         elif action_id == "generate_token":
             ret_val = self._handle_generate_token(param)
