@@ -1257,7 +1257,7 @@ class MSADGraphConnector(BaseConnector):
             elif filter_string:
                 parameters["$filter"] = filter_string
 
-        if type_filter and "$filter" not in parameters:
+        if type_filter and not filter_string:
             parameters["$filter"] = type_filter
 
         if select_string:
