@@ -40,6 +40,17 @@ For ongoing operations, specific actions require different privilege levels:
 - **Manage Groups**: Groups Administrator role minimum
 - **Read-only Operations**: Directory Readers role sufficient
 
+### Reset Password Limitations
+
+The **reset password** action calls the Microsoft Graph Update user API and updates the user's `passwordProfile`
+property. This property contains the new temporary password and whether the user must change the password at next
+sign-in. Microsoft documents in the Update user API request body properties that `passwordProfile` cannot be used for
+federated users. For federated users, Microsoft Entra ID can return the error "Password cannot be changed for federated
+users." Password management for federated users should be handled through the federation provider instead.
+
+For more information, see the Microsoft Graph
+[Update user API request body](https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body).
+
 ## Configuration Overview
 
 The MS Graph for Active Directory connector supports two authentication modes:
@@ -447,6 +458,12 @@ summary.total_objects_successful | numeric | | 1 |
 ## action: 'reset password'
 
 Reset or set a user's password in a Microsoft AD environment
+
+Note: The reset password action calls the Microsoft Graph Update user API and updates the user's passwordProfile
+property. Microsoft documents in the request body properties that passwordProfile cannot be used for federated users, so
+Microsoft Entra ID can return "Password cannot be changed for federated users." Manage passwords for federated users
+through the federation provider. For more information, see
+https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.
 
 Type: **contain** <br>
 Read only: **False**
