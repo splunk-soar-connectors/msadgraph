@@ -462,7 +462,7 @@ Reset or set a user's password in a Microsoft AD environment
 Type: **contain** <br>
 Read only: **False**
 
-Note: The reset password action calls the Microsoft Graph Update user API and updates the user's passwordProfile property. Microsoft documents in the request body properties that passwordProfile cannot be used for federated users, so Microsoft Entra ID can return "Password cannot be changed for federated users." Manage passwords for federated users through the federation provider. For more information, see https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.
+Password reset updates the user's passwordProfile property. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.
 
 #### Action Parameters
 
