@@ -1,1 +1,3 @@
 **Unreleased**
+
+* Updated reset password documentation to clarify that the Microsoft Graph Update user API cannot use `passwordProfile` for federated users.
