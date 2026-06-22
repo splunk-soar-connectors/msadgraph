@@ -65,7 +65,8 @@ MS_GENERATING_ACCESS_TOKEN_MESSAGE = "Generating access token"
 MS_TC_STATUS_SLEEP = 3
 MS_AZURE_WAIT_FOR_URL_SLEEP = 5
 MS_AZURE_CODE_GENERATION_SCOPE = "offline_access Group.ReadWrite.All User.Read.All User.ReadWrite.All Directory.ReadWrite.All \
-Directory.AccessAsUser.All User.ManageIdentities.All GroupMember.ReadWrite.All RoleManagement.ReadWrite.Directory"
+Directory.AccessAsUser.All User.ManageIdentities.All GroupMember.ReadWrite.All RoleManagement.ReadWrite.Directory \
+Policy.Read.All Policy.ReadWrite.ConditionalAccess"
 MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE = (
     "If authorization URL fails to communicate with your SOAR instance, check whether you have:  "
     " 1. Specified the Web Redirect URL of your App -- The Redirect URL should be <POST URL>/result . "

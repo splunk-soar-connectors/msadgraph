@@ -30,6 +30,17 @@ For ongoing operations, specific actions require different privilege levels:
 - **Manage Groups**: Groups Administrator role minimum
 - **Read-only Operations**: Directory Readers role sufficient
 
+### Reset Password Limitations
+
+The **reset password** action calls the Microsoft Graph Update user API and updates the user's `passwordProfile`
+property. This property contains the new temporary password and whether the user must change the password at next
+sign-in. Microsoft documents in the Update user API request body properties that `passwordProfile` cannot be used for
+federated users. For federated users, Microsoft Entra ID can return the error "Password cannot be changed for federated
+users." Password management for federated users should be handled through the federation provider instead.
+
+For more information, see the Microsoft Graph
+[Update user API request body](https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body).
+
 ## Configuration Overview
 
 The MS Graph for Active Directory connector supports two authentication modes:
@@ -75,6 +86,8 @@ Choose **either** Delegated OR Application permissions based on your use case:
    - `Group.ReadWrite.All`
    - `GroupMember.ReadWrite.All`
    - `RoleManagement.ReadWrite.Directory`
+   - `Policy.Read.All`
+   - `Policy.ReadWrite.ConditionalAccess`
    - `offline_access`
 1. Click **Add permissions**
 1. Click **Grant admin consent for [Your Organization]**
@@ -92,6 +105,8 @@ Choose **either** Delegated OR Application permissions based on your use case:
    - `Group.ReadWrite.All`
    - `GroupMember.ReadWrite.All`
    - `RoleManagement.ReadWrite.Directory`
+   - `Policy.Read.All`
+   - `Policy.ReadWrite.ConditionalAccess`
    - `User-PasswordProfile.ReadWrite.All`
 1. Click **Add permissions**
 1. Click **Grant admin consent for [Your Organization]**
@@ -200,6 +215,9 @@ The following table shows the minimum required permissions for each action:
 | **List Group Members** | `GroupMember.Read.All` | `GroupMember.Read.All` | Directory Readers |
 | **Validate Group** | `User.Read.All` | `User.Read.All` | Directory Readers |
 | **List Directory Roles** | `RoleManagement.Read.Directory` | `RoleManagement.Read.Directory` | Directory Readers |
+| **List Named Locations** | `Policy.Read.All` | `Policy.Read.All` | Conditional Access Administrator |
+| **Add CIDR to Named Location** | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | Conditional Access Administrator |
+| **Remove CIDR from Named Location** | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | Conditional Access Administrator |
 
 ### Full vs Minimum Permissions
 
@@ -207,6 +225,7 @@ The following table shows the minimum required permissions for each action:
 
 - `User.ReadWrite.All`, `Directory.ReadWrite.All`, `User.ManageIdentities.All`
 - `Group.ReadWrite.All`, `GroupMember.ReadWrite.All`, `RoleManagement.ReadWrite.Directory`
+- `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess`
 
 **Minimum Required** (For read-only operations):
 
