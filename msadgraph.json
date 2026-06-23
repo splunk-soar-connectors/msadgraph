@@ -20,7 +20,7 @@
     "utctime_updated": "2026-06-01T07:20:46.497539Z",
     "package_name": "phantom_msadgraph",
     "main_module": "msadgraph_connector.py",
-    "min_phantom_version": "6.4.0",
+    "min_phantom_version": "8.6.0",
     "fips_compliant": true,
     "latest_tested_versions": [
         "Cloud 2023-9-20, API Version: 1.0"
@@ -610,7 +610,7 @@
                 },
                 "temp_password": {
                     "description": "Temporary password for user",
-                    "data_type": "string",
+                    "data_type": "password",
                     "required": true,
                     "order": 2
                 }
@@ -636,7 +636,7 @@
                 },
                 {
                     "data_path": "action_result.parameter.temp_password",
-                    "data_type": "string",
+                    "data_type": "password",
                     "example_values": [
                         "Temp_PA$$w0rd"
                     ]
