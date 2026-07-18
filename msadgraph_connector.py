@@ -46,6 +46,11 @@ def _quote_path_segment(value):
     return urlparse.quote(str(value), safe="")
 
 
+def _escape_odata_string(value):
+    """Escape a value embedded in an OData single-quoted string."""
+    return str(value).replace("'", "''")
+
+
 def _handle_login_redirect(request, key):
     """This function is used to redirect login request to microsoft login page.
 
@@ -1407,19 +1412,22 @@ class MSADGraphConnector(BaseConnector):
         object_id = param["group_object_id"]
         user_id = param["user_id"]
 
-        endpoint = f"/users/{_quote_path_segment(user_id)}/memberOf?$filter=id eq '{object_id}'"
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method="get")
+        endpoint = f"/users/{_quote_path_segment(user_id)}/memberOf"
+        parameters = {"$filter": f"id eq '{_escape_odata_string(object_id)}'"}
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method="get", params=parameters)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
-        user_id_map = {}
-
-        for user in response.get("value", []):
-            user_id_map[user["id"]] = user["displayName"]
+        user_in_group = any(item.get("id") == object_id for item in response.get("value", []))
+        response["user_in_group"] = user_in_group
+        action_result.add_data(response)
+        summary = action_result.update_summary({})
+        summary["user_in_group"] = user_in_group
+        summary["message"] = "User is a member of the group" if user_in_group else "User is not a member of the group"
 
         self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
-        return action_result.set_status(phantom.APP_SUCCESS, f"User is member of group: {ret_val}")
+        return action_result.set_status(phantom.APP_SUCCESS, f"User in group: {user_in_group}")
 
     def _get_token(self, action_result):
         """This function is used to get a token via REST Call.
