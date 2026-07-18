@@ -239,9 +239,7 @@ def _handle_login_response(request):
 
     oauth_state = request.GET.get("state")
     if not oauth_state or ":" not in oauth_state:
-        return HttpResponse(
-            "ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE
-        ), None
+        return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
 
     asset_id, presented_nonce = oauth_state.split(":", 1)
     if not _is_valid_asset_id(asset_id):
@@ -970,11 +968,21 @@ class MSADGraphConnector(BaseConnector):
 
         data = {"accountEnabled": False}
 
-        endpoint = f"/users/{_quote_path_segment(user_id)}"
+        encoded_user_id = _quote_path_segment(user_id)
+        endpoint = f"/users/{encoded_user_id}"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="patch")
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
+
+        revoke_endpoint = f"/users/{encoded_user_id}/revokeSignInSessions"
+        ret_val, _ = self._make_rest_call_helper(action_result, revoke_endpoint, method="post")
+        if phantom.is_fail(ret_val):
+            error = action_result.get_message()
+            return action_result.set_status(
+                phantom.APP_ERROR,
+                f"User {user_id} was disabled, but session revocation failed: {error}",
+            )
 
         summary = action_result.update_summary({})
         summary["status"] = f"Successfully disabled user {user_id}"
