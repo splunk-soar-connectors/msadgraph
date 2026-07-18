@@ -39,6 +39,11 @@ from msadgraph_consts import *
 MAX_END_OFFSET_VAL = 2147483646
 
 
+def _quote_path_segment(value):
+    """Encode an action parameter as one URL path segment."""
+    return urlparse.quote(str(value), safe="")
+
+
 def _handle_login_redirect(request, key):
     """This function is used to redirect login request to microsoft login page.
 
@@ -884,7 +889,7 @@ class MSADGraphConnector(BaseConnector):
 
         data = {"passwordProfile": {"forceChangePasswordNextSignIn": force_change, "password": temp_password}}
 
-        endpoint = f"/users/{user_id}"
+        endpoint = f"/users/{_quote_path_segment(user_id)}"
 
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="patch")
 
@@ -906,7 +911,7 @@ class MSADGraphConnector(BaseConnector):
 
         data = {"accountEnabled": True}
 
-        endpoint = f"/users/{user_id}"
+        endpoint = f"/users/{_quote_path_segment(user_id)}"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="patch")
 
         if phantom.is_fail(ret_val):
@@ -924,7 +929,7 @@ class MSADGraphConnector(BaseConnector):
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         user_id = param["user_id"]
-        endpoint = f"/users/{user_id}/revokeSignInSessions"
+        endpoint = f"/users/{_quote_path_segment(user_id)}/revokeSignInSessions"
 
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, method="post")
 
@@ -945,7 +950,7 @@ class MSADGraphConnector(BaseConnector):
 
         data = {"accountEnabled": False}
 
-        endpoint = f"/users/{user_id}"
+        endpoint = f"/users/{_quote_path_segment(user_id)}"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="patch")
 
         if phantom.is_fail(ret_val):
@@ -980,7 +985,7 @@ class MSADGraphConnector(BaseConnector):
             parameters["$count"] = "true"
 
         if user_id:
-            endpoint = f"/users/{user_id}"
+            endpoint = f"/users/{_quote_path_segment(user_id)}"
         else:
             endpoint = "/users"
 
@@ -1011,7 +1016,7 @@ class MSADGraphConnector(BaseConnector):
             select_string = list(filter(None, select_string))
             parameters["$select"] = ",".join(param_value for param_value in select_string)
 
-        endpoint = f"/users/{user_id}/ownedDevices"
+        endpoint = f"/users/{_quote_path_segment(user_id)}/ownedDevices"
 
         ret_val = self._handle_pagination(action_result, endpoint, params=parameters)
 
@@ -1039,7 +1044,7 @@ class MSADGraphConnector(BaseConnector):
 
         data = {attribute: attribute_value}
 
-        endpoint = f"/users/{user_id}"
+        endpoint = f"/users/{_quote_path_segment(user_id)}"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="patch")
 
         if phantom.is_fail(ret_val):
@@ -1059,9 +1064,13 @@ class MSADGraphConnector(BaseConnector):
         object_id = param["group_object_id"]
         user_id = param["user_id"]
 
-        data = {"@odata.id": "https://{}/directoryObjects/{}".format(MSADGRAPH_API_REGION[config.get(MS_AZURE_URL, "Global")], user_id)}
+        data = {
+            "@odata.id": "https://{}/directoryObjects/{}".format(
+                MSADGRAPH_API_REGION[config.get(MS_AZURE_URL, "Global")], _quote_path_segment(user_id)
+            )
+        }
 
-        endpoint = f"/groups/{object_id}/members/$ref"
+        endpoint = f"/groups/{_quote_path_segment(object_id)}/members/$ref"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="post")
 
         summary = action_result.update_summary({})
@@ -1085,7 +1094,7 @@ class MSADGraphConnector(BaseConnector):
         object_id = param["group_object_id"]
         user_id = param["user_id"]
 
-        endpoint = f"/groups/{object_id}/members/{user_id}/$ref"
+        endpoint = f"/groups/{_quote_path_segment(object_id)}/members/{_quote_path_segment(user_id)}/$ref"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, method="delete")
 
         summary = action_result.update_summary({})
@@ -1162,7 +1171,7 @@ class MSADGraphConnector(BaseConnector):
 
         object_id = param["object_id"]
 
-        endpoint = f"/groups/{object_id}"
+        endpoint = f"/groups/{_quote_path_segment(object_id)}"
 
         ret_val, response = self._make_rest_call_helper(action_result, endpoint, method="get", headers=headers, params=parameters)
 
@@ -1200,7 +1209,7 @@ class MSADGraphConnector(BaseConnector):
             headers["ConsistencyLevel"] = "eventual"
             parameters["$count"] = "true"
 
-        endpoint = f"/groups/{object_id}/members"
+        endpoint = f"/groups/{_quote_path_segment(object_id)}/members"
 
         ret_val = self._handle_pagination(action_result, endpoint, headers=headers, params=parameters)
 
@@ -1297,7 +1306,7 @@ class MSADGraphConnector(BaseConnector):
         cidr_type = "#microsoft.graph.iPv4CidrRange" if network.version == 4 else "#microsoft.graph.iPv6CidrRange"
         normalized_cidr = str(network)
 
-        endpoint = f"/identity/conditionalAccess/namedLocations/{location_id}"
+        endpoint = f"/identity/conditionalAccess/namedLocations/{_quote_path_segment(location_id)}"
         ret_val, existing_location = self._make_rest_call_helper(action_result, endpoint, method="get")
 
         if phantom.is_fail(ret_val):
@@ -1345,7 +1354,7 @@ class MSADGraphConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, f"Invalid CIDR range: {e}")
 
         normalized_cidr = str(network)
-        endpoint = f"/identity/conditionalAccess/namedLocations/{location_id}"
+        endpoint = f"/identity/conditionalAccess/namedLocations/{_quote_path_segment(location_id)}"
         ret_val, existing_location = self._make_rest_call_helper(action_result, endpoint, method="get")
 
         if phantom.is_fail(ret_val):
@@ -1386,7 +1395,7 @@ class MSADGraphConnector(BaseConnector):
         object_id = param["group_object_id"]
         user_id = param["user_id"]
 
-        endpoint = f"/users/{user_id}/memberOf?$filter=id eq '{object_id}'"
+        endpoint = f"/users/{_quote_path_segment(user_id)}/memberOf?$filter=id eq '{object_id}'"
         ret_val, response = self._make_rest_call_helper(action_result, endpoint, method="get")
 
         if phantom.is_fail(ret_val):
