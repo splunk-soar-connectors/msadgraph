@@ -16,10 +16,12 @@
 #
 # Phantom App imports
 import grp
+import hmac
 import json
 import os
 import pathlib
 import pwd
+import secrets
 import sys
 import time
 import urllib.parse as urlparse
@@ -230,11 +232,20 @@ def _handle_login_response(request):
     :return: HttpResponse. The response displayed on authorization URL page
     """
 
-    asset_id = request.GET.get("state")
-    if not asset_id:
+    oauth_state = request.GET.get("state")
+    if not oauth_state or ":" not in oauth_state:
         return HttpResponse(
-            f"ERROR: Asset ID not found in URL\n{json.dumps(request.GET)}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE
-        )
+            "ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE
+        ), None
+
+    asset_id, presented_nonce = oauth_state.split(":", 1)
+    if not _is_valid_asset_id(asset_id):
+        return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
+
+    state = _load_app_state(asset_id)
+    stored_nonce = state.get("oauth_state_nonce", "")
+    if not stored_nonce or not hmac.compare_digest(stored_nonce, presented_nonce):
+        return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
 
     # Check for error in URL
     error = request.GET.get("error")
@@ -245,7 +256,7 @@ def _handle_login_response(request):
         message = f"Error: {error}"
         if error_description:
             message = f"{message} Details: {error_description}"
-        return HttpResponse(f"Server returned {message}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
+        return HttpResponse(f"Server returned {message}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
 
     code = request.GET.get("code")
     admin_consent = request.GET.get("admin_consent")
@@ -254,9 +265,9 @@ def _handle_login_response(request):
     if not (code or admin_consent):
         return HttpResponse(
             f"Error while authenticating\n{json.dumps(request.GET)}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE
-        )
+        ), None
 
-    state = _load_app_state(asset_id)
+    state.pop("oauth_state_nonce", None)
 
     # If value of admin_consent is available
     if admin_consent:
@@ -270,16 +281,18 @@ def _handle_login_response(request):
 
         # If admin_consent is True
         if admin_consent:
-            return HttpResponse("Admin Consent received. Please close this window.", content_type="text/plain")
+            return HttpResponse("Admin Consent received. Please close this window.", content_type="text/plain"), asset_id
         return HttpResponse(
             "Admin Consent declined. Please close this window and try again later.", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE
-        )
+        ), asset_id
 
     # If value of admin_consent is not available, value of code is available
     state["code"] = code
     _save_app_state(state, asset_id, None)
 
-    return HttpResponse("Code received. Please close this window, the action will continue to get new token.", content_type="text/plain")
+    return HttpResponse(
+        "Code received. Please close this window, the action will continue to get new token.", content_type="text/plain"
+    ), asset_id
 
 
 def _handle_rest_request(request, path_parts):
@@ -301,11 +314,8 @@ def _handle_rest_request(request, path_parts):
 
     # To handle response from microsoft login page
     if call_type == "result":
-        return_val = _handle_login_response(request)
-        asset_id = request.GET.get("state")
+        return_val, asset_id = _handle_login_response(request)
         if asset_id:
-            if not _is_valid_asset_id(asset_id):
-                return HttpResponse("Error: Invalid asset_id", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
             auth_status_file_path = _get_file_path(asset_id, is_state_file=False)
             auth_status_file_path.touch(mode=664, exist_ok=True)
             try:
@@ -719,10 +729,12 @@ class MSADGraphConnector(BaseConnector):
             self._client_id = urlparse.quote(self._client_id)
             self._tenant = urlparse.quote(self._tenant)
 
+            oauth_state_nonce = secrets.token_urlsafe(32)
+            app_state["oauth_state_nonce"] = oauth_state_nonce
             query_params = {
                 "client_id": self._client_id,
                 "redirect_uri": redirect_uri,
-                "state": self._asset_id,
+                "state": f"{self._asset_id}:{oauth_state_nonce}",
             }
 
             if self._admin_access_required:
