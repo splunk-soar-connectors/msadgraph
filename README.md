@@ -478,13 +478,13 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
 action_result.parameter.force_change | boolean | | True False |
-action_result.parameter.temp_password | password | | Temp_PA$$w0rd |
 action_result.parameter.user_id | string | `user id` | ee3dc4f2-70f9-446f-a19e-6b4e95ba030d user@test.com |
 action_result.data | string | | |
 action_result.summary.status | string | | Successfully reset user password |
 action_result.message | string | | Status: Successfully reset user password |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
+action_result.parameter.temp_password | password | | |
 
 ## action: 'disable tokens'
 
