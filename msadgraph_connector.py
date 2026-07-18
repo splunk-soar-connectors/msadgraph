@@ -522,8 +522,9 @@ class MSADGraphConnector(BaseConnector):
         # store the r_text in debug data, it will get dumped in the logs if the action fails
         if hasattr(action_result, "add_debug_data"):
             action_result.add_debug_data({"r_status_code": response.status_code})
-            action_result.add_debug_data({"r_text": response.text})
-            action_result.add_debug_data({"r_headers": response.headers})
+            if "/oauth2/v2.0/token" not in getattr(response, "url", ""):
+                action_result.add_debug_data({"r_text": response.text})
+                action_result.add_debug_data({"r_headers": response.headers})
 
         # Process each 'Content-Type' of response separately
 
