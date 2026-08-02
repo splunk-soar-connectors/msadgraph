@@ -43,7 +43,16 @@ MAX_END_OFFSET_VAL = 2147483646
 
 def _quote_path_segment(value):
     """Encode an action parameter as one URL path segment."""
-    return urlparse.quote(str(value), safe="")
+    raw_value = str(value)
+    canonical_value = raw_value
+    for _ in range(5):
+        decoded_value = urlparse.unquote(canonical_value)
+        if decoded_value == canonical_value:
+            break
+        canonical_value = decoded_value
+    if canonical_value in {".", ".."}:
+        raise ValueError("Microsoft Graph path identifiers must not be dot segments")
+    return urlparse.quote(raw_value, safe="")
 
 
 def _escape_odata_string(value):

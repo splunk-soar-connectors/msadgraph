@@ -7,3 +7,4 @@
 * Exclude OAuth token responses from diagnostic debug data.
 * Remove temporary passwords from persisted action parameters.
 * Revoke active sessions when disabling a user.
+* Reject exact and nested-encoded dot segments in Microsoft Graph path identifiers.
