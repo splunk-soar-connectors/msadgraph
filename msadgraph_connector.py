@@ -74,6 +74,10 @@ def _handle_login_redirect(request, key):
     state = _load_app_state(asset_id)
     if not state:
         return HttpResponse("ERROR: Invalid asset_id", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
+    presented_nonce = request.GET.get("state_nonce", "")
+    stored_nonce = state.get("oauth_state_nonce", "")
+    if not stored_nonce or not hmac.compare_digest(stored_nonce, presented_nonce):
+        return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
     url = state.get(key)
     if not url:
         return HttpResponse(f"App state is invalid, {key} not found.", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
@@ -768,7 +772,7 @@ class MSADGraphConnector(BaseConnector):
 
             # The URL that the user should open in a different tab.
             # This is pointing to a REST endpoint that points to the app
-            url_to_show = f"{app_rest_url}/start_oauth?asset_id={self._asset_id}&"
+            url_to_show = f"{app_rest_url}/start_oauth?{urlparse.urlencode({'asset_id': self._asset_id, 'state_nonce': oauth_state_nonce})}"
 
             # Save the state, will be used by the request handler
             _save_app_state(app_state, self._asset_id, self)

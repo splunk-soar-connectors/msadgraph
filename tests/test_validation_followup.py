@@ -31,6 +31,12 @@ def _load_quote_helper():
     return namespace["_quote_path_segment"]
 
 
+def _function_source(name):
+    tree = ast.parse(CONNECTOR.read_text())
+    helper = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == name)
+    return ast.get_source_segment(CONNECTOR.read_text(), helper)
+
+
 class ValidationFollowupTests(unittest.TestCase):
     def test_quote_path_segment_rejects_encoded_dot_segments(self):
         for value in (".", "..", "%2e", "%2E%2e", "%252e%252e"):
@@ -44,3 +50,12 @@ class ValidationFollowupTests(unittest.TestCase):
         manifest = json.loads(MANIFEST.read_text())
         action = next(item for item in manifest["actions"] if item["identifier"] == "disable_user")
         self.assertIn("non-CAE resources may remain valid until they expire", action["description"])
+
+    def test_start_oauth_requires_the_pending_flow_nonce(self):
+        source = _function_source("_handle_login_redirect")
+        self.assertIn('request.GET.get("state_nonce", "")', source)
+        self.assertIn("hmac.compare_digest(stored_nonce, presented_nonce)", source)
+
+    def test_start_oauth_link_carries_the_pending_flow_nonce(self):
+        source = CONNECTOR.read_text()
+        self.assertIn("'state_nonce': oauth_state_nonce", source)
