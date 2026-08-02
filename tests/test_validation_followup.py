@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
+import json
 import unittest
 import urllib.parse
 from pathlib import Path
@@ -19,6 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONNECTOR = ROOT / "msadgraph_connector.py"
+MANIFEST = ROOT / "msadgraph.json"
 
 
 def _load_quote_helper():
@@ -37,3 +39,8 @@ class ValidationFollowupTests(unittest.TestCase):
 
     def test_quote_path_segment_preserves_opaque_identifiers(self):
         self.assertEqual(_load_quote_helper()("user/name@example.com"), "user%2Fname%40example.com")
+
+    def test_disable_user_discloses_residual_access_token_lifetime(self):
+        manifest = json.loads(MANIFEST.read_text())
+        action = next(item for item in manifest["actions"] if item["identifier"] == "disable_user")
+        self.assertIn("non-CAE resources may remain valid until they expire", action["description"])

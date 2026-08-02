@@ -995,7 +995,10 @@ class MSADGraphConnector(BaseConnector):
             )
 
         summary = action_result.update_summary({})
-        summary["status"] = f"Successfully disabled user {user_id}"
+        summary["status"] = (
+            f"Successfully disabled user {user_id} and revoked sign-in sessions. "
+            "Already-issued access tokens for non-CAE resources may remain valid until they expire."
+        )
 
         self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
