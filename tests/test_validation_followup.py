@@ -59,3 +59,15 @@ class ValidationFollowupTests(unittest.TestCase):
     def test_start_oauth_link_carries_the_pending_flow_nonce(self):
         source = CONNECTOR.read_text()
         self.assertIn("'state_nonce': oauth_state_nonce", source)
+
+    def test_oauth_files_use_the_platform_application_state_directory(self):
+        source = _function_source("_get_file_path")
+        self.assertIn("paths.PHANTOM_APP_STATES / APP_ID / input_file", source)
+        self.assertNotIn("__file__", source)
+
+    def test_oauth_timeout_removes_temporary_state(self):
+        source = CONNECTOR.read_text()
+        timeout_message = source.index("Authentication process does not seem to be completed. Timing out")
+        timeout_return = source.index("return self.set_status(phantom.APP_ERROR)", timeout_message)
+        timeout_block = source[timeout_message:timeout_return]
+        self.assertIn("_get_file_path(self._asset_id).unlink()", timeout_block)

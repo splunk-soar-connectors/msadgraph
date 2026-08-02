@@ -19,7 +19,6 @@ import grp
 import hmac
 import json
 import os
-import pathlib
 import pwd
 import secrets
 import sys
@@ -34,11 +33,13 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
+from phantom_common import paths
 
 from msadgraph_consts import *
 
 
 MAX_END_OFFSET_VAL = 2147483646
+APP_ID = "f2a239df-acb2-47d6-861c-726a435cfe76"
 
 
 def _quote_path_segment(value):
@@ -110,13 +111,11 @@ def _get_file_path(asset_id, is_state_file=True):
     :param is_state_file: boolean parameter for state file
     :return: file_path: Path object of the file
     """
-    current_file_path = pathlib.Path(__file__).resolve()
     if is_state_file:
         input_file = f"{asset_id}_state.json"
     else:
         input_file = f"{asset_id}_oauth_task.out"
-    output_file_path = current_file_path.with_name(input_file)
-    return output_file_path
+    return paths.PHANTOM_APP_STATES / APP_ID / input_file
 
 
 def _decrypt_state(state, salt):
@@ -185,6 +184,7 @@ def _load_app_state(asset_id, app_connector=None):
         return {}
 
     state_file_path = _get_file_path(asset_id)
+    state_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     state = {}
     try:
@@ -222,6 +222,7 @@ def _save_app_state(state, asset_id, app_connector):
         return {}
 
     state_file_path = _get_file_path(asset_id)
+    state_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
         state = _encrypt_state(state, asset_id)
@@ -805,6 +806,10 @@ class MSADGraphConnector(BaseConnector):
             if not completed:
                 self.save_progress("Authentication process does not seem to be completed. Timing out")
                 self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
+                try:
+                    _get_file_path(self._asset_id).unlink()
+                except FileNotFoundError:
+                    pass
                 return self.set_status(phantom.APP_ERROR)
 
             self.send_progress("")
@@ -813,10 +818,7 @@ class MSADGraphConnector(BaseConnector):
             self._state = _load_app_state(self._asset_id, self)
 
             # Deleting the local state file because of it replicates with actual state file while installing the app
-            current_file_path = pathlib.Path(__file__).resolve()
-            input_file = f"{self._asset_id}_state.json"
-            state_file_path = current_file_path.with_name(input_file)
-            state_file_path.unlink()
+            _get_file_path(self._asset_id).unlink()
 
             if not self._state:
                 self.save_progress(MS_STATE_FILE_ERROR_MESSAGE)
