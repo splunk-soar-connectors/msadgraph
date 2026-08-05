@@ -16,10 +16,11 @@
 #
 # Phantom App imports
 import grp
+import hmac
 import json
 import os
-import pathlib
 import pwd
+import secrets
 import sys
 import time
 import urllib.parse as urlparse
@@ -32,11 +33,32 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
+from phantom_common import paths
 
 from msadgraph_consts import *
 
 
 MAX_END_OFFSET_VAL = 2147483646
+APP_ID = "f2a239df-acb2-47d6-861c-726a435cfe76"
+
+
+def _quote_path_segment(value):
+    """Encode an action parameter as one URL path segment."""
+    raw_value = str(value)
+    canonical_value = raw_value
+    for _ in range(5):
+        decoded_value = urlparse.unquote(canonical_value)
+        if decoded_value == canonical_value:
+            break
+        canonical_value = decoded_value
+    if canonical_value in {".", ".."}:
+        raise ValueError("Microsoft Graph path identifiers must not be dot segments")
+    return urlparse.quote(raw_value, safe="")
+
+
+def _escape_odata_string(value):
+    """Escape a value embedded in an OData single-quoted string."""
+    return str(value).replace("'", "''")
 
 
 def _handle_login_redirect(request, key):
@@ -53,6 +75,10 @@ def _handle_login_redirect(request, key):
     state = _load_app_state(asset_id)
     if not state:
         return HttpResponse("ERROR: Invalid asset_id", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
+    presented_nonce = request.GET.get("state_nonce", "")
+    stored_nonce = state.get("oauth_state_nonce", "")
+    if not stored_nonce or not hmac.compare_digest(stored_nonce, presented_nonce):
+        return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
     url = state.get(key)
     if not url:
         return HttpResponse(f"App state is invalid, {key} not found.", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
@@ -85,13 +111,11 @@ def _get_file_path(asset_id, is_state_file=True):
     :param is_state_file: boolean parameter for state file
     :return: file_path: Path object of the file
     """
-    current_file_path = pathlib.Path(__file__).resolve()
     if is_state_file:
         input_file = f"{asset_id}_state.json"
     else:
         input_file = f"{asset_id}_oauth_task.out"
-    output_file_path = current_file_path.with_name(input_file)
-    return output_file_path
+    return paths.PHANTOM_APP_STATES / APP_ID / input_file
 
 
 def _decrypt_state(state, salt):
@@ -160,6 +184,7 @@ def _load_app_state(asset_id, app_connector=None):
         return {}
 
     state_file_path = _get_file_path(asset_id)
+    state_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     state = {}
     try:
@@ -197,6 +222,7 @@ def _save_app_state(state, asset_id, app_connector):
         return {}
 
     state_file_path = _get_file_path(asset_id)
+    state_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
         state = _encrypt_state(state, asset_id)
@@ -225,11 +251,21 @@ def _handle_login_response(request):
     :return: HttpResponse. The response displayed on authorization URL page
     """
 
-    asset_id = request.GET.get("state")
-    if not asset_id:
-        return HttpResponse(
-            f"ERROR: Asset ID not found in URL\n{json.dumps(request.GET)}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE
-        )
+    oauth_state = request.GET.get("state")
+    if not oauth_state or ":" not in oauth_state:
+        return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
+
+    asset_id, presented_nonce = oauth_state.split(":", 1)
+    if not _is_valid_asset_id(asset_id):
+        return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
+
+    state = _load_app_state(asset_id)
+    stored_nonce = state.get("oauth_state_nonce", "")
+    if not stored_nonce or not hmac.compare_digest(stored_nonce, presented_nonce):
+        return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
+
+    state.pop("oauth_state_nonce", None)
+    _save_app_state(state, asset_id, None)
 
     # Check for error in URL
     error = request.GET.get("error")
@@ -240,7 +276,7 @@ def _handle_login_response(request):
         message = f"Error: {error}"
         if error_description:
             message = f"{message} Details: {error_description}"
-        return HttpResponse(f"Server returned {message}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
+        return HttpResponse(f"Server returned {message}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
 
     code = request.GET.get("code")
     admin_consent = request.GET.get("admin_consent")
@@ -249,9 +285,7 @@ def _handle_login_response(request):
     if not (code or admin_consent):
         return HttpResponse(
             f"Error while authenticating\n{json.dumps(request.GET)}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE
-        )
-
-    state = _load_app_state(asset_id)
+        ), None
 
     # If value of admin_consent is available
     if admin_consent:
@@ -265,16 +299,18 @@ def _handle_login_response(request):
 
         # If admin_consent is True
         if admin_consent:
-            return HttpResponse("Admin Consent received. Please close this window.", content_type="text/plain")
+            return HttpResponse("Admin Consent received. Please close this window.", content_type="text/plain"), asset_id
         return HttpResponse(
             "Admin Consent declined. Please close this window and try again later.", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE
-        )
+        ), asset_id
 
     # If value of admin_consent is not available, value of code is available
     state["code"] = code
     _save_app_state(state, asset_id, None)
 
-    return HttpResponse("Code received. Please close this window, the action will continue to get new token.", content_type="text/plain")
+    return HttpResponse(
+        "Code received. Please close this window, the action will continue to get new token.", content_type="text/plain"
+    ), asset_id
 
 
 def _handle_rest_request(request, path_parts):
@@ -296,11 +332,8 @@ def _handle_rest_request(request, path_parts):
 
     # To handle response from microsoft login page
     if call_type == "result":
-        return_val = _handle_login_response(request)
-        asset_id = request.GET.get("state")
+        return_val, asset_id = _handle_login_response(request)
         if asset_id:
-            if not _is_valid_asset_id(asset_id):
-                return HttpResponse("Error: Invalid asset_id", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
             auth_status_file_path = _get_file_path(asset_id, is_state_file=False)
             auth_status_file_path.touch(mode=664, exist_ok=True)
             try:
@@ -502,8 +535,9 @@ class MSADGraphConnector(BaseConnector):
         # store the r_text in debug data, it will get dumped in the logs if the action fails
         if hasattr(action_result, "add_debug_data"):
             action_result.add_debug_data({"r_status_code": response.status_code})
-            action_result.add_debug_data({"r_text": response.text})
-            action_result.add_debug_data({"r_headers": response.headers})
+            if "/oauth2/v2.0/token" not in getattr(response, "url", ""):
+                action_result.add_debug_data({"r_text": response.text})
+                action_result.add_debug_data({"r_headers": response.headers})
 
         # Process each 'Content-Type' of response separately
 
@@ -714,10 +748,12 @@ class MSADGraphConnector(BaseConnector):
             self._client_id = urlparse.quote(self._client_id)
             self._tenant = urlparse.quote(self._tenant)
 
+            oauth_state_nonce = secrets.token_urlsafe(32)
+            app_state["oauth_state_nonce"] = oauth_state_nonce
             query_params = {
                 "client_id": self._client_id,
                 "redirect_uri": redirect_uri,
-                "state": self._asset_id,
+                "state": f"{self._asset_id}:{oauth_state_nonce}",
             }
 
             if self._admin_access_required:
@@ -737,7 +773,7 @@ class MSADGraphConnector(BaseConnector):
 
             # The URL that the user should open in a different tab.
             # This is pointing to a REST endpoint that points to the app
-            url_to_show = f"{app_rest_url}/start_oauth?asset_id={self._asset_id}&"
+            url_to_show = f"{app_rest_url}/start_oauth?{urlparse.urlencode({'asset_id': self._asset_id, 'state_nonce': oauth_state_nonce})}"
 
             # Save the state, will be used by the request handler
             _save_app_state(app_state, self._asset_id, self)
@@ -770,6 +806,10 @@ class MSADGraphConnector(BaseConnector):
             if not completed:
                 self.save_progress("Authentication process does not seem to be completed. Timing out")
                 self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
+                try:
+                    _get_file_path(self._asset_id).unlink()
+                except FileNotFoundError:
+                    pass
                 return self.set_status(phantom.APP_ERROR)
 
             self.send_progress("")
@@ -778,10 +818,7 @@ class MSADGraphConnector(BaseConnector):
             self._state = _load_app_state(self._asset_id, self)
 
             # Deleting the local state file because of it replicates with actual state file while installing the app
-            current_file_path = pathlib.Path(__file__).resolve()
-            input_file = f"{self._asset_id}_state.json"
-            state_file_path = current_file_path.with_name(input_file)
-            state_file_path.unlink()
+            _get_file_path(self._asset_id).unlink()
 
             if not self._state:
                 self.save_progress(MS_STATE_FILE_ERROR_MESSAGE)
@@ -876,7 +913,9 @@ class MSADGraphConnector(BaseConnector):
 
     def _handle_reset_password(self, param):
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
-        action_result = self.add_action_result(ActionResult(dict(param)))
+        safe_param = dict(param)
+        safe_param.pop("temp_password", None)
+        action_result = self.add_action_result(ActionResult(safe_param))
 
         user_id = param["user_id"]
         temp_password = param.get("temp_password", "")
@@ -884,7 +923,7 @@ class MSADGraphConnector(BaseConnector):
 
         data = {"passwordProfile": {"forceChangePasswordNextSignIn": force_change, "password": temp_password}}
 
-        endpoint = f"/users/{user_id}"
+        endpoint = f"/users/{_quote_path_segment(user_id)}"
 
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="patch")
 
@@ -906,7 +945,7 @@ class MSADGraphConnector(BaseConnector):
 
         data = {"accountEnabled": True}
 
-        endpoint = f"/users/{user_id}"
+        endpoint = f"/users/{_quote_path_segment(user_id)}"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="patch")
 
         if phantom.is_fail(ret_val):
@@ -924,7 +963,7 @@ class MSADGraphConnector(BaseConnector):
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         user_id = param["user_id"]
-        endpoint = f"/users/{user_id}/revokeSignInSessions"
+        endpoint = f"/users/{_quote_path_segment(user_id)}/revokeSignInSessions"
 
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, method="post")
 
@@ -945,14 +984,27 @@ class MSADGraphConnector(BaseConnector):
 
         data = {"accountEnabled": False}
 
-        endpoint = f"/users/{user_id}"
+        encoded_user_id = _quote_path_segment(user_id)
+        endpoint = f"/users/{encoded_user_id}"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="patch")
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
+        revoke_endpoint = f"/users/{encoded_user_id}/revokeSignInSessions"
+        ret_val, _ = self._make_rest_call_helper(action_result, revoke_endpoint, method="post")
+        if phantom.is_fail(ret_val):
+            error = action_result.get_message()
+            return action_result.set_status(
+                phantom.APP_ERROR,
+                f"User {user_id} was disabled, but session revocation failed: {error}",
+            )
+
         summary = action_result.update_summary({})
-        summary["status"] = f"Successfully disabled user {user_id}"
+        summary["status"] = (
+            f"Successfully disabled user {user_id} and revoked sign-in sessions. "
+            "Already-issued access tokens for non-CAE resources may remain valid until they expire."
+        )
 
         self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
         return action_result.set_status(phantom.APP_SUCCESS)
@@ -980,7 +1032,7 @@ class MSADGraphConnector(BaseConnector):
             parameters["$count"] = "true"
 
         if user_id:
-            endpoint = f"/users/{user_id}"
+            endpoint = f"/users/{_quote_path_segment(user_id)}"
         else:
             endpoint = "/users"
 
@@ -1011,7 +1063,7 @@ class MSADGraphConnector(BaseConnector):
             select_string = list(filter(None, select_string))
             parameters["$select"] = ",".join(param_value for param_value in select_string)
 
-        endpoint = f"/users/{user_id}/ownedDevices"
+        endpoint = f"/users/{_quote_path_segment(user_id)}/ownedDevices"
 
         ret_val = self._handle_pagination(action_result, endpoint, params=parameters)
 
@@ -1039,7 +1091,7 @@ class MSADGraphConnector(BaseConnector):
 
         data = {attribute: attribute_value}
 
-        endpoint = f"/users/{user_id}"
+        endpoint = f"/users/{_quote_path_segment(user_id)}"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="patch")
 
         if phantom.is_fail(ret_val):
@@ -1059,9 +1111,13 @@ class MSADGraphConnector(BaseConnector):
         object_id = param["group_object_id"]
         user_id = param["user_id"]
 
-        data = {"@odata.id": "https://{}/directoryObjects/{}".format(MSADGRAPH_API_REGION[config.get(MS_AZURE_URL, "Global")], user_id)}
+        data = {
+            "@odata.id": "https://{}/directoryObjects/{}".format(
+                MSADGRAPH_API_REGION[config.get(MS_AZURE_URL, "Global")], _quote_path_segment(user_id)
+            )
+        }
 
-        endpoint = f"/groups/{object_id}/members/$ref"
+        endpoint = f"/groups/{_quote_path_segment(object_id)}/members/$ref"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, json=data, method="post")
 
         summary = action_result.update_summary({})
@@ -1085,7 +1141,7 @@ class MSADGraphConnector(BaseConnector):
         object_id = param["group_object_id"]
         user_id = param["user_id"]
 
-        endpoint = f"/groups/{object_id}/members/{user_id}/$ref"
+        endpoint = f"/groups/{_quote_path_segment(object_id)}/members/{_quote_path_segment(user_id)}/$ref"
         ret_val, _ = self._make_rest_call_helper(action_result, endpoint, method="delete")
 
         summary = action_result.update_summary({})
@@ -1162,7 +1218,7 @@ class MSADGraphConnector(BaseConnector):
 
         object_id = param["object_id"]
 
-        endpoint = f"/groups/{object_id}"
+        endpoint = f"/groups/{_quote_path_segment(object_id)}"
 
         ret_val, response = self._make_rest_call_helper(action_result, endpoint, method="get", headers=headers, params=parameters)
 
@@ -1200,7 +1256,7 @@ class MSADGraphConnector(BaseConnector):
             headers["ConsistencyLevel"] = "eventual"
             parameters["$count"] = "true"
 
-        endpoint = f"/groups/{object_id}/members"
+        endpoint = f"/groups/{_quote_path_segment(object_id)}/members"
 
         ret_val = self._handle_pagination(action_result, endpoint, headers=headers, params=parameters)
 
@@ -1297,7 +1353,7 @@ class MSADGraphConnector(BaseConnector):
         cidr_type = "#microsoft.graph.iPv4CidrRange" if network.version == 4 else "#microsoft.graph.iPv6CidrRange"
         normalized_cidr = str(network)
 
-        endpoint = f"/identity/conditionalAccess/namedLocations/{location_id}"
+        endpoint = f"/identity/conditionalAccess/namedLocations/{_quote_path_segment(location_id)}"
         ret_val, existing_location = self._make_rest_call_helper(action_result, endpoint, method="get")
 
         if phantom.is_fail(ret_val):
@@ -1345,7 +1401,7 @@ class MSADGraphConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, f"Invalid CIDR range: {e}")
 
         normalized_cidr = str(network)
-        endpoint = f"/identity/conditionalAccess/namedLocations/{location_id}"
+        endpoint = f"/identity/conditionalAccess/namedLocations/{_quote_path_segment(location_id)}"
         ret_val, existing_location = self._make_rest_call_helper(action_result, endpoint, method="get")
 
         if phantom.is_fail(ret_val):
@@ -1386,19 +1442,22 @@ class MSADGraphConnector(BaseConnector):
         object_id = param["group_object_id"]
         user_id = param["user_id"]
 
-        endpoint = f"/users/{user_id}/memberOf?$filter=id eq '{object_id}'"
-        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method="get")
+        endpoint = f"/users/{_quote_path_segment(user_id)}/memberOf"
+        parameters = {"$filter": f"id eq '{_escape_odata_string(object_id)}'"}
+        ret_val, response = self._make_rest_call_helper(action_result, endpoint, method="get", params=parameters)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
-        user_id_map = {}
-
-        for user in response.get("value", []):
-            user_id_map[user["id"]] = user["displayName"]
+        user_in_group = any(item.get("id") == object_id for item in response.get("value", []))
+        response["user_in_group"] = user_in_group
+        action_result.add_data(response)
+        summary = action_result.update_summary({})
+        summary["user_in_group"] = user_in_group
+        summary["message"] = "User is a member of the group" if user_in_group else "User is not a member of the group"
 
         self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
-        return action_result.set_status(phantom.APP_SUCCESS, f"User is member of group: {ret_val}")
+        return action_result.set_status(phantom.APP_SUCCESS, f"User in group: {user_in_group}")
 
     def _get_token(self, action_result):
         """This function is used to get a token via REST Call.

@@ -635,13 +635,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.parameter.temp_password",
-                    "data_type": "password",
-                    "example_values": [
-                        "Temp_PA$$w0rd"
-                    ]
-                },
-                {
                     "data_path": "action_result.parameter.user_id",
                     "data_type": "string",
                     "example_values": [
@@ -685,6 +678,10 @@
                     "example_values": [
                         1
                     ]
+                },
+                {
+                    "data_path": "action_result.parameter.temp_password",
+                    "data_type": "password"
                 }
             ],
             "render": {
@@ -894,7 +891,7 @@
         },
         {
             "action": "disable user",
-            "description": "Disable a user",
+            "description": "Disable a user and revoke sign-in sessions. Already-issued access tokens for non-CAE resources may remain valid until they expire",
             "type": "generic",
             "identifier": "disable_user",
             "read_only": false,
@@ -942,14 +939,14 @@
                     "data_path": "action_result.summary.status",
                     "data_type": "string",
                     "example_values": [
-                        "Successfully disabled user user@test.com"
+                        "Successfully disabled user user@test.com and revoked sign-in sessions. Already-issued access tokens for non-CAE resources may remain valid until they expire."
                     ]
                 },
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
-                        "Status: Successfully disabled user user@test.com"
+                        "Status: Successfully disabled user user@test.com and revoked sign-in sessions. Already-issued access tokens for non-CAE resources may remain valid until they expire."
                     ]
                 },
                 {
