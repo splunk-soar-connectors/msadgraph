@@ -329,7 +329,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [reset password](#action-reset-password) - Reset or set a user's password in a Microsoft AD environment <br>
 [disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in a Microsoft AD environment <br>
 [enable user](#action-enable-user) - Enable a user <br>
-[disable user](#action-disable-user) - Disable a user <br>
+[disable user](#action-disable-user) - Disable a user and revoke sign-in sessions. Already-issued access tokens for non-CAE resources may remain valid until they expire <br>
 [list user devices](#action-list-user-devices) - List devices for a specified user <br>
 [list user attributes](#action-list-user-attributes) - List attributes for all or a specified user <br>
 [set user attribute](#action-set-user-attribute) - Set an attribute for a user <br>
@@ -478,13 +478,13 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
 action_result.parameter.force_change | boolean | | True False |
-action_result.parameter.temp_password | password | | Temp_PA$$w0rd |
 action_result.parameter.user_id | string | `user id` | ee3dc4f2-70f9-446f-a19e-6b4e95ba030d user@test.com |
 action_result.data | string | | |
 action_result.summary.status | string | | Successfully reset user password |
 action_result.message | string | | Status: Successfully reset user password |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
+action_result.parameter.temp_password | password | | |
 
 ## action: 'disable tokens'
 
@@ -542,7 +542,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 ## action: 'disable user'
 
-Disable a user
+Disable a user and revoke sign-in sessions. Already-issued access tokens for non-CAE resources may remain valid until they expire
 
 Type: **generic** <br>
 Read only: **False**
@@ -560,8 +560,8 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 action_result.status | string | | success failed |
 action_result.parameter.user_id | string | `user id` | user@test.com |
 action_result.data | string | | |
-action_result.summary.status | string | | Successfully disabled user user@test.com |
-action_result.message | string | | Status: Successfully disabled user user@test.com |
+action_result.summary.status | string | | Successfully disabled user user@test.com and revoked sign-in sessions. Already-issued access tokens for non-CAE resources may remain valid until they expire. |
+action_result.message | string | | Status: Successfully disabled user user@test.com and revoked sign-in sessions. Already-issued access tokens for non-CAE resources may remain valid until they expire. |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
