@@ -1,7 +1,7 @@
 # MS Graph for Active Directory
 
 Publisher: Splunk <br>
-Connector Version: 1.5.2 <br>
+Connector Version: 1.5.3 <br>
 Product Vendor: Microsoft <br>
 Product Name: MS Graph for Active Directory <br>
 Minimum Product Version: 8.6.0
