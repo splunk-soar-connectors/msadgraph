@@ -678,10 +678,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.parameter.temp_password",
-                    "data_type": "password"
                 }
             ],
             "render": {

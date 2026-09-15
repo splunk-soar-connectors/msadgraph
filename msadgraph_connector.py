@@ -15,11 +15,10 @@
 #
 #
 # Phantom App imports
-import grp
+import copy
+import hashlib
 import hmac
 import json
-import os
-import pwd
 import secrets
 import sys
 import time
@@ -33,13 +32,19 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
-from phantom_common import paths
 
 from msadgraph_consts import *
 
 
 MAX_END_OFFSET_VAL = 2147483646
 APP_ID = "f2a239df-acb2-47d6-861c-726a435cfe76"
+OAUTH_FLOW_PENDING = "pending"
+OAUTH_FLOW_CLAIMED = "claimed"
+OAUTH_FLOW_SUCCESS = "success"
+OAUTH_FLOW_ERROR = "error"
+OAUTH_FLOW_STATE_KEY = "oauth_flows"
+OAUTH_FLOW_POLL_ATTEMPTS = 40
+OAUTH_FLOW_TTL_SECONDS = MS_AZURE_WAIT_FOR_URL_SLEEP + (OAUTH_FLOW_POLL_ATTEMPTS * MS_TC_STATUS_SLEEP)
 
 
 def _quote_path_segment(value):
@@ -61,32 +66,6 @@ def _escape_odata_string(value):
     return str(value).replace("'", "''")
 
 
-def _handle_login_redirect(request, key):
-    """This function is used to redirect login request to microsoft login page.
-
-    :param request: Data given to REST endpoint
-    :param key: Key to search in state file
-    :return: response authorization_url/admin_consent_url
-    """
-
-    asset_id = request.GET.get("asset_id")
-    if not asset_id:
-        return HttpResponse("ERROR: Asset ID not found in URL", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
-    state = _load_app_state(asset_id)
-    if not state:
-        return HttpResponse("ERROR: Invalid asset_id", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
-    presented_nonce = request.GET.get("state_nonce", "")
-    stored_nonce = state.get("oauth_state_nonce", "")
-    if not stored_nonce or not hmac.compare_digest(stored_nonce, presented_nonce):
-        return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
-    url = state.get(key)
-    if not url:
-        return HttpResponse(f"App state is invalid, {key} not found.", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE)
-    response = HttpResponse(status=302)
-    response["Location"] = url
-    return response
-
-
 def _is_valid_asset_id(asset_id):
     """This function validates an asset id.
     Must be an alphanumeric string of less than 128 characters.
@@ -103,19 +82,16 @@ def _is_valid_asset_id(asset_id):
     return True
 
 
-def _get_file_path(asset_id, is_state_file=True):
-    """This function gets the path of the auth status file of an asset id.
+def _is_valid_oauth_nonce(nonce):
+    """Return whether nonce is a bounded URL-safe token."""
+    return isinstance(nonce, str) and 32 <= len(nonce) <= 128 and all(character.isalnum() or character in "-_" for character in nonce)
 
-    :param asset_id: asset_id
-    :param app_connector: Object of app_connector class
-    :param is_state_file: boolean parameter for state file
-    :return: file_path: Path object of the file
-    """
-    if is_state_file:
-        input_file = f"{asset_id}_state.json"
-    else:
-        input_file = f"{asset_id}_oauth_task.out"
-    return paths.PHANTOM_APP_STATES / APP_ID / input_file
+
+def _get_oauth_flow_key(nonce):
+    """Return a non-secret key for one OAuth flow stored in asset state."""
+    if not _is_valid_oauth_nonce(nonce):
+        raise ValueError("Invalid OAuth flow nonce")
+    return hashlib.sha256(nonce.encode("utf-8")).hexdigest()
 
 
 def _decrypt_state(state, salt):
@@ -141,6 +117,15 @@ def _decrypt_state(state, salt):
     if code:
         state["code"] = encryption_helper.decrypt(code, salt)
 
+    oauth_flows = state.get(OAUTH_FLOW_STATE_KEY, {})
+    if isinstance(oauth_flows, dict):
+        for flow_state in oauth_flows.values():
+            if not isinstance(flow_state, dict):
+                continue
+            code = flow_state.get("code")
+            if code:
+                flow_state["code"] = encryption_helper.decrypt(code, salt)
+
     return state
 
 
@@ -164,84 +149,191 @@ def _encrypt_state(state, salt):
     if code:
         state["code"] = encryption_helper.encrypt(code, salt)
 
+    oauth_flows = state.get(OAUTH_FLOW_STATE_KEY, {})
+    if isinstance(oauth_flows, dict):
+        for flow_state in oauth_flows.values():
+            if not isinstance(flow_state, dict):
+                continue
+            code = flow_state.get("code")
+            if code:
+                flow_state["code"] = encryption_helper.encrypt(code, salt)
+
     state["is_encrypted"] = True
 
     return state
 
 
-def _load_app_state(asset_id, app_connector=None):
-    """This function is used to load the current state file.
+class _OAuthStateConnector(BaseConnector):
+    """Use BaseConnector state APIs from the module-level OAuth REST handler."""
 
-    :param asset_id: asset_id
-    :param app_connector: Object of app_connector class
-    :return: state: Current state file as a dictionary
-    """
+    def __init__(self, asset_id):
+        self._oauth_asset_id = str(asset_id)
+        self._oauth_app_version = None
+        super().__init__()
 
-    asset_id = str(asset_id)
-    if not _is_valid_asset_id(asset_id):
-        if app_connector:
-            app_connector.debug_print("In _load_app_state: Invalid asset_id")
-        return {}
+    def get_asset_id(self):
+        return self._oauth_asset_id
 
-    state_file_path = _get_file_path(asset_id)
-    state_file_path.parent.mkdir(parents=True, exist_ok=True)
+    def get_app_id(self):
+        return APP_ID
 
-    state = {}
-    try:
-        with open(state_file_path) as state_file:
-            state = json.load(state_file)
-    except Exception as e:
-        if app_connector:
-            app_connector.error_print(f"In _load_app_state: Exception: {e!s}")
+    def get_app_json(self):
+        return {"app_version": self._oauth_app_version}
 
-    if app_connector:
-        app_connector.debug_print("Loaded state: ", state)
-
-    try:
-        state = _decrypt_state(state, asset_id)
-    except Exception as e:
-        if app_connector:
-            app_connector.error_print(f"{MS_AZURE_DECRYPTION_ERROR}: {e!s}")
-        state = {}
-
-    return state
-
-
-def _save_app_state(state, asset_id, app_connector):
-    """This function is used to save current state in file.
-
-    :param state: Dictionary which contains data to write in state file
-    :param asset_id: asset_id
-    :param app_connector: Object of app_connector class
-    :return: status: phantom.APP_SUCCESS
-    """
-    asset_id = str(asset_id)
-    if not _is_valid_asset_id(asset_id):
-        if app_connector:
-            app_connector.debug_print("In _save_app_state: Invalid asset_id")
-        return {}
-
-    state_file_path = _get_file_path(asset_id)
-    state_file_path.parent.mkdir(parents=True, exist_ok=True)
-
-    try:
-        state = _encrypt_state(state, asset_id)
-    except Exception as e:
-        if app_connector:
-            app_connector.error_print(f"{MS_AZURE_ENCRYPTION_ERROR}: {e!s}")
+    def handle_action(self, param):
         return phantom.APP_ERROR
 
+    def load_state(self):
+        state = super().load_state()
+        if not isinstance(state, dict):
+            return {}
+        self._oauth_app_version = state.get("app_version")
+        try:
+            return _decrypt_state(state, self.get_asset_id())
+        except Exception as exc:
+            self.error_print(f"{MS_AZURE_DECRYPTION_ERROR}: {exc!s}")
+            return {}
+
+    def save_state(self, state):
+        try:
+            encrypted_state = _encrypt_state(copy.deepcopy(state), self.get_asset_id())
+        except Exception as exc:
+            self.error_print(f"{MS_AZURE_ENCRYPTION_ERROR}: {exc!s}")
+            return phantom.APP_ERROR
+        return super().save_state(encrypted_state)
+
+
+def _load_oauth_asset_state(asset_id, app_connector=None):
+    """Load canonical asset state through the supported connector API."""
+    if not _is_valid_asset_id(asset_id):
+        return None, {}
+    connector = app_connector or _OAuthStateConnector(asset_id)
+    state = connector.load_state()
+    if not isinstance(state, dict):
+        state = {}
     if app_connector:
-        app_connector.debug_print("Saving state: ", state)
+        app_connector._state = state
+    return connector, state
 
+
+def _save_oauth_asset_state(connector, state, app_connector=None):
+    """Save canonical asset state and keep the action's in-memory view current."""
+    status = connector.save_state(state)
+    if app_connector and not phantom.is_fail(status):
+        app_connector._state = state
+    return status
+
+
+def _prune_expired_oauth_flows(state):
+    """Remove expired OAuth records from an in-memory asset state document."""
+    flows = state.get(OAUTH_FLOW_STATE_KEY)
+    if flows is None:
+        return False
+    if not isinstance(flows, dict):
+        state.pop(OAUTH_FLOW_STATE_KEY, None)
+        return True
+    expired_keys = [key for key, flow in flows.items() if not isinstance(flow, dict) or flow.get("expires_at", 0) < time.time()]
+    for key in expired_keys:
+        flows.pop(key, None)
+    if not flows:
+        state.pop(OAUTH_FLOW_STATE_KEY, None)
+    return bool(expired_keys)
+
+
+def _load_oauth_flow(asset_id, nonce, app_connector=None):
+    """Load one nonce-scoped OAuth handoff from canonical asset state."""
     try:
-        with open(state_file_path, "w+") as state_file:
-            json.dump(state, state_file)
-    except Exception as e:
-        if app_connector:
-            app_connector.error_print(f"Unable to save state file: {e!s}")
+        flow_key = _get_oauth_flow_key(nonce)
+    except ValueError:
+        return {}
+    connector, state = _load_oauth_asset_state(asset_id, app_connector)
+    if not connector:
+        return {}
+    state_changed = _prune_expired_oauth_flows(state)
+    flow_state = state.get(OAUTH_FLOW_STATE_KEY, {}).get(flow_key, {})
+    if state_changed:
+        _save_oauth_asset_state(connector, state, app_connector)
+    return dict(flow_state) if isinstance(flow_state, dict) else {}
 
-    return phantom.APP_SUCCESS
+
+def _save_oauth_flow(flow_state, asset_id, nonce, app_connector=None):
+    """Save one nonce-scoped OAuth handoff through the connector state API."""
+    try:
+        flow_key = _get_oauth_flow_key(nonce)
+    except ValueError:
+        return phantom.APP_ERROR
+    connector, state = _load_oauth_asset_state(asset_id, app_connector)
+    if not connector:
+        return phantom.APP_ERROR
+    _prune_expired_oauth_flows(state)
+    state.setdefault(OAUTH_FLOW_STATE_KEY, {})[flow_key] = dict(flow_state)
+    return _save_oauth_asset_state(connector, state, app_connector)
+
+
+def _delete_oauth_flow(asset_id, nonce, app_connector=None):
+    """Remove one nonce-scoped OAuth handoff through the connector state API."""
+    try:
+        flow_key = _get_oauth_flow_key(nonce)
+    except ValueError:
+        return phantom.APP_SUCCESS
+    connector, state = _load_oauth_asset_state(asset_id, app_connector)
+    if not connector:
+        return phantom.APP_ERROR
+    flows = state.get(OAUTH_FLOW_STATE_KEY, {})
+    if not isinstance(flows, dict) or flow_key not in flows:
+        return phantom.APP_SUCCESS
+    flows.pop(flow_key, None)
+    if not flows:
+        state.pop(OAUTH_FLOW_STATE_KEY, None)
+    return _save_oauth_asset_state(connector, state, app_connector)
+
+
+def _claim_oauth_flow(asset_id, nonce):
+    """Best-effort claim a pending flow using the current state API semantics."""
+    try:
+        flow_key = _get_oauth_flow_key(nonce)
+    except ValueError:
+        return {}
+    connector, state = _load_oauth_asset_state(asset_id)
+    if not connector:
+        return {}
+    state_changed = _prune_expired_oauth_flows(state)
+    flow_state = state.get(OAUTH_FLOW_STATE_KEY, {}).get(flow_key, {})
+    stored_nonce = flow_state.get("oauth_state_nonce", "") if isinstance(flow_state, dict) else ""
+    if not stored_nonce or flow_state.get("status") != OAUTH_FLOW_PENDING or not hmac.compare_digest(stored_nonce, nonce):
+        if state_changed:
+            _save_oauth_asset_state(connector, state)
+        return {}
+    flow_state["status"] = OAUTH_FLOW_CLAIMED
+    if phantom.is_fail(_save_oauth_asset_state(connector, state)):
+        return {}
+    return dict(flow_state)
+
+
+def _finish_oauth_flow(flow_state, asset_id, nonce):
+    """Publish a terminal callback result if the claimed handoff still exists."""
+    try:
+        flow_key = _get_oauth_flow_key(nonce)
+    except ValueError:
+        return phantom.APP_ERROR
+    connector, state = _load_oauth_asset_state(asset_id)
+    if not connector:
+        return phantom.APP_ERROR
+    state_changed = _prune_expired_oauth_flows(state)
+    current_flow = state.get(OAUTH_FLOW_STATE_KEY, {}).get(flow_key, {})
+    if not isinstance(current_flow, dict):
+        if state_changed:
+            _save_oauth_asset_state(connector, state)
+        return phantom.APP_ERROR
+    stored_nonce = current_flow.get("oauth_state_nonce", "")
+    if current_flow.get("status") != OAUTH_FLOW_CLAIMED or not stored_nonce or not hmac.compare_digest(stored_nonce, nonce):
+        if state_changed:
+            _save_oauth_asset_state(connector, state)
+        return phantom.APP_ERROR
+    terminal_flow = dict(flow_state)
+    terminal_flow.pop("oauth_state_nonce", None)
+    state[OAUTH_FLOW_STATE_KEY][flow_key] = terminal_flow
+    return _save_oauth_asset_state(connector, state)
 
 
 def _handle_login_response(request):
@@ -259,13 +351,9 @@ def _handle_login_response(request):
     if not _is_valid_asset_id(asset_id):
         return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
 
-    state = _load_app_state(asset_id)
-    stored_nonce = state.get("oauth_state_nonce", "")
-    if not stored_nonce or not hmac.compare_digest(stored_nonce, presented_nonce):
+    flow_state = _claim_oauth_flow(asset_id, presented_nonce)
+    if not flow_state:
         return HttpResponse("ERROR: Invalid OAuth state", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
-
-    state.pop("oauth_state_nonce", None)
-    _save_app_state(state, asset_id, None)
 
     # Check for error in URL
     error = request.GET.get("error")
@@ -276,16 +364,21 @@ def _handle_login_response(request):
         message = f"Error: {error}"
         if error_description:
             message = f"{message} Details: {error_description}"
-        return HttpResponse(f"Server returned {message}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), None
+        flow_state.update({"status": OAUTH_FLOW_ERROR, "error": message})
+        if phantom.is_fail(_finish_oauth_flow(flow_state, asset_id, presented_nonce)):
+            return HttpResponse("ERROR: Unable to save OAuth result", content_type="text/plain", status=500), None
+        return HttpResponse(f"Server returned {message}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE), asset_id
 
     code = request.GET.get("code")
     admin_consent = request.GET.get("admin_consent")
 
     # If none of the code or admin_consent is available
     if not (code or admin_consent):
+        flow_state.update({"status": OAUTH_FLOW_ERROR, "error": "OAuth response did not contain a code or consent result"})
+        _finish_oauth_flow(flow_state, asset_id, presented_nonce)
         return HttpResponse(
             f"Error while authenticating\n{json.dumps(request.GET)}", content_type="text/plain", status=MS_AZURE_BAD_REQUEST_CODE
-        ), None
+        ), asset_id
 
     # If value of admin_consent is available
     if admin_consent:
@@ -294,8 +387,9 @@ def _handle_login_response(request):
         else:
             admin_consent = False
 
-        state["admin_consent"] = admin_consent
-        _save_app_state(state, asset_id, None)
+        flow_state.update({"status": OAUTH_FLOW_SUCCESS, "admin_consent": admin_consent})
+        if phantom.is_fail(_finish_oauth_flow(flow_state, asset_id, presented_nonce)):
+            return HttpResponse("ERROR: Unable to save OAuth result", content_type="text/plain", status=500), None
 
         # If admin_consent is True
         if admin_consent:
@@ -305,8 +399,9 @@ def _handle_login_response(request):
         ), asset_id
 
     # If value of admin_consent is not available, value of code is available
-    state["code"] = code
-    _save_app_state(state, asset_id, None)
+    flow_state.update({"status": OAUTH_FLOW_SUCCESS, "code": code})
+    if phantom.is_fail(_finish_oauth_flow(flow_state, asset_id, presented_nonce)):
+        return HttpResponse("ERROR: Unable to save OAuth result", content_type="text/plain", status=500), None
 
     return HttpResponse(
         "Code received. Please close this window, the action will continue to get new token.", content_type="text/plain"
@@ -326,24 +421,9 @@ def _handle_rest_request(request, path_parts):
 
     call_type = path_parts[1]
 
-    # To handle authorize request in test connectivity action
-    if call_type == "start_oauth":
-        return _handle_login_redirect(request, "admin_consent_url")
-
     # To handle response from microsoft login page
     if call_type == "result":
-        return_val, asset_id = _handle_login_response(request)
-        if asset_id:
-            auth_status_file_path = _get_file_path(asset_id, is_state_file=False)
-            auth_status_file_path.touch(mode=664, exist_ok=True)
-            try:
-                uid = pwd.getpwnam("apache").pw_uid
-                gid = grp.getgrnam("phantom").gr_gid
-                os.chown(auth_status_file_path, uid, gid)  # nosemgrep file traversal risk is handled by blocking non-alphanum strings
-            except Exception:
-                pass
-
-        return return_val
+        return _handle_login_response(request)[0]
     return HttpResponse("error: Invalid endpoint", content_type="text/plain", status=MS_AZURE_NOT_FOUND_CODE)
 
 
@@ -408,7 +488,7 @@ class MSADGraphConnector(BaseConnector):
         :return: status
         """
         try:
-            state = _encrypt_state(state, self.get_asset_id())
+            state = _encrypt_state(copy.deepcopy(state), self.get_asset_id())
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             self.error_print(f"{MS_AZURE_ENCRYPTION_ERROR}: {error_message}")
@@ -723,7 +803,6 @@ class MSADGraphConnector(BaseConnector):
 
         # Progress
         # self.save_progress("Generating Authentication URL")
-        app_state = {}
         action_result = self.add_action_result(ActionResult(param))
 
         if not (self._admin_access_required and self._admin_access_granted):
@@ -736,11 +815,8 @@ class MSADGraphConnector(BaseConnector):
                 self.save_progress(MS_REST_URL_NOT_AVAILABLE_MESSAGE.format(error=self.get_status()))
                 return self.set_status(phantom.APP_ERROR)
 
-            # create the url that the oauth server should re-direct to after the auth is completed
-            # (success and failure), this is added to the state so that the request handler will access
-            # it later on
+            # Create the URL that the OAuth server redirects to after authentication completes.
             redirect_uri = f"{app_rest_url}/result"
-            app_state["redirect_uri"] = redirect_uri
 
             self.save_progress(MS_OAUTH_URL_MESSAGE)
             self.save_progress(redirect_uri)
@@ -749,7 +825,11 @@ class MSADGraphConnector(BaseConnector):
             self._tenant = urlparse.quote(self._tenant)
 
             oauth_state_nonce = secrets.token_urlsafe(32)
-            app_state["oauth_state_nonce"] = oauth_state_nonce
+            flow_state = {
+                "status": OAUTH_FLOW_PENDING,
+                "oauth_state_nonce": oauth_state_nonce,
+                "expires_at": time.time() + OAUTH_FLOW_TTL_SECONDS,
+            }
             query_params = {
                 "client_id": self._client_id,
                 "redirect_uri": redirect_uri,
@@ -769,17 +849,11 @@ class MSADGraphConnector(BaseConnector):
 
             admin_consent_url = f"{admin_consent_url_base}?{query_string}"
 
-            app_state["admin_consent_url"] = admin_consent_url
-
-            # The URL that the user should open in a different tab.
-            # This is pointing to a REST endpoint that points to the app
-            url_to_show = f"{app_rest_url}/start_oauth?{urlparse.urlencode({'asset_id': self._asset_id, 'state_nonce': oauth_state_nonce})}"
-
-            # Save the state, will be used by the request handler
-            _save_app_state(app_state, self._asset_id, self)
+            if phantom.is_fail(_save_oauth_flow(flow_state, self._asset_id, oauth_state_nonce, self)):
+                return action_result.set_status(phantom.APP_ERROR, "Unable to initialize OAuth flow state")
 
             self.save_progress("Please connect to the following URL from a different tab to continue the connectivity process")
-            self.save_progress(url_to_show)
+            self.save_progress(admin_consent_url)
             self.save_progress(MS_AZURE_AUTHORIZE_TROUBLESHOOT_MESSAGE)
 
             time.sleep(MS_AZURE_WAIT_FOR_URL_SLEEP)
@@ -789,16 +863,15 @@ class MSADGraphConnector(BaseConnector):
             if not _is_valid_asset_id(self._asset_id):
                 return action_result.set_status(phantom.APP_ERROR, "Invalid asset id")
 
-            auth_status_file_path = _get_file_path(self._asset_id, is_state_file=False)
-
             self.save_progress("Waiting for authorization to complete")
 
-            for i in range(0, 40):
+            flow_result = {}
+            for i in range(0, OAUTH_FLOW_POLL_ATTEMPTS):
                 self.send_progress("{}".format("." * (i % 10)))
 
-                if auth_status_file_path.is_file():
+                flow_result = _load_oauth_flow(self._asset_id, oauth_state_nonce, self)
+                if flow_result.get("status") in {OAUTH_FLOW_SUCCESS, OAUTH_FLOW_ERROR}:
                     completed = True
-                    auth_status_file_path.unlink()
                     break
 
                 time.sleep(MS_TC_STATUS_SLEEP)
@@ -806,33 +879,35 @@ class MSADGraphConnector(BaseConnector):
             if not completed:
                 self.save_progress("Authentication process does not seem to be completed. Timing out")
                 self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
-                try:
-                    _get_file_path(self._asset_id).unlink()
-                except FileNotFoundError:
-                    pass
+                _delete_oauth_flow(self._asset_id, oauth_state_nonce, self)
                 return self.set_status(phantom.APP_ERROR)
 
             self.send_progress("")
+            _delete_oauth_flow(self._asset_id, oauth_state_nonce, self)
 
-            # Load the state again, since the http request handlers would have saved the result of the admin consent
-            self._state = _load_app_state(self._asset_id, self)
+            if flow_result.get("status") == OAUTH_FLOW_ERROR:
+                return action_result.set_status(phantom.APP_ERROR, flow_result.get("error", "OAuth authorization failed"))
 
-            # Deleting the local state file because of it replicates with actual state file while installing the app
-            _get_file_path(self._asset_id).unlink()
-
-            if not self._state:
+            if not flow_result:
                 self.save_progress(MS_STATE_FILE_ERROR_MESSAGE)
                 self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
                 return action_result.set_status(phantom.APP_ERROR)
 
+            self._state["redirect_uri"] = redirect_uri
             self._state.setdefault("admin_consent", False)
 
-            if self._admin_access_required and not self._state.get("admin_consent"):
+            if self._admin_access_required:
+                self._state["admin_consent"] = flow_result.get("admin_consent", False)
+
+            if self._admin_access_required and not self._state["admin_consent"]:
                 self.save_progress(MS_ADMIN_CONSENT_ERROR_MESSAGE)
                 self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
                 return action_result.set_status(phantom.APP_ERROR)
 
-            if not self._admin_access_required and not self._state.get("code"):
+            if not self._admin_access_required:
+                self._state["code"] = flow_result.get("code")
+
+            if not self._admin_access_required and not self._state["code"]:
                 self.save_progress(MS_AUTHORIZATION_ERROR_MESSAGE)
                 self.save_progress(MS_AZURE_TEST_CONNECTIVITY_FAILURE_MESSAGE)
                 return action_result.set_status(phantom.APP_ERROR)
