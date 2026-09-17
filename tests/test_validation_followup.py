@@ -125,8 +125,8 @@ class ValidationFollowupTests(unittest.TestCase):
         action = next(item for item in manifest["actions"] if item["identifier"] == "reset_password")
         output_types = {item["data_path"]: item["data_type"] for item in action["output"]}
         self.assertNotIn("action_result.parameter.temp_password", output_types)
-        self.assertEqual(output_types["action_result.data.*.vault_id"], "string")
-        self.assertEqual(output_types["action_result.summary.vault_id"], "string")
+        self.assertEqual(output_types["action_result.data.*.temp_password_vault_id"], "string")
+        self.assertEqual(output_types["action_result.summary.temp_password_vault_id"], "string")
 
         tree = ast.parse(CONNECTOR.read_text())
         connector_class = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MSADGraphConnector")
@@ -135,9 +135,9 @@ class ValidationFollowupTests(unittest.TestCase):
         self.assertIn('safe_param.pop("temp_password", None)', source)
         self.assertIn("Vault.create_attachment", source)
         self.assertIn('temp_password.encode("utf-8")', source)
-        self.assertIn('action_result.add_data({"vault_id": vault_id})', source)
+        self.assertIn('action_result.add_data({"temp_password_vault_id": vault_id})', source)
 
-    def test_reset_password_stores_secret_in_vault_and_returns_only_vault_id(self):
+    def test_reset_password_returns_temp_password_vault_id(self):
         class FakeVault:
             call = None
 
@@ -170,8 +170,8 @@ class ValidationFollowupTests(unittest.TestCase):
             (b"Temporary secret", 42, "msadgraph-temp-password-0123456789abcdef.txt"),
         )
         self.assertNotIn("temp_password", connector.action_result.param)
-        self.assertEqual(connector.action_result.data, [{"vault_id": "vault-reference"}])
-        self.assertEqual(connector.action_result.summary["vault_id"], "vault-reference")
+        self.assertEqual(connector.action_result.data, [{"temp_password_vault_id": "vault-reference"}])
+        self.assertEqual(connector.action_result.summary["temp_password_vault_id"], "vault-reference")
         self.assertEqual(connector.rest_request[2]["json"]["passwordProfile"]["password"], "Temporary secret")
 
     def test_reset_password_stops_before_graph_when_vault_write_fails(self):

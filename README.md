@@ -462,7 +462,7 @@ Reset or set a user's password in a Microsoft AD environment and store the tempo
 Type: **contain** <br>
 Read only: **False**
 
-Password reset stores the temporary password in the executing container's Vault and returns its Vault ID instead of returning the password. It then updates the user's passwordProfile property. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.
+Password reset stores the temporary password in the executing container's Vault and returns its Vault ID as temp_password_vault_id instead of returning the password. It then updates the user's passwordProfile property. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.
 
 #### Action Parameters
 
@@ -481,8 +481,8 @@ action_result.parameter.force_change | boolean | | True False |
 action_result.parameter.user_id | string | `user id` | ee3dc4f2-70f9-446f-a19e-6b4e95ba030d user@test.com |
 action_result.data | string | | |
 action_result.summary.status | string | | Successfully reset user password |
-action_result.summary.vault_id | string | `vault id` | |
-action_result.data.\*.vault_id | string | `vault id` | |
+action_result.summary.temp_password_vault_id | string | `vault id` | |
+action_result.data.\*.temp_password_vault_id | string | `vault id` | |
 action_result.message | string | | Status: Successfully reset user password |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |

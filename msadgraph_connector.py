@@ -996,7 +996,7 @@ class MSADGraphConnector(BaseConnector):
         if not vault_id or vault_response.get("succeeded", True) is False:
             return action_result.set_status(phantom.APP_ERROR, "Unable to store the temporary password in Vault")
 
-        action_result.add_data({"vault_id": vault_id})
+        action_result.add_data({"temp_password_vault_id": vault_id})
 
         data = {"passwordProfile": {"forceChangePasswordNextSignIn": force_change, "password": temp_password}}
 
@@ -1009,7 +1009,7 @@ class MSADGraphConnector(BaseConnector):
 
         summary = action_result.update_summary({})
         summary["status"] = f"Successfully reset password for {user_id}"
-        summary["vault_id"] = vault_id
+        summary["temp_password_vault_id"] = vault_id
 
         # An empty response indicates success. No response body is returned.
         self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
