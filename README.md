@@ -326,7 +326,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 [test connectivity](#action-test-connectivity) - Use supplied credentials to generate a token with MS Graph <br>
 [list users](#action-list-users) - Get a list of users <br>
-[reset password](#action-reset-password) - Reset or set a user's password in a Microsoft AD environment and store the temporary password in Vault <br>
+[reset password](#action-reset-password) - Reset or set a user's password in a Microsoft AD environment <br>
 [disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in a Microsoft AD environment <br>
 [enable user](#action-enable-user) - Enable a user <br>
 [disable user](#action-disable-user) - Disable a user and revoke sign-in sessions. Already-issued access tokens for non-CAE resources may remain valid until they expire <br>
@@ -457,12 +457,12 @@ summary.total_objects_successful | numeric | | 1 |
 
 ## action: 'reset password'
 
-Reset or set a user's password in a Microsoft AD environment and store the temporary password in Vault
+Reset or set a user's password in a Microsoft AD environment
 
 Type: **contain** <br>
 Read only: **False**
 
-Password reset stores the temporary password in the executing container's Vault and returns its Vault ID as temp_password_vault_id instead of returning the password. It then updates the user's passwordProfile property. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.
+Password reset updates the user's passwordProfile property. The required temp_password input parameter is not included in action output. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.
 
 #### Action Parameters
 
@@ -481,8 +481,6 @@ action_result.parameter.force_change | boolean | | True False |
 action_result.parameter.user_id | string | `user id` | ee3dc4f2-70f9-446f-a19e-6b4e95ba030d user@test.com |
 action_result.data | string | | |
 action_result.summary.status | string | | Successfully reset user password |
-action_result.summary.temp_password_vault_id | string | `vault id` | |
-action_result.data.\*.temp_password_vault_id | string | `vault id` | |
 action_result.message | string | | Status: Successfully reset user password |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
