@@ -71,6 +71,13 @@ class ValidationFollowupTests(unittest.TestCase):
         output_paths = {item["data_path"] for item in action["output"]}
         self.assertIn("action_result.parameter.temp_password", output_paths)
 
+        tree = ast.parse(CONNECTOR.read_text())
+        connector_class = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MSADGraphConnector")
+        method = next(node for node in connector_class.body if isinstance(node, ast.FunctionDef) and node.name == "_handle_reset_password")
+        source = ast.get_source_segment(CONNECTOR.read_text(), method)
+        self.assertIn("ActionResult(dict(param))", source)
+        self.assertNotIn('pop("temp_password"', source)
+
     def test_save_state_encrypts_a_copy(self):
         tree = ast.parse(CONNECTOR.read_text())
         connector_class = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MSADGraphConnector")
