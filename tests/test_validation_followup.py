@@ -56,6 +56,29 @@ class ValidationFollowupTests(unittest.TestCase):
         self.assertIn("connector.load_state()", source)
         self.assertIn("connector.save_state(state)", source)
 
+    def test_connector_module_has_one_base_connector_subclass(self):
+        tree = ast.parse(CONNECTOR.read_text())
+        connector_classes = [
+            node
+            for node in tree.body
+            if isinstance(node, ast.ClassDef) and any(isinstance(base, ast.Name) and base.id == "BaseConnector" for base in node.bases)
+        ]
+        self.assertEqual([node.name for node in connector_classes], ["MSADGraphConnector"])
+
+    def test_temporary_password_remains_an_action_output(self):
+        manifest = json.loads(MANIFEST.read_text())
+        action = next(item for item in manifest["actions"] if item["identifier"] == "reset_password")
+        output_paths = {item["data_path"] for item in action["output"]}
+        self.assertIn("action_result.parameter.temp_password", output_paths)
+
+    def test_save_state_encrypts_a_copy(self):
+        tree = ast.parse(CONNECTOR.read_text())
+        connector_class = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MSADGraphConnector")
+        method = next(node for node in connector_class.body if isinstance(node, ast.FunctionDef) and node.name == "save_state")
+        source = ast.get_source_segment(CONNECTOR.read_text(), method)
+        self.assertIn("encrypted_state = _encrypt_state(copy.deepcopy(state)", source)
+        self.assertIn("super().save_state(encrypted_state)", source)
+
     def test_oauth_flow_does_not_manage_state_files(self):
         source = CONNECTOR.read_text()
         self.assertNotIn("PHANTOM_APP_STATES", source)

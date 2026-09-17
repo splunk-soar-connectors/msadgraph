@@ -163,51 +163,11 @@ def _encrypt_state(state, salt):
     return state
 
 
-class _OAuthStateConnector(BaseConnector):
-    """Use BaseConnector state APIs from the module-level OAuth REST handler."""
-
-    def __init__(self, asset_id):
-        self._oauth_asset_id = str(asset_id)
-        self._oauth_app_version = None
-        super().__init__()
-
-    def get_asset_id(self):
-        return self._oauth_asset_id
-
-    def get_app_id(self):
-        return APP_ID
-
-    def get_app_json(self):
-        return {"app_version": self._oauth_app_version}
-
-    def handle_action(self, param):
-        return phantom.APP_ERROR
-
-    def load_state(self):
-        state = super().load_state()
-        if not isinstance(state, dict):
-            return {}
-        self._oauth_app_version = state.get("app_version")
-        try:
-            return _decrypt_state(state, self.get_asset_id())
-        except Exception as exc:
-            self.error_print(f"{MS_AZURE_DECRYPTION_ERROR}: {exc!s}")
-            return {}
-
-    def save_state(self, state):
-        try:
-            encrypted_state = _encrypt_state(copy.deepcopy(state), self.get_asset_id())
-        except Exception as exc:
-            self.error_print(f"{MS_AZURE_ENCRYPTION_ERROR}: {exc!s}")
-            return phantom.APP_ERROR
-        return super().save_state(encrypted_state)
-
-
 def _load_oauth_asset_state(asset_id, app_connector=None):
     """Load canonical asset state through the supported connector API."""
     if not _is_valid_asset_id(asset_id):
         return None, {}
-    connector = app_connector or _OAuthStateConnector(asset_id)
+    connector = app_connector or MSADGraphConnector(state_asset_id=asset_id)
     state = connector.load_state()
     if not isinstance(state, dict):
         state = {}
@@ -447,10 +407,14 @@ class RetVal(tuple):
 
 
 class MSADGraphConnector(BaseConnector):
-    def __init__(self):
+    def __init__(self, state_asset_id=None):
         # Call the BaseConnectors init first
         super().__init__()
 
+        # REST callbacks execute outside an action run. In that context this same connector
+        # class is given the validated asset ID needed by BaseConnector's state APIs.
+        self._state_asset_id = str(state_asset_id) if state_asset_id is not None else None
+        self._state_app_version = None
         self._state = None
         self._tenant = None
         self._client_id = None
@@ -460,6 +424,21 @@ class MSADGraphConnector(BaseConnector):
         self._base_url = None
         self._admin_access_required = None
         self._admin_access_granted = None
+
+    def get_asset_id(self):
+        if self._state_asset_id is not None:
+            return self._state_asset_id
+        return super().get_asset_id()
+
+    def get_app_id(self):
+        if self._state_asset_id is not None:
+            return APP_ID
+        return super().get_app_id()
+
+    def get_app_json(self):
+        if self._state_asset_id is not None:
+            return {"app_version": self._state_app_version}
+        return super().get_app_json()
 
     def load_state(self):
         """
@@ -471,6 +450,8 @@ class MSADGraphConnector(BaseConnector):
             self.debug_print("Reseting the state file with the default format")
             state = {"app_version": self.get_app_json().get("app_version")}
             return state
+        if self._state_asset_id is not None:
+            self._state_app_version = state.get("app_version")
         try:
             state = _decrypt_state(state, self.get_asset_id())
         except Exception as e:
@@ -488,12 +469,13 @@ class MSADGraphConnector(BaseConnector):
         :return: status
         """
         try:
-            state = _encrypt_state(copy.deepcopy(state), self.get_asset_id())
+            encrypted_state = _encrypt_state(copy.deepcopy(state), self.get_asset_id())
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             self.error_print(f"{MS_AZURE_ENCRYPTION_ERROR}: {error_message}")
+            return phantom.APP_ERROR
 
-        return super().save_state(state)
+        return super().save_state(encrypted_state)
 
     def _dump_error_log(self, error, message="Exception occurred."):
         self.error_print(message, dump_object=error)
