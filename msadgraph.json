@@ -586,8 +586,8 @@
         },
         {
             "action": "reset password",
-            "description": "Reset or set a user's password in a Microsoft AD environment",
-            "verbose": "Password reset updates the user's passwordProfile property. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.",
+            "description": "Reset or set a user's password in a Microsoft AD environment and store the temporary password in Vault",
+            "verbose": "Password reset stores the temporary password in the executing container's Vault and returns its Vault ID instead of returning the password. It then updates the user's passwordProfile property. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.",
             "type": "contain",
             "identifier": "reset_password",
             "read_only": false,
@@ -659,6 +659,21 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.summary.vault_id",
+                    "data_type": "string",
+                    "contains": [
+                        "vault id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vault_id",
+                    "data_type": "string",
+                    "contains": [
+                        "vault id"
+                    ],
+                    "column_name": "Vault ID"
+                },
+                {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
@@ -678,10 +693,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.parameter.temp_password",
-                    "data_type": "string"
                 }
             ],
             "render": {

@@ -32,6 +32,7 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
+from phantom.vault import Vault
 
 from msadgraph_consts import *
 
@@ -970,11 +971,32 @@ class MSADGraphConnector(BaseConnector):
 
     def _handle_reset_password(self, param):
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
-        action_result = self.add_action_result(ActionResult(dict(param)))
+        safe_param = dict(param)
+        safe_param.pop("temp_password", None)
+        action_result = self.add_action_result(ActionResult(safe_param))
 
         user_id = param["user_id"]
         temp_password = param.get("temp_password", "")
         force_change = param.get("force_change", True)
+
+        vault_file_name = f"msadgraph-temp-password-{secrets.token_hex(8)}.txt"
+        try:
+            vault_response = Vault.create_attachment(
+                temp_password.encode("utf-8"),
+                self.get_container_id(),
+                file_name=vault_file_name,
+            )
+        except Exception as exc:
+            return action_result.set_status(
+                phantom.APP_ERROR,
+                f"Unable to store the temporary password in Vault: {self._get_error_message_from_exception(exc)}",
+            )
+
+        vault_id = vault_response.get("vault_id") if isinstance(vault_response, dict) else None
+        if not vault_id or vault_response.get("succeeded", True) is False:
+            return action_result.set_status(phantom.APP_ERROR, "Unable to store the temporary password in Vault")
+
+        action_result.add_data({"vault_id": vault_id})
 
         data = {"passwordProfile": {"forceChangePasswordNextSignIn": force_change, "password": temp_password}}
 
@@ -987,6 +1009,7 @@ class MSADGraphConnector(BaseConnector):
 
         summary = action_result.update_summary({})
         summary["status"] = f"Successfully reset password for {user_id}"
+        summary["vault_id"] = vault_id
 
         # An empty response indicates success. No response body is returned.
         self.save_progress(f"Completed action handler for: {self.get_action_identifier()}")
