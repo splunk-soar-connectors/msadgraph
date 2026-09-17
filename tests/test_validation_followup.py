@@ -68,8 +68,8 @@ class ValidationFollowupTests(unittest.TestCase):
     def test_temporary_password_remains_an_action_output(self):
         manifest = json.loads(MANIFEST.read_text())
         action = next(item for item in manifest["actions"] if item["identifier"] == "reset_password")
-        output_paths = {item["data_path"] for item in action["output"]}
-        self.assertIn("action_result.parameter.temp_password", output_paths)
+        output_types = {item["data_path"]: item["data_type"] for item in action["output"]}
+        self.assertEqual(output_types["action_result.parameter.temp_password"], "string")
 
         tree = ast.parse(CONNECTOR.read_text())
         connector_class = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MSADGraphConnector")

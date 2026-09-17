@@ -484,7 +484,7 @@ action_result.summary.status | string | | Successfully reset user password |
 action_result.message | string | | Status: Successfully reset user password |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
-action_result.parameter.temp_password | password | | |
+action_result.parameter.temp_password | string | | |
 
 ## action: 'disable tokens'
 

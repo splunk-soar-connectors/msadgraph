@@ -681,7 +681,7 @@
                 },
                 {
                     "data_path": "action_result.parameter.temp_password",
-                    "data_type": "password"
+                    "data_type": "string"
                 }
             ],
             "render": {
