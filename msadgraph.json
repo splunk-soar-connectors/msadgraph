@@ -15,9 +15,9 @@
         }
     ],
     "license": "Copyright (c) 2022-2026 Splunk Inc.",
-    "app_version": "1.5.3",
+    "app_version": "2.0.0",
     "python_version": "3.9, 3.13",
-    "utctime_updated": "2026-09-14T21:37:33.791904Z",
+    "utctime_updated": "2026-09-19T00:28:33.457448Z",
     "package_name": "phantom_msadgraph",
     "main_module": "msadgraph_connector.py",
     "min_phantom_version": "8.6.0",
