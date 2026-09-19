@@ -51,23 +51,46 @@ class ValidationFollowupTests(unittest.TestCase):
         action = next(item for item in manifest["actions"] if item["identifier"] == "disable_user")
         self.assertIn("non-CAE resources may remain valid until they expire", action["description"])
 
-    def test_start_oauth_requires_the_pending_flow_nonce(self):
-        source = _function_source("_handle_login_redirect")
-        self.assertIn('request.GET.get("state_nonce", "")', source)
-        self.assertIn("hmac.compare_digest(stored_nonce, presented_nonce)", source)
-
-    def test_start_oauth_link_carries_the_pending_flow_nonce(self):
+    def test_oauth_handoff_uses_connector_state_api(self):
         source = CONNECTOR.read_text()
-        self.assertIn("'state_nonce': oauth_state_nonce", source)
+        self.assertIn("connector.load_state()", source)
+        self.assertIn("connector.save_state(state)", source)
 
-    def test_oauth_files_use_the_platform_application_state_directory(self):
-        source = _function_source("_get_file_path")
-        self.assertIn("paths.PHANTOM_APP_STATES / APP_ID / input_file", source)
-        self.assertNotIn("__file__", source)
+    def test_connector_module_has_one_base_connector_subclass(self):
+        tree = ast.parse(CONNECTOR.read_text())
+        connector_classes = [
+            node
+            for node in tree.body
+            if isinstance(node, ast.ClassDef) and any(isinstance(base, ast.Name) and base.id == "BaseConnector" for base in node.bases)
+        ]
+        self.assertEqual([node.name for node in connector_classes], ["MSADGraphConnector"])
 
-    def test_oauth_timeout_removes_temporary_state(self):
+    def test_temporary_password_is_input_only(self):
+        manifest = json.loads(MANIFEST.read_text())
+        action = next(item for item in manifest["actions"] if item["identifier"] == "reset_password")
+        output_types = {item["data_path"]: item["data_type"] for item in action["output"]}
+        self.assertEqual(action["parameters"]["temp_password"]["data_type"], "password")
+        self.assertTrue(action["parameters"]["temp_password"]["required"])
+        self.assertNotIn("action_result.parameter.temp_password", output_types)
+        self.assertFalse(any("temp_password" in data_path for data_path in output_types))
+
+        tree = ast.parse(CONNECTOR.read_text())
+        connector_class = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MSADGraphConnector")
+        method = next(node for node in connector_class.body if isinstance(node, ast.FunctionDef) and node.name == "_handle_reset_password")
+        source = ast.get_source_segment(CONNECTOR.read_text(), method)
+        self.assertIn('safe_param.pop("temp_password", None)', source)
+        self.assertNotIn("Vault", source)
+
+    def test_save_state_encrypts_a_copy(self):
+        tree = ast.parse(CONNECTOR.read_text())
+        connector_class = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MSADGraphConnector")
+        method = next(node for node in connector_class.body if isinstance(node, ast.FunctionDef) and node.name == "save_state")
+        source = ast.get_source_segment(CONNECTOR.read_text(), method)
+        self.assertIn("encrypted_state = _encrypt_state(copy.deepcopy(state)", source)
+        self.assertIn("super().save_state(encrypted_state)", source)
+
+    def test_oauth_flow_does_not_manage_state_files(self):
         source = CONNECTOR.read_text()
-        timeout_message = source.index("Authentication process does not seem to be completed. Timing out")
-        timeout_return = source.index("return self.set_status(phantom.APP_ERROR)", timeout_message)
-        timeout_block = source[timeout_message:timeout_return]
-        self.assertIn("_get_file_path(self._asset_id).unlink()", timeout_block)
+        self.assertNotIn("PHANTOM_APP_STATES", source)
+        self.assertNotIn("set_app_file_perms", source)
+        self.assertNotIn("tempfile", source)

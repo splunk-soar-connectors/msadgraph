@@ -462,7 +462,7 @@ Reset or set a user's password in a Microsoft AD environment
 Type: **contain** <br>
 Read only: **False**
 
-Password reset updates the user's passwordProfile property. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.
+Password reset updates the user's passwordProfile property. The required temp_password input parameter is not included in action output. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.
 
 #### Action Parameters
 
@@ -484,7 +484,6 @@ action_result.summary.status | string | | Successfully reset user password |
 action_result.message | string | | Status: Successfully reset user password |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
-action_result.parameter.temp_password | password | | |
 
 ## action: 'disable tokens'
 

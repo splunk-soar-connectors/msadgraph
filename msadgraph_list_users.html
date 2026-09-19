@@ -1,4 +1,4 @@
-{% extends 'widgets/widget_template.html' %}
+{% extends "widgets/widget_template.html" %}
 {% load custom_template %}
 {% block custom_title_prop %}
   {% if title_logo %}
@@ -92,7 +92,7 @@ and limitations under the License.
       {% else %}
         {% if result.param.select_string %}
           {% for curr_data in result.data %}
-            {% if curr_data == 'Empty response' %}
+            {% if curr_data == "Empty response" %}
               <h3 class="wf-h3-style">Empty response. Please add valid property name</h3>
             {% else %}
               <h3 class="wf-h3-style">User</h3>

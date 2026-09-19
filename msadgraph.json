@@ -587,7 +587,7 @@
         {
             "action": "reset password",
             "description": "Reset or set a user's password in a Microsoft AD environment",
-            "verbose": "Password reset updates the user's passwordProfile property. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.",
+            "verbose": "Password reset updates the user's passwordProfile property. The required temp_password input parameter is not included in action output. This property cannot be used for federated users; manage those passwords through the federation provider. For more information, refer to https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body.",
             "type": "contain",
             "identifier": "reset_password",
             "read_only": false,
@@ -678,10 +678,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.parameter.temp_password",
-                    "data_type": "password"
                 }
             ],
             "render": {
