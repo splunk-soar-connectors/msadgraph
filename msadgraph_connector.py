@@ -742,26 +742,14 @@ class MSADGraphConnector(BaseConnector):
             headers = {}
 
         token = self._state.get(MS_AZURE_TOKEN_STRING, {})
-        if not token.get(MS_AZURE_ACCESS_TOKEN_STRING):
+        if not token.get(MS_AZURE_ACCESS_TOKEN_STRING) or token.get(MS_AZURE_EXPIRES_AT_STRING, 0) < time.time():
+            self.save_progress("Token is missing or expired. Hence, generating a new token.")
             ret_val = self._get_token(action_result)
 
             if phantom.is_fail(ret_val):
                 return RetVal(action_result.get_status(), None)
         headers.update({"Authorization": f"Bearer {self._access_token}", "Accept": "application/json", "Content-Type": "application/json"})
         ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
-
-        # If token is expired, generate a new token
-        message = action_result.get_message()
-        self.debug_print(f"message: {message}")
-        if message and ("token" in message and "expired" in message):
-            self.save_progress("Token is invalid/expired. Hence, generating a new token.")
-            ret_val = self._get_token(action_result)
-            if phantom.is_fail(ret_val):
-                return RetVal(ret_val, None)
-
-            headers.update({"Authorization": f"Bearer {self._access_token}"})
-
-            ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
 
         if phantom.is_fail(ret_val):
             return RetVal(ret_val, resp_json)
@@ -1555,6 +1543,9 @@ class MSADGraphConnector(BaseConnector):
         if self._admin_access_required and self._admin_access_granted:
             self._state["admin_consent"] = True
 
+        if resp_json.get(MS_AZURE_EXPIRES_IN_STRING):
+            resp_json[MS_AZURE_EXPIRES_AT_STRING] = int(time.time()) + resp_json[MS_AZURE_EXPIRES_IN_STRING] - MS_AZURE_TOKEN_EXPIRY_BUFFER
+        
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
         self._access_token = resp_json.get(MS_AZURE_ACCESS_TOKEN_STRING, None)
         self._refresh_token = resp_json.get(MS_AZURE_REFRESH_TOKEN_STRING, None)
