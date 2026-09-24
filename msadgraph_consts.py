@@ -43,6 +43,7 @@ MS_AZURE_ACCESS_TOKEN_STRING = "access_token"
 MS_AZURE_REFRESH_TOKEN_STRING = "refresh_token"
 MS_AZURE_EXPIRES_IN_STRING = "expires_in"
 MS_AZURE_EXPIRES_AT_STRING = "expires_at"
+MS_AZURE_TOKEN_EXPIRY_BUFFER = 60 # In seconds
 MS_AZURE_PHANTOM_BASE_URL = "{phantom_base_url}rest"
 MS_AZURE_PHANTOM_SYS_INFO_URL = "/system_info"
 MS_AZURE_PHANTOM_ASSET_INFO_URL = "/asset/{asset_id}"

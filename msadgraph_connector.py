@@ -1544,7 +1544,7 @@ class MSADGraphConnector(BaseConnector):
             self._state["admin_consent"] = True
 
         if resp_json.get(MS_AZURE_EXPIRES_IN_STRING):
-            resp_json[MS_AZURE_EXPIRES_AT_STRING] = int(time.time()) + resp_json[MS_AZURE_EXPIRES_IN_STRING]
+            resp_json[MS_AZURE_EXPIRES_AT_STRING] = int(time.time()) + resp_json[MS_AZURE_EXPIRES_IN_STRING] - MS_AZURE_TOKEN_EXPIRY_BUFFER
         
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
         self._access_token = resp_json.get(MS_AZURE_ACCESS_TOKEN_STRING, None)
