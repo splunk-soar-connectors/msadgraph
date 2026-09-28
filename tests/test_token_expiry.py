@@ -107,6 +107,15 @@ class TokenExpiryTests(unittest.TestCase):
         self.assertEqual(connector.calls[1]["headers"]["Authorization"], "Bearer new-token")
         self.assertEqual(connector._state["token"]["expires_at"], NOW + 3540)
 
+    def test_legacy_token_without_refresh_credentials_is_reused(self):
+        connector = self._connector({"access_token": "current-token"}, admin_access=False)
+
+        status, _ = connector._make_rest_call_helper(ActionResult(), "/users")
+
+        self.assertEqual(status, 0)
+        self.assertEqual([call["method"] for call in connector.calls], ["get"])
+        self.assertEqual(connector.calls[0]["headers"]["Authorization"], "Bearer current-token")
+
     def test_valid_token_is_reused(self):
         connector = self._connector({"access_token": "current-token", "expires_at": NOW + 120})
 

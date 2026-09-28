@@ -742,7 +742,9 @@ class MSADGraphConnector(BaseConnector):
             headers = {}
 
         token = self._state.get(MS_AZURE_TOKEN_STRING, {})
-        if not self._access_token or token.get(MS_AZURE_EXPIRES_AT_STRING, 0) <= time.time():
+        expires_at = token.get(MS_AZURE_EXPIRES_AT_STRING)
+        can_refresh = self._admin_access_required or self._refresh_token
+        if not self._access_token or (expires_at is None and can_refresh) or (expires_at is not None and expires_at <= time.time()):
             self.save_progress("Token is missing or expired. Generating a new token.")
             ret_val = self._get_token(action_result)
 
