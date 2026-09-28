@@ -71,7 +71,7 @@ class TokenExpiryTests(unittest.TestCase):
                 self._base_url = "https://graph.microsoft.com/v1.0"
                 self._tenant = "tenant"
                 self._client_id = "client"
-                self._client_secret = "secret"
+                self._client_secret = ""
                 self._access_token = token.get("access_token")
                 self._refresh_token = token.get("refresh_token")
                 self._admin_access_required = admin_access
