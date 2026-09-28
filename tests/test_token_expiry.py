@@ -49,7 +49,7 @@ class ActionResult:
         self.status = 0
         self.message = None
 
-    def set_status(self, status, message):
+    def set_status(self, status, message=None):
         self.status = status
         self.message = message
         return status
@@ -87,8 +87,8 @@ class TokenExpiryTests(unittest.TestCase):
                 pass
 
             def _make_rest_call(self, endpoint, action_result, verify=True, headers=None, params=None, data=None, json=None, method="get"):
-                self.calls.append({"method": method, "headers": dict(headers or {}), "data": data})
-                if method == "post":
+                self.calls.append({"endpoint": endpoint, "method": method, "headers": dict(headers or {}), "data": data, "json": json})
+                if endpoint.startswith("https://login.microsoftonline.com/"):
                     if token_status:
                         return action_result.set_status(token_status, "Token request failed"), None
                     return 0, {"access_token": "new-token", "refresh_token": "new-refresh", "expires_in": 3600}
@@ -116,7 +116,8 @@ class TokenExpiryTests(unittest.TestCase):
             graph_error_message="401 InvalidAuthenticationToken: Invalid token lifetime",
         )
 
-        status, response = connector._make_rest_call_helper(ActionResult(), "/users")
+        action_result = ActionResult()
+        status, response = connector._make_rest_call_helper(action_result, "/users")
 
         self.assertEqual(status, 0)
         self.assertEqual(response, {"value": []})
@@ -124,6 +125,8 @@ class TokenExpiryTests(unittest.TestCase):
         self.assertEqual(connector.calls[1]["data"]["grant_type"], "refresh_token")
         self.assertEqual(connector.calls[2]["headers"]["Authorization"], "Bearer new-token")
         self.assertEqual(connector._state["token"]["expires_at"], NOW + 3540)
+        self.assertEqual(action_result.get_status(), 0)
+        self.assertFalse(action_result.get_message())
 
     def test_legacy_token_without_refresh_credentials_is_reused(self):
         connector = self._connector({"access_token": "current-token"}, admin_access=False)
@@ -143,15 +146,16 @@ class TokenExpiryTests(unittest.TestCase):
         self.assertEqual([call["method"] for call in connector.calls], ["get"])
         self.assertEqual(connector.calls[0]["headers"]["Authorization"], "Bearer current-token")
 
-    def test_success_does_not_retry_for_stale_error_message(self):
+    def test_successful_mutation_does_not_retry_for_stale_error_message(self):
         connector = self._connector({"access_token": "current-token", "expires_at": NOW + 120})
         action_result = ActionResult()
-        action_result.message = "token expired"
+        action_result.message = "InvalidAuthenticationToken: Invalid token lifetime"
 
-        status, _ = connector._make_rest_call_helper(action_result, "/users")
+        status, _ = connector._make_rest_call_helper(action_result, "/users", method="post")
 
         self.assertEqual(status, 0)
-        self.assertEqual([call["method"] for call in connector.calls], ["get"])
+        self.assertEqual([call["method"] for call in connector.calls], ["post"])
+        self.assertTrue(connector.calls[0]["endpoint"].endswith("/users"))
 
     def test_invalid_token_lifetime_refreshes_and_retries(self):
         for error_message in (
@@ -186,6 +190,23 @@ class TokenExpiryTests(unittest.TestCase):
         self.assertIsNone(response)
         self.assertEqual([call["method"] for call in connector.calls], ["get"])
 
+    def test_mutating_request_retries_once_with_original_body_after_token_rejection(self):
+        connector = self._connector(
+            {"access_token": "old-token", "refresh_token": "old-refresh", "expires_at": NOW + 120},
+            admin_access=False,
+            graph_error_message="401 InvalidAuthenticationToken: Invalid token lifetime",
+        )
+        body = {"accountEnabled": False}
+
+        status, response = connector._make_rest_call_helper(ActionResult(), "/users/user-id", method="patch", json=body)
+
+        self.assertEqual(status, 0)
+        self.assertEqual(response, {"value": []})
+        self.assertEqual([call["method"] for call in connector.calls], ["patch", "post", "patch"])
+        self.assertEqual([connector.calls[index]["json"] for index in (0, 2)], [body, body])
+        self.assertEqual(connector.calls[0]["headers"]["Authorization"], "Bearer old-token")
+        self.assertEqual(connector.calls[2]["headers"]["Authorization"], "Bearer new-token")
+
     def test_expired_token_refreshes_before_graph_request(self):
         connector = self._connector({"access_token": "old-token", "expires_at": NOW})
 
@@ -203,6 +224,32 @@ class TokenExpiryTests(unittest.TestCase):
         self.assertEqual(status, -1)
         self.assertIsNone(response)
         self.assertEqual([call["method"] for call in connector.calls], ["post"])
+
+    def test_failed_refresh_after_graph_rejection_does_not_retry(self):
+        connector = self._connector(
+            {"access_token": "old-token", "refresh_token": "old-refresh"},
+            admin_access=False,
+            token_status=-1,
+            graph_error_message="401 InvalidAuthenticationToken: Invalid token lifetime",
+        )
+        action_result = ActionResult()
+
+        status, response = connector._make_rest_call_helper(action_result, "/users")
+
+        self.assertEqual(status, -1)
+        self.assertIsNone(response)
+        self.assertEqual(action_result.get_message(), "Token request failed")
+        self.assertEqual([call["method"] for call in connector.calls], ["get", "post"])
+        self.assertEqual(connector._access_token, "old-token")
+
+    def test_missing_delegated_token_without_refresh_credentials_fails_before_graph(self):
+        connector = self._connector({}, admin_access=False)
+
+        status, response = connector._make_rest_call_helper(ActionResult(), "/users")
+
+        self.assertEqual(status, -1)
+        self.assertIsNone(response)
+        self.assertEqual(connector.calls, [])
 
 
 if __name__ == "__main__":

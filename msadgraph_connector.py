@@ -748,7 +748,7 @@ class MSADGraphConnector(BaseConnector):
             ret_val = self._get_token(action_result)
 
             if phantom.is_fail(ret_val):
-                return RetVal(action_result.get_status(), None)
+                return RetVal(ret_val, None)
         headers.update({"Authorization": f"Bearer {self._access_token}", "Accept": "application/json", "Content-Type": "application/json"})
         ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
 
@@ -769,6 +769,8 @@ class MSADGraphConnector(BaseConnector):
             headers.update({"Authorization": f"Bearer {self._access_token}"})
 
             ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
+            if not phantom.is_fail(ret_val):
+                action_result.set_status(phantom.APP_SUCCESS)
 
         if phantom.is_fail(ret_val):
             return RetVal(ret_val, resp_json)
@@ -1558,7 +1560,7 @@ class MSADGraphConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(req_url, action_result, headers=headers, data=data, method="post")
 
         if phantom.is_fail(ret_val):
-            return action_result.get_status()
+            return ret_val
 
         if self._admin_access_required and self._admin_access_granted:
             self._state["admin_consent"] = True
