@@ -19,6 +19,7 @@ import copy
 import hashlib
 import hmac
 import json
+import math
 import secrets
 import sys
 import time
@@ -743,7 +744,7 @@ class MSADGraphConnector(BaseConnector):
 
         token = self._state.get(MS_AZURE_TOKEN_STRING, {})
         expires_at = token.get(MS_AZURE_EXPIRES_AT_STRING)
-        if not self._access_token or (expires_at is not None and expires_at <= time.time()):
+        if not self._access_token or (isinstance(expires_at, (int, float)) and not isinstance(expires_at, bool) and expires_at <= time.time()):
             self.save_progress("Token is missing or expired. Generating a new token.")
             ret_val = self._get_token(action_result)
 
@@ -1566,8 +1567,13 @@ class MSADGraphConnector(BaseConnector):
             self._state["admin_consent"] = True
 
         expires_in = resp_json.get(MS_AZURE_EXPIRES_IN_STRING)
-        if expires_in is not None:
-            resp_json[MS_AZURE_EXPIRES_AT_STRING] = request_time + int(expires_in) - MS_AZURE_TOKEN_EXPIRY_BUFFER
+        if not isinstance(expires_in, bool):
+            try:
+                expires_in = float(expires_in)
+            except (TypeError, ValueError, OverflowError):
+                expires_in = None
+            if expires_in is not None and math.isfinite(expires_in) and expires_in > 0:
+                resp_json[MS_AZURE_EXPIRES_AT_STRING] = request_time + expires_in - MS_AZURE_TOKEN_EXPIRY_BUFFER
 
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
         self._access_token = resp_json.get(MS_AZURE_ACCESS_TOKEN_STRING, None)

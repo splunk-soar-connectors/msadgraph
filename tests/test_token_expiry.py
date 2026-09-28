@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
+import math
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -37,6 +38,7 @@ def _load_token_policy():
         "MS_AZURE_EXPIRES_IN_STRING": "expires_in",
         "MS_AZURE_EXPIRES_AT_STRING": "expires_at",
         "MS_AZURE_TOKEN_EXPIRY_BUFFER": 60,
+        "math": math,
         "MS_AZURE_CODE_GENERATION_SCOPE": "scope",
         "SERVER_TOKEN_URL": "https://login.microsoftonline.com/{0}/oauth2/v2.0/token",
     }
@@ -62,8 +64,10 @@ class ActionResult:
 
 
 class TokenExpiryTests(unittest.TestCase):
-    def _connector(self, token, admin_access=True, token_status=0, graph_error_message=None):
+    def _connector(self, token, admin_access=True, token_status=0, graph_error_message=None, token_response=None):
         policy = _load_token_policy()
+        if token_response is None:
+            token_response = {"access_token": "new-token", "refresh_token": "new-refresh", "expires_in": 3600}
 
         class Connector(policy):
             def __init__(self):
@@ -91,7 +95,7 @@ class TokenExpiryTests(unittest.TestCase):
                 if endpoint.startswith("https://login.microsoftonline.com/"):
                     if token_status:
                         return action_result.set_status(token_status, "Token request failed"), None
-                    return 0, {"access_token": "new-token", "refresh_token": "new-refresh", "expires_in": 3600}
+                    return 0, dict(token_response)
                 if graph_error_message and not self.graph_failure_sent:
                     self.graph_failure_sent = True
                     return action_result.set_status(-1, graph_error_message), None
@@ -145,6 +149,46 @@ class TokenExpiryTests(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual([call["method"] for call in connector.calls], ["get"])
         self.assertEqual(connector.calls[0]["headers"]["Authorization"], "Bearer current-token")
+
+    def test_malformed_cached_expiry_uses_graph_and_reactive_refresh(self):
+        for expires_at in ("invalid", {"value": NOW}, True):
+            with self.subTest(expires_at=expires_at):
+                connector = self._connector(
+                    {"access_token": "old-token", "refresh_token": "old-refresh", "expires_at": expires_at},
+                    admin_access=False,
+                    graph_error_message="401 InvalidAuthenticationToken: Invalid token lifetime",
+                )
+
+                status, response = connector._make_rest_call_helper(ActionResult(), "/users")
+
+                self.assertEqual((status, response), (0, {"value": []}))
+                self.assertEqual([call["method"] for call in connector.calls], ["get", "post", "get"])
+                self.assertEqual(connector.calls[2]["headers"]["Authorization"], "Bearer new-token")
+
+    def test_malformed_token_lifetime_does_not_block_graph_request(self):
+        for expires_in in ("invalid", {}, True, float("nan"), float("inf"), 10**400, 0):
+            with self.subTest(expires_in=expires_in):
+                connector = self._connector(
+                    {"access_token": "old-token", "expires_at": NOW - 1},
+                    token_response={"access_token": "new-token", "expires_in": expires_in},
+                )
+
+                status, response = connector._make_rest_call_helper(ActionResult(), "/users")
+
+                self.assertEqual((status, response), (0, {"value": []}))
+                self.assertEqual([call["method"] for call in connector.calls], ["post", "get"])
+                self.assertNotIn("expires_at", connector._state["token"])
+
+    def test_numeric_string_token_lifetime_records_expiry(self):
+        connector = self._connector(
+            {"access_token": "old-token", "expires_at": NOW - 1},
+            token_response={"access_token": "new-token", "expires_in": "3600"},
+        )
+
+        status, _ = connector._make_rest_call_helper(ActionResult(), "/users")
+
+        self.assertEqual(status, 0)
+        self.assertEqual(connector._state["token"]["expires_at"], NOW + 3540)
 
     def test_successful_mutation_does_not_retry_for_stale_error_message(self):
         connector = self._connector({"access_token": "current-token", "expires_at": NOW + 120})
