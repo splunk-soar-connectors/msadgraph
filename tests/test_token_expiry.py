@@ -62,7 +62,7 @@ class ActionResult:
 
 
 class TokenExpiryTests(unittest.TestCase):
-    def _connector(self, token, admin_access=True, token_status=0):
+    def _connector(self, token, admin_access=True, token_status=0, graph_error_message=None):
         policy = _load_token_policy()
 
         class Connector(policy):
@@ -78,6 +78,7 @@ class TokenExpiryTests(unittest.TestCase):
                 self._admin_access_granted = admin_access
                 self.calls = []
                 self.progress = []
+                self.graph_failure_sent = False
 
             def save_progress(self, message):
                 self.progress.append(message)
@@ -91,20 +92,37 @@ class TokenExpiryTests(unittest.TestCase):
                     if token_status:
                         return action_result.set_status(token_status, "Token request failed"), None
                     return 0, {"access_token": "new-token", "refresh_token": "new-refresh", "expires_in": 3600}
+                if graph_error_message and not self.graph_failure_sent:
+                    self.graph_failure_sent = True
+                    return action_result.set_status(-1, graph_error_message), None
                 return 0, {"value": []}
 
         return Connector()
 
-    def test_legacy_token_refreshes_before_graph_request(self):
-        connector = self._connector({"access_token": "old-token", "refresh_token": "old-refresh"}, admin_access=False)
+    def test_legacy_token_with_refresh_credentials_is_reused(self):
+        connector = self._connector({"access_token": "current-token", "refresh_token": "old-refresh"}, admin_access=False, token_status=-1)
 
         status, response = connector._make_rest_call_helper(ActionResult(), "/users")
 
         self.assertEqual(status, 0)
         self.assertEqual(response, {"value": []})
-        self.assertEqual([call["method"] for call in connector.calls], ["post", "get"])
-        self.assertEqual(connector.calls[0]["data"]["grant_type"], "refresh_token")
-        self.assertEqual(connector.calls[1]["headers"]["Authorization"], "Bearer new-token")
+        self.assertEqual([call["method"] for call in connector.calls], ["get"])
+        self.assertEqual(connector.calls[0]["headers"]["Authorization"], "Bearer current-token")
+
+    def test_expired_legacy_token_refreshes_after_graph_rejection(self):
+        connector = self._connector(
+            {"access_token": "old-token", "refresh_token": "old-refresh"},
+            admin_access=False,
+            graph_error_message="401 InvalidAuthenticationToken: Invalid token lifetime",
+        )
+
+        status, response = connector._make_rest_call_helper(ActionResult(), "/users")
+
+        self.assertEqual(status, 0)
+        self.assertEqual(response, {"value": []})
+        self.assertEqual([call["method"] for call in connector.calls], ["get", "post", "get"])
+        self.assertEqual(connector.calls[1]["data"]["grant_type"], "refresh_token")
+        self.assertEqual(connector.calls[2]["headers"]["Authorization"], "Bearer new-token")
         self.assertEqual(connector._state["token"]["expires_at"], NOW + 3540)
 
     def test_legacy_token_without_refresh_credentials_is_reused(self):
@@ -133,6 +151,39 @@ class TokenExpiryTests(unittest.TestCase):
         status, _ = connector._make_rest_call_helper(action_result, "/users")
 
         self.assertEqual(status, 0)
+        self.assertEqual([call["method"] for call in connector.calls], ["get"])
+
+    def test_invalid_token_lifetime_refreshes_and_retries(self):
+        for error_message in (
+            "401 InvalidAuthenticationToken: Invalid token lifetime",
+            "401 InvalidAuthenticationToken",
+            "401 Invalid token lifetime",
+        ):
+            with self.subTest(error_message=error_message):
+                connector = self._connector(
+                    {"access_token": "old-token", "refresh_token": "old-refresh", "expires_at": NOW + 120},
+                    admin_access=False,
+                    graph_error_message=error_message,
+                )
+
+                status, response = connector._make_rest_call_helper(ActionResult(), "/users")
+
+                self.assertEqual(status, 0)
+                self.assertEqual(response, {"value": []})
+                self.assertEqual([call["method"] for call in connector.calls], ["get", "post", "get"])
+                self.assertEqual(connector.calls[1]["data"]["grant_type"], "refresh_token")
+                self.assertEqual(connector.calls[2]["headers"]["Authorization"], "Bearer new-token")
+
+    def test_other_graph_error_does_not_refresh_or_retry(self):
+        connector = self._connector(
+            {"access_token": "current-token", "expires_at": NOW + 120},
+            graph_error_message="403 Authorization_RequestDenied: Insufficient privileges",
+        )
+
+        status, response = connector._make_rest_call_helper(ActionResult(), "/users")
+
+        self.assertEqual(status, -1)
+        self.assertIsNone(response)
         self.assertEqual([call["method"] for call in connector.calls], ["get"])
 
     def test_expired_token_refreshes_before_graph_request(self):

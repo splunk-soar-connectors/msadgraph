@@ -743,8 +743,7 @@ class MSADGraphConnector(BaseConnector):
 
         token = self._state.get(MS_AZURE_TOKEN_STRING, {})
         expires_at = token.get(MS_AZURE_EXPIRES_AT_STRING)
-        can_refresh = self._admin_access_required or self._refresh_token
-        if not self._access_token or (expires_at is None and can_refresh) or (expires_at is not None and expires_at <= time.time()):
+        if not self._access_token or (expires_at is not None and expires_at <= time.time()):
             self.save_progress("Token is missing or expired. Generating a new token.")
             ret_val = self._get_token(action_result)
 
@@ -756,7 +755,12 @@ class MSADGraphConnector(BaseConnector):
         # If token is expired, generate a new token
         message = action_result.get_message()
         self.debug_print(f"message: {message}")
-        if phantom.is_fail(ret_val) and message and ("token" in message and "expired" in message):
+        error_message = message.lower() if message else ""
+        if phantom.is_fail(ret_val) and (
+            ("token" in error_message and "expired" in error_message)
+            or "invalid token lifetime" in error_message
+            or "invalidauthenticationtoken" in error_message
+        ):
             self.save_progress("Token is invalid/expired. Hence, generating a new token.")
             ret_val = self._get_token(action_result)
             if phantom.is_fail(ret_val):
