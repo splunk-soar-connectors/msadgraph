@@ -742,7 +742,8 @@ class MSADGraphConnector(BaseConnector):
             headers = {}
 
         token = self._state.get(MS_AZURE_TOKEN_STRING, {})
-        if not token.get(MS_AZURE_ACCESS_TOKEN_STRING):
+        if not self._access_token or token.get(MS_AZURE_EXPIRES_AT_STRING, 0) <= time.time():
+            self.save_progress("Token is missing or expired. Generating a new token.")
             ret_val = self._get_token(action_result)
 
             if phantom.is_fail(ret_val):
@@ -753,7 +754,7 @@ class MSADGraphConnector(BaseConnector):
         # If token is expired, generate a new token
         message = action_result.get_message()
         self.debug_print(f"message: {message}")
-        if message and ("token" in message and "expired" in message):
+        if phantom.is_fail(ret_val) and message and ("token" in message and "expired" in message):
             self.save_progress("Token is invalid/expired. Hence, generating a new token.")
             ret_val = self._get_token(action_result)
             if phantom.is_fail(ret_val):
@@ -1547,6 +1548,7 @@ class MSADGraphConnector(BaseConnector):
             data["scope"] = "https://graph.microsoft.com/.default"
             data["grant_type"] = "client_credentials"
 
+        request_time = time.time()
         ret_val, resp_json = self._make_rest_call(req_url, action_result, headers=headers, data=data, method="post")
 
         if phantom.is_fail(ret_val):
@@ -1554,6 +1556,10 @@ class MSADGraphConnector(BaseConnector):
 
         if self._admin_access_required and self._admin_access_granted:
             self._state["admin_consent"] = True
+
+        expires_in = resp_json.get(MS_AZURE_EXPIRES_IN_STRING)
+        if expires_in is not None:
+            resp_json[MS_AZURE_EXPIRES_AT_STRING] = request_time + int(expires_in) - MS_AZURE_TOKEN_EXPIRY_BUFFER
 
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
         self._access_token = resp_json.get(MS_AZURE_ACCESS_TOKEN_STRING, None)
