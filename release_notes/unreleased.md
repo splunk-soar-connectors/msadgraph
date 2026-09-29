@@ -1,1 +1,3 @@
 **Unreleased**
+
+* Refresh Microsoft Graph access tokens before they expire so actions continue after token lifetime errors.

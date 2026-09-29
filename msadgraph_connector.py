@@ -19,6 +19,7 @@ import copy
 import hashlib
 import hmac
 import json
+import math
 import secrets
 import sys
 import time
@@ -742,18 +743,25 @@ class MSADGraphConnector(BaseConnector):
             headers = {}
 
         token = self._state.get(MS_AZURE_TOKEN_STRING, {})
-        if not token.get(MS_AZURE_ACCESS_TOKEN_STRING):
+        expires_at = token.get(MS_AZURE_EXPIRES_AT_STRING)
+        if not self._access_token or (isinstance(expires_at, (int, float)) and not isinstance(expires_at, bool) and expires_at <= time.time()):
+            self.save_progress("Token is missing or expired. Generating a new token.")
             ret_val = self._get_token(action_result)
 
             if phantom.is_fail(ret_val):
-                return RetVal(action_result.get_status(), None)
+                return RetVal(ret_val, None)
         headers.update({"Authorization": f"Bearer {self._access_token}", "Accept": "application/json", "Content-Type": "application/json"})
         ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
 
         # If token is expired, generate a new token
         message = action_result.get_message()
         self.debug_print(f"message: {message}")
-        if message and ("token" in message and "expired" in message):
+        error_message = message.lower() if message else ""
+        if phantom.is_fail(ret_val) and (
+            ("token" in error_message and "expired" in error_message)
+            or "invalid token lifetime" in error_message
+            or "invalidauthenticationtoken" in error_message
+        ):
             self.save_progress("Token is invalid/expired. Hence, generating a new token.")
             ret_val = self._get_token(action_result)
             if phantom.is_fail(ret_val):
@@ -762,6 +770,8 @@ class MSADGraphConnector(BaseConnector):
             headers.update({"Authorization": f"Bearer {self._access_token}"})
 
             ret_val, resp_json = self._make_rest_call(url, action_result, verify, headers, params, data, json, method)
+            if not phantom.is_fail(ret_val):
+                action_result.set_status(phantom.APP_SUCCESS)
 
         if phantom.is_fail(ret_val):
             return RetVal(ret_val, resp_json)
@@ -1547,13 +1557,23 @@ class MSADGraphConnector(BaseConnector):
             data["scope"] = "https://graph.microsoft.com/.default"
             data["grant_type"] = "client_credentials"
 
+        request_time = time.time()
         ret_val, resp_json = self._make_rest_call(req_url, action_result, headers=headers, data=data, method="post")
 
         if phantom.is_fail(ret_val):
-            return action_result.get_status()
+            return ret_val
 
         if self._admin_access_required and self._admin_access_granted:
             self._state["admin_consent"] = True
+
+        expires_in = resp_json.get(MS_AZURE_EXPIRES_IN_STRING)
+        if not isinstance(expires_in, bool):
+            try:
+                expires_in = float(expires_in)
+            except (TypeError, ValueError, OverflowError):
+                expires_in = None
+            if expires_in is not None and math.isfinite(expires_in) and expires_in > 0:
+                resp_json[MS_AZURE_EXPIRES_AT_STRING] = request_time + expires_in
 
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
         self._access_token = resp_json.get(MS_AZURE_ACCESS_TOKEN_STRING, None)
