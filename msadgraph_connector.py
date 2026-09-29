@@ -1573,7 +1573,7 @@ class MSADGraphConnector(BaseConnector):
             except (TypeError, ValueError, OverflowError):
                 expires_in = None
             if expires_in is not None and math.isfinite(expires_in) and expires_in > 0:
-                resp_json[MS_AZURE_EXPIRES_AT_STRING] = request_time + expires_in - MS_AZURE_TOKEN_EXPIRY_BUFFER
+                resp_json[MS_AZURE_EXPIRES_AT_STRING] = request_time + expires_in
 
         self._state[MS_AZURE_TOKEN_STRING] = resp_json
         self._access_token = resp_json.get(MS_AZURE_ACCESS_TOKEN_STRING, None)

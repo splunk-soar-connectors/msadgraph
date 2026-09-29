@@ -37,7 +37,6 @@ def _load_token_policy():
         "MS_AZURE_REFRESH_TOKEN_STRING": "refresh_token",
         "MS_AZURE_EXPIRES_IN_STRING": "expires_in",
         "MS_AZURE_EXPIRES_AT_STRING": "expires_at",
-        "MS_AZURE_TOKEN_EXPIRY_BUFFER": 60,
         "math": math,
         "MS_AZURE_CODE_GENERATION_SCOPE": "scope",
         "SERVER_TOKEN_URL": "https://login.microsoftonline.com/{0}/oauth2/v2.0/token",
@@ -128,7 +127,7 @@ class TokenExpiryTests(unittest.TestCase):
         self.assertEqual([call["method"] for call in connector.calls], ["get", "post", "get"])
         self.assertEqual(connector.calls[1]["data"]["grant_type"], "refresh_token")
         self.assertEqual(connector.calls[2]["headers"]["Authorization"], "Bearer new-token")
-        self.assertEqual(connector._state["token"]["expires_at"], NOW + 3540)
+        self.assertEqual(connector._state["token"]["expires_at"], NOW + 3600)
         self.assertEqual(action_result.get_status(), 0)
         self.assertFalse(action_result.get_message())
 
@@ -147,6 +146,17 @@ class TokenExpiryTests(unittest.TestCase):
         status, _ = connector._make_rest_call_helper(ActionResult(), "/users")
 
         self.assertEqual(status, 0)
+        self.assertEqual([call["method"] for call in connector.calls], ["get"])
+        self.assertEqual(connector.calls[0]["headers"]["Authorization"], "Bearer current-token")
+
+    def test_valid_token_in_last_minute_survives_token_endpoint_failure(self):
+        connector = self._connector({"access_token": "current-token", "expires_at": NOW + 30}, token_status=-1)
+        action_result = ActionResult()
+
+        status, response = connector._make_rest_call_helper(action_result, "/users")
+
+        self.assertEqual((status, response), (0, {"value": []}))
+        self.assertEqual(action_result.get_status(), 0)
         self.assertEqual([call["method"] for call in connector.calls], ["get"])
         self.assertEqual(connector.calls[0]["headers"]["Authorization"], "Bearer current-token")
 
@@ -188,7 +198,24 @@ class TokenExpiryTests(unittest.TestCase):
         status, _ = connector._make_rest_call_helper(ActionResult(), "/users")
 
         self.assertEqual(status, 0)
-        self.assertEqual(connector._state["token"]["expires_at"], NOW + 3540)
+        self.assertEqual(connector._state["token"]["expires_at"], NOW + 3600)
+
+    def test_short_token_lifetime_records_actual_expiry(self):
+        connector = self._connector(
+            {"access_token": "old-token", "expires_at": NOW - 1},
+            token_response={"access_token": "new-token", "expires_in": 30},
+        )
+
+        status, _ = connector._make_rest_call_helper(ActionResult(), "/users")
+
+        self.assertEqual(status, 0)
+        self.assertEqual(connector._state["token"]["expires_at"], NOW + 30)
+        self.assertEqual([call["method"] for call in connector.calls], ["post", "get"])
+
+        status, _ = connector._make_rest_call_helper(ActionResult(), "/users")
+
+        self.assertEqual(status, 0)
+        self.assertEqual([call["method"] for call in connector.calls], ["post", "get", "get"])
 
     def test_successful_mutation_does_not_retry_for_stale_error_message(self):
         connector = self._connector({"access_token": "current-token", "expires_at": NOW + 120})
@@ -209,7 +236,7 @@ class TokenExpiryTests(unittest.TestCase):
         ):
             with self.subTest(error_message=error_message):
                 connector = self._connector(
-                    {"access_token": "old-token", "refresh_token": "old-refresh", "expires_at": NOW + 120},
+                    {"access_token": "old-token", "refresh_token": "old-refresh", "expires_at": NOW + 30},
                     admin_access=False,
                     graph_error_message=error_message,
                 )
@@ -261,7 +288,7 @@ class TokenExpiryTests(unittest.TestCase):
         self.assertEqual(connector.calls[1]["headers"]["Authorization"], "Bearer new-token")
 
     def test_failed_refresh_does_not_call_graph(self):
-        connector = self._connector({"access_token": "old-token", "expires_at": NOW - 1}, token_status=-1)
+        connector = self._connector({"access_token": "old-token", "expires_at": NOW}, token_status=-1)
 
         status, response = connector._make_rest_call_helper(ActionResult(), "/users")
 
