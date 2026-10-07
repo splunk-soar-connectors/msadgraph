@@ -16,7 +16,7 @@
     ],
     "license": "Copyright (c) 2022-2026 Splunk Inc.",
     "app_version": "2.0.0",
-    "python_version": "3.9, 3.13",
+    "python_version": "3.13",
     "utctime_updated": "2026-09-19T00:28:33.457448Z",
     "package_name": "phantom_msadgraph",
     "main_module": "msadgraph_connector.py",
@@ -29,24 +29,28 @@
     "rest_handler": "msadgraph_connector._handle_rest_request",
     "configuration": {
         "tenant_id": {
+            "category": "connectivity",
             "description": "Tenant (Tenant ID or Tenant Name)",
             "data_type": "string",
             "required": true,
             "order": 0
         },
         "client_id": {
+            "category": "connectivity",
             "description": "Application ID",
             "data_type": "string",
             "required": true,
             "order": 2
         },
         "client_secret": {
+            "category": "connectivity",
             "description": "Client Secret",
             "data_type": "password",
             "required": true,
             "order": 3
         },
         "region": {
+            "category": "connectivity",
             "data_type": "string",
             "description": "Microsoft AD Region",
             "default": "Global",
@@ -60,12 +64,14 @@
             ]
         },
         "admin_access_required": {
+            "category": "connectivity",
             "description": "Admin Access Required",
             "data_type": "boolean",
             "default": false,
             "order": 4
         },
         "admin_access_granted": {
+            "category": "connectivity",
             "description": "Admin Consent Already Provided",
             "data_type": "boolean",
             "default": false,
