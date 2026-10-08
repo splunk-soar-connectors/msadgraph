@@ -11,11 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import httpx
 from soar_sdk.abstract import SOARClient
-from soar_sdk.action_results import ActionOutput, OutputField
+from soar_sdk.action_results import ActionOutput, OutputField, PermissiveActionOutput
+from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Param, Params
 
 from ..asset import Asset
+from ..client import (
+    GRAPH_PAGE_SIZE,
+    get_graph_client,
+    get_graph_collection,
+    get_graph_token,
+)
 
 
 class ListUsersParams(Params):
@@ -70,7 +78,7 @@ class Thumbnailphoto_OdataOutput(ActionOutput):
     )
 
 
-class ListUsersOutput(ActionOutput):
+class ListUsersOutput(PermissiveActionOutput):
     accountEnabled: bool
     ageGroup: str
     assignedLicenses: list[AssignedlicensesOutput]
@@ -109,6 +117,7 @@ class ListUsersOutput(ActionOutput):
         cef_types=["email"], example_values=["user.test@outlook.com"]
     )
     passwordPolicies: str = OutputField(example_values=["None"])
+    passwordProfileValue: str = OutputField(alias="passwordProfile")
     passwordProfile: PasswordprofileOutput
     physicalDeliveryOfficeName: str
     postalCode: str = OutputField(example_values=["94303"])
@@ -126,7 +135,9 @@ class ListUsersOutput(ActionOutput):
     streetAddress: str = OutputField(example_values=["2479 E. Bayshore Rd."])
     surname: str = OutputField(example_values=["Test_surname"])
     telephoneNumber: str
-    thumbnailPhoto_odata: Thumbnailphoto_OdataOutput
+    thumbnailPhoto_odata: Thumbnailphoto_OdataOutput = OutputField(
+        alias="thumbnailPhoto@odata"
+    )
     usageLocation: str = OutputField(example_values=["US"])
     userPrincipalName: str = OutputField(
         cef_types=["user id"], example_values=["user@test.com"]
@@ -136,7 +147,44 @@ class ListUsersOutput(ActionOutput):
     userType: str = OutputField(example_values=["Member"])
 
 
+class ListUsersSummary(ActionOutput):
+    num_users: int = OutputField(example_values=[8])
+    result_found: bool | None = OutputField(example_values=[True, False])
+    total_results: int | None = OutputField(example_values=[7])
+
+
 def list_users(
     params: ListUsersParams, soar: SOARClient, asset: Asset
-) -> ListUsersOutput:
-    raise NotImplementedError()
+) -> list[ListUsersOutput]:
+    query: dict[str, str] = {"$top": str(GRAPH_PAGE_SIZE)}
+    headers: dict[str, str] = {}
+
+    if params.filter_string:
+        query["$filter"] = params.filter_string
+    if params.select_string:
+        selected_fields = [
+            value.strip() for value in params.select_string.split(",") if value.strip()
+        ]
+        if selected_fields:
+            query["$select"] = ",".join(selected_fields)
+    if params.expand_string:
+        query["$expand"] = params.expand_string
+    if params.use_advanced_query:
+        headers["ConsistencyLevel"] = "eventual"
+        query["$count"] = "true"
+
+    try:
+        token = get_graph_token(asset, str(soar.get_asset_id()))
+        with get_graph_client(asset, token) as graph_client:
+            users = get_graph_collection(
+                graph_client,
+                "/users",
+                headers=headers,
+                params=query,
+            )
+    except (httpx.HTTPError, RuntimeError, ValueError) as error:
+        raise ActionFailure(str(error)) from error
+
+    soar.set_message(f"Num users: {len(users)}")
+    soar.set_summary(ListUsersSummary(num_users=len(users)))
+    return [ListUsersOutput(**user) for user in users]

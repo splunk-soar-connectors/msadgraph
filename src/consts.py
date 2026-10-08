@@ -15,10 +15,10 @@
 MICROSOFT_LOGIN_BASE_URL = "https://login.microsoftonline.com"
 MICROSOFT_GRAPH_BASE_URLS = {
     "Global": "https://graph.microsoft.com/v1.0",
-    "US Gov L4": "https://graph.microsoft.us",
-    "US Gov L5 (DOD)": "https://dod-graph.microsoft.us",
-    "Germany": "https://graph.microsoft.de",
-    "China (21Vianet)": "https://microsoftgraph.chinacloudapi.cn",
+    "US Gov L4": "https://graph.microsoft.us/v1.0",
+    "US Gov L5 (DOD)": "https://dod-graph.microsoft.us/v1.0",
+    "Germany": "https://graph.microsoft.de/v1.0",
+    "China (21Vianet)": "https://microsoftgraph.chinacloudapi.cn/v1.0",
 }
 
 MICROSOFT_GRAPH_DELEGATED_SCOPE = (

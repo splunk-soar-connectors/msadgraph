@@ -26,7 +26,7 @@ from .list_groups import list_groups
 from .list_named_locations import list_named_locations
 from .list_user_attributes import list_user_attributes
 from .list_user_devices import list_user_devices
-from .list_users import list_users
+from .list_users import ListUsersSummary, list_users
 from .remove_cidr_from_named_location import remove_cidr_from_named_location
 from .remove_user import remove_user
 from .reset_password import reset_password
@@ -39,6 +39,7 @@ def register_actions(app: App) -> App:
         action=list_users,
         description="Get a list of users",
         action_type="investigate",
+        summary_type=ListUsersSummary,
         verbose="For more information on using the filter_string, select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters. By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter.",
     )
     app.register_action(
