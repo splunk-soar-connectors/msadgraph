@@ -50,3 +50,15 @@ def test_app_factory_builds_an_independent_application() -> None:
     assert created_app is not app
     assert created_app.asset_cls is Asset
     assert tuple(created_app.get_actions()) == EXPECTED_ACTIONS
+
+
+def test_app_registers_oauth_webhooks() -> None:
+    routes = {
+        route.url_pattern: route.allowed_methods for route in app.webhook_meta.routes
+    }
+
+    assert app.webhook_meta.requires_auth is False
+    assert routes == {
+        "oauth_start": ["GET"],
+        "oauth_callback": ["GET"],
+    }

@@ -17,7 +17,7 @@ from soar_sdk.asset import AssetField, BaseAsset
 class Asset(BaseAsset):
     tenant_id: str = AssetField(description="Tenant (Tenant ID or Tenant Name)")
     client_id: str = AssetField(description="Application ID")
-    client_secret: str = AssetField(description="Client Secret")
+    client_secret: str = AssetField(description="Client Secret", sensitive=True)
     region: str | None = AssetField(
         description="Microsoft AD Region",
         default="Global",
