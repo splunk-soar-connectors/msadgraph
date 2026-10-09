@@ -14,7 +14,12 @@
 import secrets
 import urllib.parse
 
-from soar_sdk.auth import AuthorizationCodeFlow, ClientCredentialsFlow
+import httpx
+from soar_sdk.auth import (
+    AuthorizationCodeFlow,
+    ClientCredentialsFlow,
+    OAuthBearerAuth,
+)
 
 from .asset import Asset
 from .consts import (
@@ -27,6 +32,7 @@ from .consts import (
     AUTHORIZATION_ERROR_STATE_KEY,
     AUTHORIZATION_URL_STATE_KEY,
     MICROSOFT_GRAPH_APPLICATION_SCOPE,
+    MICROSOFT_GRAPH_BASE_URLS,
     MICROSOFT_GRAPH_DELEGATED_SCOPE,
     MICROSOFT_LOGIN_BASE_URL,
     REDIRECT_URI_STATE_KEY,
@@ -68,6 +74,40 @@ def get_client_credentials_flow(asset: Asset) -> ClientCredentialsFlow:
         client_secret=asset.client_secret,
         token_endpoint=(f"{MICROSOFT_LOGIN_BASE_URL}/{tenant_id}/oauth2/v2.0/token"),
         scope=MICROSOFT_GRAPH_APPLICATION_SCOPE,
+    )
+
+
+def get_graph_client(asset: Asset, asset_id: str) -> httpx.Client:
+    """Return an authenticated Microsoft Graph HTTP client for the asset."""
+
+    base_url = MICROSOFT_GRAPH_BASE_URLS[asset.region or "Global"].rstrip("/")
+
+    if asset.admin_access_required:
+        token = get_client_credentials_flow(asset).get_token()
+        return httpx.Client(
+            base_url=base_url,
+            headers={
+                "Authorization": (
+                    f"{token.token_type or 'Bearer'} {token.access_token}"
+                )
+            },
+            timeout=30.0,
+        )
+
+    redirect_uri = asset.auth_state.get(REDIRECT_URI_STATE_KEY)
+    if not isinstance(redirect_uri, str) or not redirect_uri:
+        raise ValueError(
+            "No delegated OAuth session is available. Run test connectivity first."
+        )
+    flow = get_authorization_code_flow(
+        asset,
+        asset_id,
+        redirect_uri=redirect_uri,
+    )
+    return httpx.Client(
+        base_url=base_url,
+        auth=OAuthBearerAuth(flow.client),
+        timeout=30.0,
     )
 
 
