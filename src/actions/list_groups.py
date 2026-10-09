@@ -11,11 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Any
+from urllib.parse import parse_qs, urlparse
+
+import httpx
 from soar_sdk.abstract import SOARClient
-from soar_sdk.action_results import ActionOutput, OutputField
+from soar_sdk.action_results import ActionOutput, OutputField, PermissiveActionOutput
+from soar_sdk.auth import OAuthClientError
+from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Param, Params
 
 from ..asset import Asset
+from ..auth import get_graph_client
+
+
+GRAPH_PAGE_SIZE = 999
 
 
 class ListGroupsParams(Params):
@@ -37,14 +47,18 @@ class OdataOutput(ActionOutput):
     type: str = OutputField(example_values=["test.DirectoryServices.Group"])
 
 
-class ListGroupsOutput(ActionOutput):
+class ListGroupsOutput(PermissiveActionOutput):
     classification: str
     createdDateTime: str = OutputField(example_values=["2021-03-25T18:40:53Z"])
     deletedDateTime: str
     deletionTimestamp: str
-    description: str = OutputField(example_values=["This is for testing purpose"])
+    displayName: str = OutputField(
+        example_values=["Test-site"], column_name="Display Name"
+    )
+    description: str = OutputField(
+        example_values=["This is for testing purpose"], column_name="Description"
+    )
     dirSyncEnabled: str
-    displayName: str = OutputField(example_values=["Test-site"])
     expirationDateTime: str
     id: str = OutputField(
         cef_types=["group object id"],
@@ -77,7 +91,110 @@ class ListGroupsOutput(ActionOutput):
     visibility: str = OutputField(example_values=["Private"])
 
 
+class ListGroupsSummary(ActionOutput):
+    num_groups: int = OutputField(example_values=[7])
+
+
+def _get_graph_response(response: httpx.Response) -> dict[str, Any]:
+    try:
+        payload = response.json()
+    except ValueError as error:
+        if response.is_success:
+            raise RuntimeError(
+                "Unable to parse JSON response from Microsoft Graph"
+            ) from error
+        response.raise_for_status()
+        raise
+    if not response.is_success:
+        detail: object = payload
+        graph_error = payload.get("error") if isinstance(payload, dict) else None
+        if isinstance(graph_error, dict):
+            detail = graph_error.get("message", graph_error)
+        elif graph_error:
+            detail = graph_error
+        raise RuntimeError(
+            f"Error from server. Status Code: {response.status_code}. Data from server: \n{detail}\n"
+        )
+    if not isinstance(payload, dict):
+        raise RuntimeError("Microsoft Graph returned a non-object JSON response")
+    return payload
+
+
+def _normalize_odata(value: Any) -> Any:
+    if isinstance(value, list):
+        return [_normalize_odata(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+    normalized = {key: _normalize_odata(item) for key, item in value.items()}
+    odata = {
+        key.removeprefix("@odata."): _normalize_odata(item)
+        for key, item in value.items()
+        if key.startswith("@odata.")
+    }
+    if odata:
+        normalized["odata"] = odata
+    return normalized
+
+
+def _get_groups(
+    client: httpx.Client, *, headers: dict[str, str], params: dict[str, str]
+) -> list[dict[str, Any]]:
+    groups: list[dict[str, Any]] = []
+    next_params: dict[str, str] | None = {**params, "$top": str(GRAPH_PAGE_SIZE)}
+    while next_params is not None:
+        payload = _get_graph_response(
+            client.get("/groups", headers=headers, params=next_params)
+        )
+        page = payload.get("value")
+        if not isinstance(page, list) or not all(
+            isinstance(item, dict) for item in page
+        ):
+            raise RuntimeError(
+                "Microsoft Graph response did not contain a valid list value"
+            )
+        groups.extend(_normalize_odata(item) for item in page)
+        next_link = payload.get("@odata.nextLink") or payload.get("odata.nextLink")
+        if next_link is None:
+            next_params = None
+            continue
+        if not isinstance(next_link, str):
+            raise RuntimeError("Microsoft Graph returned an invalid next page URL")
+        skip_tokens = parse_qs(urlparse(next_link).query).get("$skiptoken")
+        if not skip_tokens:
+            raise RuntimeError(
+                "Microsoft Graph next page URL did not contain a skip token"
+            )
+        next_params = {
+            **params,
+            "$top": str(GRAPH_PAGE_SIZE),
+            "$skiptoken": skip_tokens[0],
+        }
+    return groups
+
+
 def list_groups(
     params: ListGroupsParams, soar: SOARClient, asset: Asset
-) -> ListGroupsOutput:
-    raise NotImplementedError()
+) -> list[ListGroupsOutput]:
+    query: dict[str, str] = {}
+    headers: dict[str, str] = {}
+    if params.filter_string:
+        query["$filter"] = params.filter_string
+    if params.select_string:
+        values = [
+            value.strip() for value in params.select_string.split(",") if value.strip()
+        ]
+        if values:
+            query["$select"] = ",".join(values)
+    if params.expand_string:
+        query["$expand"] = params.expand_string
+    if params.use_advanced_query:
+        headers["ConsistencyLevel"] = "eventual"
+        query["$count"] = "true"
+    try:
+        with get_graph_client(asset, str(soar.get_asset_id())) as graph_client:
+            groups = _get_groups(graph_client, headers=headers, params=query)
+    except (httpx.HTTPError, OAuthClientError, RuntimeError, ValueError) as error:
+        raise ActionFailure(str(error)) from error
+    soar.set_message(f"Num groups: {len(groups)}")
+    soar.set_summary(ListGroupsSummary(num_groups=len(groups)))
+    return [ListGroupsOutput(**group) for group in groups]
