@@ -11,11 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Any
+from urllib.parse import quote, unquote
+
+import httpx
 from soar_sdk.abstract import SOARClient
-from soar_sdk.action_results import ActionOutput, OutputField
+from soar_sdk.action_results import ActionOutput, OutputField, PermissiveActionOutput
+from soar_sdk.auth import OAuthClientError
+from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Param, Params
 
 from ..asset import Asset
+from ..auth import get_graph_client
 
 
 class GetGroupParams(Params):
@@ -42,7 +49,7 @@ class OdataOutput(ActionOutput):
     type: str = OutputField(example_values=["test.DirectoryServices.Group"])
 
 
-class GetGroupOutput(ActionOutput):
+class GetGroupOutput(PermissiveActionOutput):
     odata: OdataOutput
     classification: str
     createdDateTime: str = OutputField(example_values=["2020-08-05T11:59:49Z"])
@@ -50,16 +57,20 @@ class GetGroupOutput(ActionOutput):
     deletionTimestamp: str
     description: str = OutputField(example_values=["This is the office 365 group"])
     dirSyncEnabled: str
-    displayName: str = OutputField(example_values=["o365group"])
+    displayName: str = OutputField(
+        example_values=["o365group"], column_name="Display Name"
+    )
     expirationDateTime: str
     id: str = OutputField(
         cef_types=["group object id"],
         example_values=["ddb876b3-603a-437b-9814-2d46a2219a1e"],
+        column_name="Object ID",
     )
     isAssignableToRole: str
     lastDirSyncTime: str
     mail: str = OutputField(cef_types=["email"], example_values=["bc7f9cabe@test.com"])
-    mailEnabled: bool
+    securityEnabled: bool = OutputField(column_name="Security Enabled")
+    mailEnabled: bool = OutputField(column_name="Mail Enabled")
     mailNickname: str = OutputField(example_values=["bc7f9cabe"])
     membershipRule: str
     membershipRuleProcessingState: str
@@ -74,7 +85,6 @@ class GetGroupOutput(ActionOutput):
     preferredLanguage: str
     proxyAddresses: str = OutputField(example_values=["SMTP:bc7f9cabe@test.com"])
     renewedDateTime: str = OutputField(example_values=["2020-08-05T11:59:49Z"])
-    securityEnabled: bool
     securityIdentifier: str = OutputField(
         example_values=["S-1-12-1-909260723-1083662375-1952945031-2402852259"]
     )
@@ -82,5 +92,80 @@ class GetGroupOutput(ActionOutput):
     visibility: str
 
 
+class GetGroupSummary(ActionOutput):
+    status: str = OutputField(example_values=["Successfully retrieved group group-id"])
+
+
+def _quote_path_segment(value: str) -> str:
+    raw_value = str(value)
+    canonical_value = raw_value
+    for _ in range(5):
+        decoded_value = unquote(canonical_value)
+        if decoded_value == canonical_value:
+            break
+        canonical_value = decoded_value
+    if canonical_value in {".", ".."}:
+        raise ValueError("Microsoft Graph path identifiers must not be dot segments")
+    return quote(raw_value, safe="")
+
+
+def _get_graph_response(response: httpx.Response) -> dict[str, Any]:
+    try:
+        payload = response.json()
+    except ValueError as error:
+        if response.is_success:
+            raise RuntimeError(
+                "Unable to parse JSON response from Microsoft Graph"
+            ) from error
+        response.raise_for_status()
+        raise
+    if not response.is_success:
+        graph_error = payload.get("error") if isinstance(payload, dict) else payload
+        if isinstance(graph_error, dict):
+            graph_error = graph_error.get("message", graph_error)
+        raise RuntimeError(
+            f"Error from server. Status Code: {response.status_code}. Data from server: \n{graph_error}\n"
+        )
+    if not isinstance(payload, dict):
+        raise RuntimeError("Microsoft Graph returned a non-object JSON response")
+    return payload
+
+
+def _normalize_odata(value: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(value)
+    odata = {
+        key.removeprefix("@odata."): item
+        for key, item in value.items()
+        if key.startswith("@odata.")
+    }
+    if odata:
+        normalized["odata"] = odata
+    return normalized
+
+
 def get_group(params: GetGroupParams, soar: SOARClient, asset: Asset) -> GetGroupOutput:
-    raise NotImplementedError()
+    query: dict[str, str] = {}
+    headers: dict[str, str] = {}
+    if params.select_string:
+        values = [
+            value.strip() for value in params.select_string.split(",") if value.strip()
+        ]
+        if values:
+            query["$select"] = ",".join(values)
+    if params.expand_string:
+        query["$expand"] = params.expand_string
+    if params.use_advanced_query:
+        headers["ConsistencyLevel"] = "eventual"
+        query["$count"] = "true"
+    try:
+        endpoint = f"/groups/{_quote_path_segment(params.object_id)}"
+        with get_graph_client(asset, str(soar.get_asset_id())) as graph_client:
+            payload = _get_graph_response(
+                graph_client.get(endpoint, headers=headers, params=query)
+            )
+    except (httpx.HTTPError, OAuthClientError, RuntimeError, ValueError) as error:
+        raise ActionFailure(str(error)) from error
+    status = f"Successfully retrieved group {params.object_id}"
+    soar.set_message(f"Status: {status}")
+    soar.set_summary(GetGroupSummary(status=status))
+    return GetGroupOutput(**_normalize_odata(payload))
