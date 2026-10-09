@@ -82,11 +82,11 @@ class ListUserDevicesOutput(PermissiveActionOutput):
     createdDateTime: str = OutputField(example_values=["2019-09-26T03:42:15Z"])
     deletedDateTime: str
     deviceCategory: str
-    deviceId: str
+    deviceId: str = OutputField(column_name="Device ID")
     deviceMetadata: str
     deviceOwnership: str
     deviceVersion: float
-    displayName: str
+    displayName: str = OutputField(column_name="Display Name")
     domainName: str
     enrollmentProfileName: str
     enrollmentType: str

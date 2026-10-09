@@ -38,6 +38,29 @@ EXPECTED_ACTIONS = (
     "generate_token",
 )
 
+EXPECTED_TABLE_COLUMNS = {
+    "list_users": ("Display Name", "Object ID", "User Principal Name"),
+    "list_user_devices": ("Device ID", "Display Name"),
+    "list_user_attributes": (
+        "Display Name",
+        "User Object ID",
+        "User Principal Name",
+    ),
+    "list_groups": ("Display Name", "Description", "Group Object ID"),
+    "get_group": (
+        "Description",
+        "Display Name",
+        "Object ID",
+        "Security Enabled",
+        "Mail Enabled",
+    ),
+    "list_group_members": (
+        "Display Name",
+        "User Object ID",
+        "User Principal Name",
+    ),
+}
+
 
 def test_exported_app_uses_typed_asset_and_registers_all_actions() -> None:
     assert app.asset_cls is Asset
@@ -50,3 +73,16 @@ def test_app_factory_builds_an_independent_application() -> None:
     assert created_app is not app
     assert created_app.asset_cls is Asset
     assert tuple(created_app.get_actions()) == EXPECTED_ACTIONS
+
+
+def test_migrated_custom_views_use_sdk_tables() -> None:
+    for action_name, expected_columns in EXPECTED_TABLE_COLUMNS.items():
+        action = app.actions_manager.get_action(action_name)
+        columns = tuple(
+            field["column_name"]
+            for field in action.meta.output._to_json_schema()
+            if "column_name" in field
+        )
+
+        assert action.meta.render_as == "table"
+        assert columns == expected_columns

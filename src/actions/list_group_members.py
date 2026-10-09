@@ -116,7 +116,9 @@ class ListGroupMembersOutput(PermissiveActionOutput):
     faxNumber: str
     givenName: str
     id: str = OutputField(
-        cef_types=["user id"], example_values=["17be76d0-35ed-4881-ab62-d2eb73c2ebe3"]
+        cef_types=["user id"],
+        example_values=["17be76d0-35ed-4881-ab62-d2eb73c2ebe3"],
+        column_name="User Object ID",
     )
     identities: list[IdentitiesOutput]
     isResourceAccount: str
@@ -152,7 +154,11 @@ class ListGroupMembersOutput(PermissiveActionOutput):
     streetAddress: str = OutputField(example_values=["2479 E. Bayshore Rd."])
     surname: str
     usageLocation: str = OutputField(example_values=["US"])
-    userPrincipalName: str = OutputField(example_values=["ews_retest@test.com"])
+    userPrincipalName: str = OutputField(
+        cef_types=["user id"],
+        example_values=["ews_retest@test.com"],
+        column_name="User Principal Name",
+    )
     userType: str = OutputField(example_values=["Member"])
 
 

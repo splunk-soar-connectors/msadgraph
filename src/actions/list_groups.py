@@ -63,6 +63,7 @@ class ListGroupsOutput(PermissiveActionOutput):
     id: str = OutputField(
         cef_types=["group object id"],
         example_values=["2a201c95-101b-42d9-a7af-9a2fdf8193f1"],
+        column_name="Group Object ID",
     )
     isAssignableToRole: str
     lastDirSyncTime: str

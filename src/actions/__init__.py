@@ -45,6 +45,7 @@ def register_actions(app: App) -> App:
         action=list_users,
         description="Get a list of users",
         action_type="investigate",
+        render_as="table",
         summary_type=ListUsersSummary,
         verbose="For more information on using the filter_string, select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters. By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter.",
     )
@@ -86,6 +87,7 @@ def register_actions(app: App) -> App:
         action=list_user_devices,
         description="List devices for a specified user",
         action_type="investigate",
+        render_as="table",
         summary_type=ListUserDevicesSummary,
         verbose="By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string parameter, refer to <a href='https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter' target='_blank'>this</a> documentation.",
     )
@@ -93,6 +95,7 @@ def register_actions(app: App) -> App:
         action=list_user_attributes,
         description="List attributes for all or a specified user",
         action_type="investigate",
+        render_as="table",
         summary_type=ListUserAttributesSummary,
         verbose="By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.",
     )
@@ -124,6 +127,7 @@ def register_actions(app: App) -> App:
         action=list_groups,
         description="List groups in the organization",
         action_type="investigate",
+        render_as="table",
         summary_type=ListGroupsSummary,
         verbose="By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.",
     )
@@ -131,6 +135,7 @@ def register_actions(app: App) -> App:
         action=get_group,
         description="Get information about a group",
         action_type="investigate",
+        render_as="table",
         summary_type=GetGroupSummary,
         verbose="By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.",
     )
@@ -138,6 +143,7 @@ def register_actions(app: App) -> App:
         action=list_group_members,
         description="List the members in a group",
         action_type="investigate",
+        render_as="table",
         summary_type=ListGroupMembersSummary,
         verbose="By default, only a limited set of properties are returned, to return an alternative property set use $select query parameter. For more information on using the select_string and expand_string parameters, refer to https://docs.microsoft.com/en-us/graph/query-parameters.",
     )

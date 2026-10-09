@@ -108,12 +108,16 @@ class ListUserAttributesOutput(PermissiveActionOutput):
     deletionTimestamp: str
     department: str = OutputField(example_values=["Sales"])
     dirSyncEnabled: str
-    displayName: str = OutputField(example_values=["Test User"])
+    displayName: str = OutputField(
+        example_values=["Test User"], column_name="Display Name"
+    )
     employeeId: str
     facsimileTelephoneNumber: str
     givenName: str
     id: str = OutputField(
-        cef_types=["user id"], example_values=["7d55d7e6-cf5a-4dd2-a176-57a3c33b7fa9"]
+        cef_types=["user id"],
+        example_values=["7d55d7e6-cf5a-4dd2-a176-57a3c33b7fa9"],
+        column_name="User Object ID",
     )
     identities: list[IdentitiesOutput]
     immutableId: str
@@ -152,7 +156,9 @@ class ListUserAttributesOutput(PermissiveActionOutput):
     thumbnailPhoto_odata: Thumbnailphoto_OdataOutput
     usageLocation: str = OutputField(example_values=["US"])
     userPrincipalName: str = OutputField(
-        cef_types=["user id"], example_values=["user@test.com"]
+        cef_types=["user id"],
+        example_values=["user@test.com"],
+        column_name="User Principal Name",
     )
     userState: str
     userStateChangedOn: str

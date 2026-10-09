@@ -55,7 +55,9 @@ class GetGroupOutput(PermissiveActionOutput):
     createdDateTime: str = OutputField(example_values=["2020-08-05T11:59:49Z"])
     deletedDateTime: str
     deletionTimestamp: str
-    description: str = OutputField(example_values=["This is the office 365 group"])
+    description: str = OutputField(
+        example_values=["This is the office 365 group"], column_name="Description"
+    )
     dirSyncEnabled: str
     displayName: str = OutputField(
         example_values=["o365group"], column_name="Display Name"
