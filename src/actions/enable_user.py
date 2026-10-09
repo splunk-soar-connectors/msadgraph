@@ -12,10 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from soar_sdk.abstract import SOARClient
-from soar_sdk.action_results import ActionOutput
+from urllib.parse import quote, unquote
+
+import httpx
+from soar_sdk.action_results import ActionOutput, ActionResult, OutputField
+from soar_sdk.auth import OAuthClientError
+from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Param, Params
 
 from ..asset import Asset
+from ..auth import get_graph_client
 
 
 class EnableUserParams(Params):
@@ -23,10 +29,57 @@ class EnableUserParams(Params):
         description="User ID to enable - can be user principal name or object ID",
         primary=True,
         cef_types=["user id"],
+        column_name="User ID",
+    )
+
+
+class EnableUserSummary(ActionOutput):
+    status: str = OutputField(
+        example_values=["Successfully enabled user user@test.com"]
+    )
+
+
+def _quote_path_segment(value: str) -> str:
+    raw_value = str(value)
+    canonical_value = raw_value
+    for _ in range(5):
+        decoded_value = unquote(canonical_value)
+        if decoded_value == canonical_value:
+            break
+        canonical_value = decoded_value
+    if canonical_value in {".", ".."}:
+        raise ValueError("Microsoft Graph path identifiers must not be dot segments")
+    return quote(raw_value, safe="")
+
+
+def _raise_for_graph_error(response: httpx.Response) -> None:
+    if response.is_success:
+        return
+    try:
+        payload = response.json()
+    except ValueError:
+        response.raise_for_status()
+        return
+    error = payload.get("error") if isinstance(payload, dict) else payload
+    if isinstance(error, dict):
+        error = error.get("message", error)
+    raise RuntimeError(
+        f"Error from server. Status Code: {response.status_code}. Data from server: \n{error}\n"
     )
 
 
 def enable_user(
     params: EnableUserParams, soar: SOARClient, asset: Asset
 ) -> ActionOutput:
-    raise NotImplementedError()
+    try:
+        endpoint = f"/users/{_quote_path_segment(params.user_id)}"
+        with get_graph_client(asset, str(soar.get_asset_id())) as graph_client:
+            response = graph_client.patch(endpoint, json={"accountEnabled": True})
+            _raise_for_graph_error(response)
+    except (httpx.HTTPError, OAuthClientError, RuntimeError, ValueError) as error:
+        raise ActionFailure(str(error)) from error
+
+    status = f"Successfully enabled user {params.user_id}"
+    result = ActionResult(True, f"Status: {status}", params.model_dump())
+    result.set_summary(EnableUserSummary(status=status).model_dump())
+    return result
