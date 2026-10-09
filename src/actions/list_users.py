@@ -11,19 +11,107 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Any
+from urllib.parse import parse_qs, urlparse
+
 import httpx
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField, PermissiveActionOutput
+from soar_sdk.auth import OAuthClientError
 from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Param, Params
 
 from ..asset import Asset
-from ..client import (
-    GRAPH_PAGE_SIZE,
-    get_graph_client,
-    get_graph_collection,
-    get_graph_token,
-)
+from ..auth import get_graph_client
+
+
+GRAPH_PAGE_SIZE = 999
+
+
+def _normalize_odata(value: Any) -> Any:
+    if isinstance(value, list):
+        return [_normalize_odata(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+    normalized = {key: _normalize_odata(item) for key, item in value.items()}
+    odata = {
+        key.removeprefix("@odata."): _normalize_odata(item)
+        for key, item in value.items()
+        if key.startswith("@odata.")
+    }
+    if odata:
+        normalized["odata"] = odata
+    return normalized
+
+
+class _GraphAPIError(RuntimeError):
+    """An error response or invalid payload returned by Microsoft Graph."""
+
+
+def _get_users(
+    client: httpx.Client,
+    *,
+    headers: dict[str, str],
+    params: dict[str, str],
+) -> list[dict[str, Any]]:
+    users: list[dict[str, Any]] = []
+    next_params: dict[str, str] | None = dict(params)
+
+    while next_params is not None:
+        response = client.get("/users", headers=headers, params=next_params)
+        payload = _get_graph_response(response)
+        page = payload.get("value")
+        if not isinstance(page, list):
+            raise _GraphAPIError(
+                "Microsoft Graph response did not contain a list value"
+            )
+        if not all(isinstance(user, dict) for user in page):
+            raise _GraphAPIError("Microsoft Graph returned an invalid user")
+        users.extend(_normalize_odata(user) for user in page)
+
+        raw_next_url = payload.get("@odata.nextLink") or payload.get("odata.nextLink")
+        if raw_next_url is None:
+            next_params = None
+            continue
+        if not isinstance(raw_next_url, str):
+            raise _GraphAPIError("Microsoft Graph returned an invalid next page URL")
+        skip_tokens = parse_qs(urlparse(raw_next_url).query).get("$skiptoken")
+        if not skip_tokens:
+            raise _GraphAPIError(
+                "Microsoft Graph next page URL did not contain a skip token"
+            )
+        next_params = {**params, "$skiptoken": skip_tokens[0]}
+
+    return users
+
+
+def _get_graph_response(response: httpx.Response) -> dict[str, Any]:
+    try:
+        payload = response.json()
+    except ValueError as error:
+        if response.is_success:
+            raise _GraphAPIError(
+                "Unable to parse JSON response from Microsoft Graph"
+            ) from error
+        response.raise_for_status()
+        raise
+
+    if not response.is_success:
+        error_detail: object = payload
+        graph_error = payload.get("error") if isinstance(payload, dict) else None
+        if isinstance(graph_error, dict) and graph_error.get("message"):
+            error_detail = graph_error["message"]
+        elif graph_error:
+            error_detail = graph_error
+        raise _GraphAPIError(
+            "Error from server. "
+            f"Status Code: {response.status_code}. "
+            f"Data from server: \n{error_detail}\n"
+        )
+
+    if not isinstance(payload, dict):
+        raise _GraphAPIError("Microsoft Graph returned a non-object JSON response")
+    return payload
 
 
 class ListUsersParams(Params):
@@ -92,12 +180,14 @@ class ListUsersOutput(PermissiveActionOutput):
     deletionTimestamp: str
     department: str = OutputField(example_values=["Sales"])
     dirSyncEnabled: str
-    displayName: str = OutputField(example_values=["User"])
+    displayName: str = OutputField(example_values=["User"], column_name="Display Name")
     employeeId: str
     facsimileTelephoneNumber: str
     givenName: str = OutputField(example_values=["testuser"])
     id: str = OutputField(
-        cef_types=["user id"], example_values=["e4c722ac-3b83-478d-8f52-c388885dc30f"]
+        cef_types=["user id"],
+        example_values=["e4c722ac-3b83-478d-8f52-c388885dc30f"],
+        column_name="Object ID",
     )
     immutableId: str
     isCompromised: str
@@ -140,7 +230,9 @@ class ListUsersOutput(PermissiveActionOutput):
     )
     usageLocation: str = OutputField(example_values=["US"])
     userPrincipalName: str = OutputField(
-        cef_types=["user id"], example_values=["user@test.com"]
+        cef_types=["user id"],
+        example_values=["user@test.com"],
+        column_name="User Principal Name",
     )
     userState: str
     userStateChangedOn: str
@@ -174,15 +266,13 @@ def list_users(
         query["$count"] = "true"
 
     try:
-        token = get_graph_token(asset, str(soar.get_asset_id()))
-        with get_graph_client(asset, token) as graph_client:
-            users = get_graph_collection(
+        with get_graph_client(asset, str(soar.get_asset_id())) as graph_client:
+            users = _get_users(
                 graph_client,
-                "/users",
                 headers=headers,
                 params=query,
             )
-    except (httpx.HTTPError, RuntimeError, ValueError) as error:
+    except (httpx.HTTPError, OAuthClientError, RuntimeError, ValueError) as error:
         raise ActionFailure(str(error)) from error
 
     soar.set_message(f"Num users: {len(users)}")
