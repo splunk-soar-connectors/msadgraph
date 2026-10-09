@@ -16,7 +16,6 @@ from soar_sdk.app import App
 
 from .actions import register_actions
 from .asset import Asset
-from .auth import is_client_credentials_auth
 from .consts import OAUTH_CALLBACK_ROUTE, OAUTH_START_ROUTE
 from .test_connectivity import run_test_connectivity
 from .webhooks import register_webhooks
@@ -42,7 +41,7 @@ def create_msadgraph_app() -> App:
 
     @app.test_connectivity()
     def test_connectivity(soar: SOARClient, asset: Asset) -> None:
-        if is_client_credentials_auth(asset) and asset.admin_access_granted:
+        if asset.admin_access_required and asset.admin_access_granted:
             run_test_connectivity(
                 soar,
                 asset,

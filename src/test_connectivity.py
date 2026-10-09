@@ -16,16 +16,15 @@ import time
 import httpx
 from soar_sdk import logging
 from soar_sdk.abstract import SOARClient
-from soar_sdk.auth import AuthorizationCodeFlow, OAuthToken
+from soar_sdk.auth import AuthorizationCodeFlow
 
 from .asset import Asset
 from .auth import (
     begin_admin_consent,
     begin_delegated_authorization,
     get_client_credentials_flow,
-    is_client_credentials_auth,
+    get_graph_client,
 )
-from .client import get_graph_client
 from .consts import (
     ADMIN_CONSENT_COMPLETE_STATE_KEY,
     ADMIN_CONSENT_ERROR_MESSAGE,
@@ -50,15 +49,15 @@ def run_test_connectivity(
     oauth_callback_url: str,
     oauth_start_url: str,
 ) -> None:
-    if is_client_credentials_auth(asset):
-        token = _run_client_credentials_authentication(
+    if asset.admin_access_required:
+        _run_client_credentials_authentication(
             soar,
             asset,
             oauth_callback_url=oauth_callback_url,
             oauth_start_url=oauth_start_url,
         )
     else:
-        token = _run_delegated_authentication(
+        _run_delegated_authentication(
             soar,
             asset,
             oauth_callback_url=oauth_callback_url,
@@ -67,7 +66,7 @@ def run_test_connectivity(
 
     logging.info("Getting info about a single user to verify token")
     try:
-        with get_graph_client(asset, token) as graph_client:
+        with get_graph_client(asset, str(soar.get_asset_id())) as graph_client:
             response = graph_client.get("/users", params={"$top": "1"})
             response.raise_for_status()
     except httpx.HTTPError:
@@ -86,7 +85,7 @@ def _run_client_credentials_authentication(
     *,
     oauth_callback_url: str,
     oauth_start_url: str,
-) -> OAuthToken:
+) -> None:
     if not asset.admin_access_granted:
         _run_admin_consent(
             soar,
@@ -96,7 +95,7 @@ def _run_client_credentials_authentication(
         )
 
     logging.info("Generating access token")
-    return get_client_credentials_flow(asset).authenticate()
+    get_client_credentials_flow(asset).authenticate()
 
 
 def _run_delegated_authentication(
@@ -105,7 +104,7 @@ def _run_delegated_authentication(
     *,
     oauth_callback_url: str,
     oauth_start_url: str,
-) -> OAuthToken:
+) -> None:
     flow = begin_delegated_authorization(
         asset,
         str(soar.get_asset_id()),
@@ -120,7 +119,7 @@ def _run_delegated_authentication(
 
     logging.info("Code Received")
     logging.info("Generating access token")
-    return flow.exchange_code_for_token(authorization_code)
+    flow.exchange_code_for_token(authorization_code)
 
 
 def _run_admin_consent(

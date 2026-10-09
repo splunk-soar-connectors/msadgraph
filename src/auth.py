@@ -39,10 +39,6 @@ from .consts import (
 )
 
 
-def is_client_credentials_auth(asset: Asset) -> bool:
-    return bool(asset.admin_access_required)
-
-
 def get_authorization_code_flow(
     asset: Asset,
     asset_id: str,
