@@ -11,18 +11,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Any
+
+import httpx
 from soar_sdk.abstract import SOARClient
-from soar_sdk.action_results import ActionOutput, OutputField
+from soar_sdk.action_results import ActionOutput, OutputField, PermissiveActionOutput
+from soar_sdk.auth import OAuthClientError
+from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Params
 
 from ..asset import Asset
+from ..auth import get_graph_client
 
 
 class OdataOutput(ActionOutput):
     type: str = OutputField(example_values=["test.DirectoryServices.DirectoryRole"])
 
 
-class ListDirectoryRolesOutput(ActionOutput):
+class ListDirectoryRolesOutput(PermissiveActionOutput):
     deletedDateTime: str
     deletionTimestamp: str
     description: str = OutputField(
@@ -30,10 +36,13 @@ class ListDirectoryRolesOutput(ActionOutput):
             "Can read basic directory information. For granting access to applications, not intended for users."
         ]
     )
-    displayName: str = OutputField(example_values=["Directory Readers"])
+    displayName: str = OutputField(
+        example_values=["Directory Readers"], column_name="Display Name"
+    )
     id: str = OutputField(
         cef_types=["directory object id"],
         example_values=["02b238cb-0d15-454b-aae6-0e94993a3207"],
+        column_name="Object ID",
     )
     isSystem: bool
     objectType: str = OutputField(example_values=["Role"])
@@ -44,7 +53,59 @@ class ListDirectoryRolesOutput(ActionOutput):
     )
 
 
+class ListDirectoryRolesSummary(ActionOutput):
+    num_directory_roles: int = OutputField(example_values=[5])
+
+
+def _get_graph_response(response: httpx.Response) -> dict[str, Any]:
+    try:
+        payload = response.json()
+    except ValueError as error:
+        if response.is_success:
+            raise RuntimeError(
+                "Unable to parse JSON response from Microsoft Graph"
+            ) from error
+        response.raise_for_status()
+        raise
+    if not response.is_success:
+        graph_error = payload.get("error") if isinstance(payload, dict) else payload
+        if isinstance(graph_error, dict):
+            graph_error = graph_error.get("message", graph_error)
+        raise RuntimeError(
+            f"Error from server. Status Code: {response.status_code}. Data from server: \n{graph_error}\n"
+        )
+    if not isinstance(payload, dict):
+        raise RuntimeError("Microsoft Graph returned a non-object JSON response")
+    return payload
+
+
+def _normalize_odata(value: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(value)
+    odata = {
+        key.removeprefix("@odata."): item
+        for key, item in value.items()
+        if key.startswith("@odata.")
+    }
+    if odata:
+        normalized["odata"] = odata
+    return normalized
+
+
 def list_directory_roles(
     params: Params, soar: SOARClient, asset: Asset
-) -> ListDirectoryRolesOutput:
-    raise NotImplementedError()
+) -> list[ListDirectoryRolesOutput]:
+    try:
+        with get_graph_client(asset, str(soar.get_asset_id())) as graph_client:
+            payload = _get_graph_response(graph_client.get("/directoryRoles"))
+        roles = payload.get("value", [])
+        if not isinstance(roles, list) or not all(
+            isinstance(role, dict) for role in roles
+        ):
+            raise RuntimeError(
+                "Microsoft Graph response did not contain a valid list value"
+            )
+    except (httpx.HTTPError, OAuthClientError, RuntimeError, ValueError) as error:
+        raise ActionFailure(str(error)) from error
+    soar.set_message(f"Num directory roles: {len(roles)}")
+    soar.set_summary(ListDirectoryRolesSummary(num_directory_roles=len(roles)))
+    return [ListDirectoryRolesOutput(**_normalize_odata(role)) for role in roles]
