@@ -12,11 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from soar_sdk.abstract import SOARClient
-from soar_sdk.action_results import ActionOutput
+from soar_sdk.action_results import ActionOutput, ActionResult
+from soar_sdk.auth import OAuthClientError
+from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Params
 
 from ..asset import Asset
+from ..auth import get_authorization_code_flow, get_client_credentials_flow
+from ..consts import REDIRECT_URI_STATE_KEY
 
 
 def generate_token(params: Params, soar: SOARClient, asset: Asset) -> ActionOutput:
-    raise NotImplementedError()
+    try:
+        if asset.admin_access_required:
+            get_client_credentials_flow(asset).get_token()
+        else:
+            redirect_uri = asset.auth_state.get(REDIRECT_URI_STATE_KEY)
+            if not isinstance(redirect_uri, str) or not redirect_uri:
+                raise ValueError(
+                    "No delegated OAuth session is available. Run test connectivity first."
+                )
+            get_authorization_code_flow(
+                asset,
+                str(soar.get_asset_id()),
+                redirect_uri=redirect_uri,
+            ).get_token()
+    except (OAuthClientError, RuntimeError, ValueError) as error:
+        raise ActionFailure(str(error)) from error
+
+    return ActionResult(True, "Token generated", params.model_dump())
