@@ -86,3 +86,29 @@ def test_migrated_custom_views_use_sdk_tables() -> None:
 
         assert action.meta.render_as == "table"
         assert columns == expected_columns
+
+
+def test_legacy_platform_and_read_only_contract() -> None:
+    assert app.app_meta_info["min_phantom_version"] == "8.6.0"
+    read_only_actions = {
+        "list_users",
+        "list_user_devices",
+        "list_user_attributes",
+        "list_groups",
+        "get_group",
+        "list_group_members",
+        "validate_group",
+        "list_directory_roles",
+        "list_named_locations",
+    }
+    for action_name in EXPECTED_ACTIONS:
+        if action_name != "test_connectivity":
+            action = app.actions_manager.get_action(action_name)
+            assert action.meta.read_only == (action_name in read_only_actions)
+
+
+def test_user_attributes_advertises_legacy_photo_datapath() -> None:
+    action = app.actions_manager.get_action("list_user_attributes")
+    datapaths = {field["data_path"] for field in action.meta.output._to_json_schema()}
+    assert "action_result.data.*.thumbnailPhoto@odata.mediaEditLink" in datapaths
+    assert not any("thumbnailPhoto_odata" in path for path in datapaths)

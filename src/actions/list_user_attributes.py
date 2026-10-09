@@ -153,7 +153,9 @@ class ListUserAttributesOutput(PermissiveActionOutput):
     streetAddress: str
     surname: str
     telephoneNumber: str
-    thumbnailPhoto_odata: Thumbnailphoto_OdataOutput
+    thumbnailPhoto_odata: Thumbnailphoto_OdataOutput = OutputField(
+        alias="thumbnailPhoto@odata"
+    )
     usageLocation: str = OutputField(example_values=["US"])
     userPrincipalName: str = OutputField(
         cef_types=["user id"],
