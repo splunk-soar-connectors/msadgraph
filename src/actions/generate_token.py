@@ -18,8 +18,11 @@ from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Params
 
 from ..asset import Asset
-from ..auth import get_authorization_code_flow, get_client_credentials_flow
-from ..consts import REDIRECT_URI_STATE_KEY
+from ..auth import (
+    get_authorization_code_flow,
+    get_client_credentials_flow,
+    get_delegated_redirect_uri,
+)
 
 
 def generate_token(params: Params, soar: SOARClient, asset: Asset) -> ActionOutput:
@@ -27,11 +30,7 @@ def generate_token(params: Params, soar: SOARClient, asset: Asset) -> ActionOutp
         if asset.admin_access_required:
             get_client_credentials_flow(asset).get_token()
         else:
-            redirect_uri = asset.auth_state.get(REDIRECT_URI_STATE_KEY)
-            if not isinstance(redirect_uri, str) or not redirect_uri:
-                raise ValueError(
-                    "No delegated OAuth session is available. Run test connectivity first."
-                )
+            redirect_uri = get_delegated_redirect_uri(asset, str(soar.get_asset_id()))
             get_authorization_code_flow(
                 asset,
                 str(soar.get_asset_id()),

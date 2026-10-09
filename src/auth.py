@@ -13,6 +13,7 @@
 # limitations under the License.
 import secrets
 import urllib.parse
+from copy import deepcopy
 
 import httpx
 from soar_sdk.auth import (
@@ -20,6 +21,8 @@ from soar_sdk.auth import (
     ClientCredentialsFlow,
     OAuthBearerAuth,
 )
+from soar_sdk.auth.models import OAuthState, OAuthToken
+from soar_sdk.shims.phantom.encryption_helper import encryption_helper
 
 from .asset import Asset
 from .consts import (
@@ -31,10 +34,9 @@ from .consts import (
     AUTH_FLOW_MODE_STATE_KEY,
     AUTHORIZATION_ERROR_STATE_KEY,
     AUTHORIZATION_URL_STATE_KEY,
-    MICROSOFT_GRAPH_APPLICATION_SCOPE,
     MICROSOFT_GRAPH_BASE_URLS,
     MICROSOFT_GRAPH_DELEGATED_SCOPE,
-    MICROSOFT_LOGIN_BASE_URL,
+    MICROSOFT_LOGIN_BASE_URLS,
     REDIRECT_URI_STATE_KEY,
 )
 
@@ -46,15 +48,14 @@ def get_authorization_code_flow(
     redirect_uri: str,
 ) -> AuthorizationCodeFlow:
     tenant_id = asset.tenant_id.strip()
+    login_url = MICROSOFT_LOGIN_BASE_URLS[asset.region or "Global"]
     return AuthorizationCodeFlow(
         asset.auth_state,
         asset_id,
         client_id=asset.client_id,
         client_secret=asset.client_secret,
-        authorization_endpoint=(
-            f"{MICROSOFT_LOGIN_BASE_URL}/{tenant_id}/oauth2/v2.0/authorize"
-        ),
-        token_endpoint=(f"{MICROSOFT_LOGIN_BASE_URL}/{tenant_id}/oauth2/v2.0/token"),
+        authorization_endpoint=(f"{login_url}/{tenant_id}/oauth2/v2.0/authorize"),
+        token_endpoint=(f"{login_url}/{tenant_id}/oauth2/v2.0/token"),
         redirect_uri=redirect_uri,
         scope=MICROSOFT_GRAPH_DELEGATED_SCOPE,
         extra_token_params={"scope": MICROSOFT_GRAPH_DELEGATED_SCOPE},
@@ -64,13 +65,63 @@ def get_authorization_code_flow(
 
 def get_client_credentials_flow(asset: Asset) -> ClientCredentialsFlow:
     tenant_id = asset.tenant_id.strip()
+    region = asset.region or "Global"
+    login_url = MICROSOFT_LOGIN_BASE_URLS[region]
+    graph_root = MICROSOFT_GRAPH_BASE_URLS[region].removesuffix("/v1.0")
     return ClientCredentialsFlow(
         asset.auth_state,
         client_id=asset.client_id,
         client_secret=asset.client_secret,
-        token_endpoint=(f"{MICROSOFT_LOGIN_BASE_URL}/{tenant_id}/oauth2/v2.0/token"),
-        scope=MICROSOFT_GRAPH_APPLICATION_SCOPE,
+        token_endpoint=(f"{login_url}/{tenant_id}/oauth2/v2.0/token"),
+        scope=f"{graph_root}/.default",
     )
+
+
+def get_delegated_redirect_uri(asset: Asset, asset_id: str) -> str:
+    """Migrate an authorized legacy asset before using its delegated session."""
+    state = asset.auth_state.get_all()
+    if "oauth" not in state:
+        legacy_state = asset.auth_state.backend.load_state() or {}
+        redirect_uri = legacy_state.get(REDIRECT_URI_STATE_KEY)
+        legacy_token = deepcopy(legacy_state.get("token") or {})
+        code = legacy_state.get("code")
+        if isinstance(redirect_uri, str) and redirect_uri and (legacy_token or code):
+            if legacy_state.get("is_encrypted"):
+                try:
+                    for key in ("access_token", "refresh_token"):
+                        if legacy_token.get(key):
+                            legacy_token[key] = encryption_helper.decrypt(
+                                legacy_token[key], asset_id
+                            )
+                    if code and not legacy_token:
+                        code = encryption_helper.decrypt(code, asset_id)
+                except Exception as error:
+                    raise ValueError(
+                        "Unable to decrypt the legacy OAuth session. Run test connectivity again."
+                    ) from error
+            if legacy_token:
+                # Legacy stores relative expires_in without the acquisition time.
+                # Refresh rather than treating an old access token as newly issued.
+                legacy_token["expires_at"] = 0
+                token = OAuthToken.model_validate(legacy_token)
+                state["oauth"] = OAuthState(
+                    token=token, client_id=asset.client_id
+                ).model_dump(mode="json", exclude_none=True)
+            else:
+                flow = get_authorization_code_flow(
+                    asset, asset_id, redirect_uri=redirect_uri
+                )
+                flow.exchange_code_for_token(code)
+                state = asset.auth_state.get_all()
+            state.setdefault(REDIRECT_URI_STATE_KEY, redirect_uri)
+            asset.auth_state.put_all(state)
+
+    redirect_uri = state.get(REDIRECT_URI_STATE_KEY)
+    if not isinstance(redirect_uri, str) or not redirect_uri:
+        raise ValueError(
+            "No delegated OAuth session is available. Run test connectivity first."
+        )
+    return redirect_uri
 
 
 def get_graph_client(asset: Asset, asset_id: str) -> httpx.Client:
@@ -90,11 +141,7 @@ def get_graph_client(asset: Asset, asset_id: str) -> httpx.Client:
             timeout=30.0,
         )
 
-    redirect_uri = asset.auth_state.get(REDIRECT_URI_STATE_KEY)
-    if not isinstance(redirect_uri, str) or not redirect_uri:
-        raise ValueError(
-            "No delegated OAuth session is available. Run test connectivity first."
-        )
+    redirect_uri = get_delegated_redirect_uri(asset, asset_id)
     flow = get_authorization_code_flow(
         asset,
         asset_id,
@@ -112,6 +159,7 @@ def build_admin_consent_url(
     client_id: str,
     redirect_uri: str,
     state: str,
+    region: str = "Global",
 ) -> str:
     query = urllib.parse.urlencode(
         {
@@ -120,7 +168,8 @@ def build_admin_consent_url(
             "state": state,
         }
     )
-    return f"{MICROSOFT_LOGIN_BASE_URL}/{tenant_id}/adminconsent?{query}"
+    login_url = MICROSOFT_LOGIN_BASE_URLS[region]
+    return f"{login_url}/{tenant_id}/adminconsent?{query}"
 
 
 def begin_delegated_authorization(
@@ -158,6 +207,7 @@ def begin_admin_consent(
         asset.client_id,
         redirect_uri,
         state_value,
+        asset.region or "Global",
     )
     state = asset.auth_state.get_all()
     state.update(

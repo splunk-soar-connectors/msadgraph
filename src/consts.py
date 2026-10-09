@@ -12,7 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MICROSOFT_LOGIN_BASE_URL = "https://login.microsoftonline.com"
+MICROSOFT_LOGIN_BASE_URLS = {
+    "Global": "https://login.microsoftonline.com",
+    "US Gov L4": "https://login.microsoftonline.us",
+    "US Gov L5 (DOD)": "https://login.microsoftonline.us",
+    "Germany": "https://login.microsoftonline.de",
+    "China (21Vianet)": "https://login.chinacloudapi.cn",
+}
 MICROSOFT_GRAPH_BASE_URLS = {
     "Global": "https://graph.microsoft.com/v1.0",
     "US Gov L4": "https://graph.microsoft.us/v1.0",
@@ -28,8 +34,6 @@ MICROSOFT_GRAPH_DELEGATED_SCOPE = (
     "RoleManagement.ReadWrite.Directory Policy.Read.All "
     "Policy.ReadWrite.ConditionalAccess"
 )
-MICROSOFT_GRAPH_APPLICATION_SCOPE = "https://graph.microsoft.com/.default"
-
 OAUTH_START_ROUTE = "oauth_start"
 OAUTH_CALLBACK_ROUTE = "oauth_callback"
 
