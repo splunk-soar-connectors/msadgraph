@@ -24,7 +24,7 @@ from .webhooks import register_webhooks
 
 def create_msadgraph_app() -> App:
     app = App(
-        name="msadgraph",
+        name="MS Graph for Active Directory",
         app_type="identity management",
         logo="logo_msadgraph.svg",
         logo_dark="logo_msadgraph_dark.svg",
