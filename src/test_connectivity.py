@@ -121,6 +121,8 @@ def _run_delegated_authentication(
     logging.info("Code Received")
     logging.info("Generating access token")
     token = flow.exchange_code_for_token(authorization_code)
+    # SDK 6.1.3 saves its pre-exchange snapshot after storing the new token.
+    flow.client._store_token(token)
     logging.info("OAuth token exchange completed")
     stored_token = flow.client.get_stored_token()
     logging.info(f"OAuth stored token present: {stored_token is not None}")

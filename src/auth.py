@@ -111,7 +111,8 @@ def get_delegated_redirect_uri(asset: Asset, asset_id: str) -> str:
                 flow = get_authorization_code_flow(
                     asset, asset_id, redirect_uri=redirect_uri
                 )
-                flow.exchange_code_for_token(code)
+                token = flow.exchange_code_for_token(code)
+                flow.client._store_token(token)
                 state = asset.auth_state.get_all()
             state.setdefault(REDIRECT_URI_STATE_KEY, redirect_uri)
             asset.auth_state.put_all(state)
