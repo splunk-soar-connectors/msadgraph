@@ -89,7 +89,8 @@ def reset_password(
             response = graph_client.patch(endpoint, json=body)
             _raise_for_graph_error(response)
     except (httpx.HTTPError, OAuthClientError, RuntimeError, ValueError) as error:
-        raise ActionFailure(str(error)) from error
+        message = str(error) or "Microsoft Graph password reset failed"
+        raise ActionFailure(f"{message} ({type(error).__name__})") from error
 
     status = f"Successfully reset password for {params.user_id}"
     safe_params = params.model_dump(exclude={"temp_password"})
