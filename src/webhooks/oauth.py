@@ -55,8 +55,9 @@ def oauth_start(request: WebhookRequest) -> WebhookResponse:
     )
 
 
-def oauth_callback(request: WebhookRequest) -> WebhookResponse:
-    query = _query_values(request)
+def _handle_callback_error(
+    request: WebhookRequest, query: dict[str, str]
+) -> WebhookResponse | None:
     if error := query.get("error"):
         message = f"Error: {error}"
         if error_description := query.get("error_description"):
@@ -65,7 +66,11 @@ def oauth_callback(request: WebhookRequest) -> WebhookResponse:
         return WebhookResponse.text_response(
             f"Server returned {message}", status_code=400
         )
+    return None
 
+
+def oauth_callback(request: WebhookRequest) -> WebhookResponse:
+    query = _query_values(request)
     flow_mode = request.asset.auth_state.get(AUTH_FLOW_MODE_STATE_KEY)
     if flow_mode == AUTH_FLOW_MODE_DELEGATED:
         return _handle_delegated_callback(request, query)
@@ -94,8 +99,10 @@ def _handle_delegated_callback(
         or not hmac.compare_digest(session.state, callback_state)
     ):
         message = "OAuth state mismatch."
-        _save_authorization_error(request, message)
         return WebhookResponse.text_response(message, status_code=400)
+
+    if error_response := _handle_callback_error(request, query):
+        return error_response
 
     authorization_code = query.get("code")
     if not authorization_code:
@@ -116,12 +123,15 @@ def _handle_admin_consent_callback(
     callback_state = query.get("state", "")
     if (
         not expected_state
+        or request.asset.auth_state.get(ADMIN_CONSENT_COMPLETE_STATE_KEY, False)
         or not callback_state
         or not hmac.compare_digest(expected_state, callback_state)
     ):
         message = "OAuth state mismatch."
-        _save_authorization_error(request, message)
         return WebhookResponse.text_response(message, status_code=400)
+
+    if error_response := _handle_callback_error(request, query):
+        return error_response
 
     consent_granted = query.get("admin_consent") == "True"
     state = request.asset.auth_state.get_all()
