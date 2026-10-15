@@ -28,7 +28,7 @@ from ..auth import (
 def generate_token(params: Params, soar: SOARClient, asset: Asset) -> ActionOutput:
     try:
         if asset.admin_access_required:
-            get_client_credentials_flow(asset).get_token()
+            get_client_credentials_flow(asset).authenticate()
         else:
             redirect_uri = get_delegated_redirect_uri(asset, str(soar.get_asset_id()))
             get_authorization_code_flow(

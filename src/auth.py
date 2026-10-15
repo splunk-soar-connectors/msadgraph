@@ -13,6 +13,7 @@
 # limitations under the License.
 import secrets
 import urllib.parse
+from collections.abc import Generator
 from copy import deepcopy
 
 import httpx
@@ -125,20 +126,37 @@ def get_delegated_redirect_uri(asset: Asset, asset_id: str) -> str:
     return redirect_uri
 
 
+class _ClientCredentialsAuth(httpx.Auth):
+    """Reacquire an app token and retry once when Graph rejects authentication."""
+
+    def __init__(self, flow: ClientCredentialsFlow) -> None:
+        self._flow = flow
+
+    def auth_flow(
+        self, request: httpx.Request
+    ) -> Generator[httpx.Request, httpx.Response]:
+        token = self._flow.get_token()
+        request.headers["Authorization"] = (
+            f"{token.token_type or 'Bearer'} {token.access_token}"
+        )
+        response = yield request
+        if response.status_code == 401:
+            token = self._flow.authenticate()
+            request.headers["Authorization"] = (
+                f"{token.token_type or 'Bearer'} {token.access_token}"
+            )
+            yield request
+
+
 def get_graph_client(asset: Asset, asset_id: str) -> httpx.Client:
     """Return an authenticated Microsoft Graph HTTP client for the asset."""
 
     base_url = MICROSOFT_GRAPH_BASE_URLS[asset.region or "Global"].rstrip("/")
 
     if asset.admin_access_required:
-        token = get_client_credentials_flow(asset).get_token()
         return httpx.Client(
             base_url=base_url,
-            headers={
-                "Authorization": (
-                    f"{token.token_type or 'Bearer'} {token.access_token}"
-                )
-            },
+            auth=_ClientCredentialsAuth(get_client_credentials_flow(asset)),
             timeout=30.0,
         )
 
