@@ -85,12 +85,12 @@ class ValidateGroupOutput(PermissiveActionOutput):
         example_values=["https://graph.test.com/v1.0/$metadata#directoryObjects"],
     )
     odata: OdataOutput
-    user_in_group: str
+    user_in_group: bool
     value: list[ValueOutput]
 
 
 class ValidateGroupSummary(ActionOutput):
-    user_in_group: str = OutputField(example_values=["True", "False"])
+    user_in_group: bool = OutputField(example_values=[True, False])
     message: str = OutputField(
         example_values=[
             "User is a member of the group",
@@ -169,16 +169,15 @@ def validate_group(
         raise ActionFailure(str(error)) from error
 
     user_in_group = any(item.get("id") == params.group_object_id for item in values)
-    membership = str(user_in_group)
     summary_message = (
         "User is a member of the group"
         if user_in_group
         else "User is not a member of the group"
     )
-    soar.set_message(f"User in group: {membership}")
+    soar.set_message(f"User in group: {user_in_group}")
     soar.set_summary(
-        ValidateGroupSummary(user_in_group=membership, message=summary_message)
+        ValidateGroupSummary(user_in_group=user_in_group, message=summary_message)
     )
-    payload["user_in_group"] = membership
+    payload["user_in_group"] = user_in_group
     payload["value"] = [_normalize_odata(item) for item in values]
     return ValidateGroupOutput(**payload)

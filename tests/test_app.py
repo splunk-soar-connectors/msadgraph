@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from src.app import app, create_msadgraph_app
+from src.actions.validate_group import ValidateGroupOutput, ValidateGroupSummary
 from src.asset import Asset
 
 
@@ -112,3 +113,17 @@ def test_user_attributes_advertises_legacy_photo_datapath() -> None:
     datapaths = {field["data_path"] for field in action.meta.output._to_json_schema()}
     assert "action_result.data.*.thumbnailPhoto@odata.mediaEditLink" in datapaths
     assert not any("thumbnailPhoto_odata" in path for path in datapaths)
+
+
+def test_group_membership_preserves_boolean_contract() -> None:
+    assert ValidateGroupOutput.model_fields["user_in_group"].annotation is bool
+    assert ValidateGroupSummary.model_fields["user_in_group"].annotation is bool
+    for membership in (True, False):
+        summary = ValidateGroupSummary(user_in_group=membership, message="")
+        assert summary.model_dump()["user_in_group"] is membership
+
+    action = app.actions_manager.get_action("validate_group")
+    fields = {
+        field["data_path"]: field for field in action.meta.output._to_json_schema()
+    }
+    assert fields["action_result.data.*.user_in_group"]["data_type"] == "boolean"
