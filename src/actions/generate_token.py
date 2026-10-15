@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from soar_sdk.abstract import SOARClient
-from soar_sdk.action_results import ActionOutput
+from soar_sdk.action_results import ActionOutput, ActionResult
 from soar_sdk.auth import OAuthClientError
 from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Params
@@ -25,17 +25,7 @@ from ..auth import (
 )
 
 
-class GenerateTokenParams(Params):
-    """Generate token has no action parameters; credentials come from the asset."""
-
-
-class GenerateTokenOutput(ActionOutput):
-    """Generate token exposes no action data or credential values."""
-
-
-def generate_token(
-    params: GenerateTokenParams, soar: SOARClient, asset: Asset
-) -> list[GenerateTokenOutput]:
+def generate_token(params: Params, soar: SOARClient, asset: Asset) -> ActionOutput:
     try:
         if asset.admin_access_required:
             get_client_credentials_flow(asset).authenticate()
@@ -49,5 +39,4 @@ def generate_token(
     except (OAuthClientError, RuntimeError, ValueError) as error:
         raise ActionFailure(str(error)) from error
 
-    soar.set_message("Token generated")
-    return []
+    return ActionResult(True, "Token generated", params.model_dump())
