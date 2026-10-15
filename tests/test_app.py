@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from src.app import app, create_msadgraph_app
+from src.actions.generate_token import GenerateTokenOutput, GenerateTokenParams
 from src.actions.validate_group import ValidateGroupOutput, ValidateGroupSummary
 from src.asset import Asset
 
@@ -127,3 +128,13 @@ def test_group_membership_preserves_boolean_contract() -> None:
         field["data_path"]: field for field in action.meta.output._to_json_schema()
     }
     assert fields["action_result.data.*.user_in_group"]["data_type"] == "boolean"
+
+
+def test_generate_token_models_preserve_empty_action_contract() -> None:
+    action = app.actions_manager.get_action("generate_token")
+    assert action.meta.parameters is GenerateTokenParams
+    assert action.meta.output is GenerateTokenOutput
+    assert GenerateTokenParams.model_fields == {}
+    assert GenerateTokenOutput.model_fields == {}
+    assert action.meta.model_dump()["parameters"] == {}
+    assert list(GenerateTokenOutput._to_json_schema()) == []
