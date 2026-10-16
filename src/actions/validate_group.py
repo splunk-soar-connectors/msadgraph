@@ -23,6 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..asset import Asset
 from ..auth import get_graph_client
+from ..graph_response import get_graph_response
 
 
 class ValidateGroupParams(Params):
@@ -116,28 +117,6 @@ def _escape_odata_string(value: str) -> str:
     return str(value).replace("'", "''")
 
 
-def _get_graph_response(response: httpx.Response) -> dict[str, Any]:
-    try:
-        payload = response.json()
-    except ValueError as error:
-        if response.is_success:
-            raise RuntimeError(
-                "Unable to parse JSON response from Microsoft Graph"
-            ) from error
-        response.raise_for_status()
-        raise
-    if not response.is_success:
-        graph_error = payload.get("error") if isinstance(payload, dict) else payload
-        if isinstance(graph_error, dict):
-            graph_error = graph_error.get("message", graph_error)
-        raise RuntimeError(
-            f"Error from server. Status Code: {response.status_code}. Data from server: \n{graph_error}\n"
-        )
-    if not isinstance(payload, dict):
-        raise RuntimeError("Microsoft Graph returned a non-object JSON response")
-    return payload
-
-
 def _normalize_odata(value: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(value)
     odata = {
@@ -157,7 +136,7 @@ def validate_group(
     try:
         endpoint = f"/users/{_quote_path_segment(params.user_id)}/memberOf"
         with get_graph_client(asset, str(soar.get_asset_id())) as graph_client:
-            payload = _get_graph_response(graph_client.get(endpoint, params=query))
+            payload = get_graph_response(graph_client.get(endpoint, params=query))
         values = payload.get("value", [])
         if not isinstance(values, list) or not all(
             isinstance(item, dict) for item in values

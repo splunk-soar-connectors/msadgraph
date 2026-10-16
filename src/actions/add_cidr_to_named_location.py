@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from ipaddress import ip_network
-from typing import Any
 from urllib.parse import quote, unquote
 
 import httpx
@@ -24,6 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..asset import Asset
 from ..auth import get_graph_client
+from ..graph_response import get_graph_response
 
 
 class AddCidrToNamedLocationParams(Params):
@@ -60,30 +60,6 @@ def _quote_path_segment(value: str) -> str:
     return quote(raw_value, safe="")
 
 
-def _get_graph_response(response: httpx.Response) -> dict[str, Any]:
-    if not response.content and response.is_success:
-        return {}
-    try:
-        payload = response.json()
-    except ValueError as error:
-        if response.is_success:
-            raise RuntimeError(
-                "Unable to parse JSON response from Microsoft Graph"
-            ) from error
-        response.raise_for_status()
-        raise
-    if not response.is_success:
-        graph_error = payload.get("error") if isinstance(payload, dict) else payload
-        if isinstance(graph_error, dict):
-            graph_error = graph_error.get("message", graph_error)
-        raise RuntimeError(
-            f"Error from server. Status Code: {response.status_code}. Data from server: \n{graph_error}\n"
-        )
-    if not isinstance(payload, dict):
-        raise RuntimeError("Microsoft Graph returned a non-object JSON response")
-    return payload
-
-
 def add_cidr_to_named_location(
     params: AddCidrToNamedLocationParams, soar: SOARClient, asset: Asset
 ) -> ActionOutput:
@@ -103,7 +79,7 @@ def add_cidr_to_named_location(
             f"{_quote_path_segment(params.location_id)}"
         )
         with get_graph_client(asset, str(soar.get_asset_id())) as graph_client:
-            location = _get_graph_response(graph_client.get(endpoint))
+            location = get_graph_response(graph_client.get(endpoint), allow_empty=True)
             if location.get("@odata.type") != "#microsoft.graph.ipNamedLocation":
                 raise RuntimeError(
                     f"Named location {params.location_id} is not an IP-based named location"
@@ -128,14 +104,15 @@ def add_cidr_to_named_location(
                 *ranges,
                 {"@odata.type": cidr_type, "cidrAddress": normalized_cidr},
             ]
-            _get_graph_response(
+            get_graph_response(
                 graph_client.patch(
                     endpoint,
                     json={
                         "@odata.type": "#microsoft.graph.ipNamedLocation",
                         "ipRanges": updated_ranges,
                     },
-                )
+                ),
+                allow_empty=True,
             )
     except (httpx.HTTPError, OAuthClientError, RuntimeError, ValueError) as error:
         raise ActionFailure(str(error)) from error

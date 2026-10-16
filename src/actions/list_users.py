@@ -23,6 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..asset import Asset
 from ..auth import get_graph_client
+from ..graph_response import get_graph_response
 
 
 GRAPH_PAGE_SIZE = 999
@@ -59,7 +60,7 @@ def _get_users(
 
     while next_params is not None:
         response = client.get("/users", headers=headers, params=next_params)
-        payload = _get_graph_response(response)
+        payload = get_graph_response(response)
         page = payload.get("value")
         if not isinstance(page, list):
             raise _GraphAPIError(
@@ -83,35 +84,6 @@ def _get_users(
         next_params = {**params, "$skiptoken": skip_tokens[0]}
 
     return users
-
-
-def _get_graph_response(response: httpx.Response) -> dict[str, Any]:
-    try:
-        payload = response.json()
-    except ValueError as error:
-        if response.is_success:
-            raise _GraphAPIError(
-                "Unable to parse JSON response from Microsoft Graph"
-            ) from error
-        response.raise_for_status()
-        raise
-
-    if not response.is_success:
-        error_detail: object = payload
-        graph_error = payload.get("error") if isinstance(payload, dict) else None
-        if isinstance(graph_error, dict) and graph_error.get("message"):
-            error_detail = graph_error["message"]
-        elif graph_error:
-            error_detail = graph_error
-        raise _GraphAPIError(
-            "Error from server. "
-            f"Status Code: {response.status_code}. "
-            f"Data from server: \n{error_detail}\n"
-        )
-
-    if not isinstance(payload, dict):
-        raise _GraphAPIError("Microsoft Graph returned a non-object JSON response")
-    return payload
 
 
 class ListUsersParams(Params):

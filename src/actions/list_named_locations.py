@@ -23,6 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..asset import Asset
 from ..auth import get_graph_client
+from ..graph_response import get_graph_response
 
 
 GRAPH_PAGE_SIZE = 999
@@ -96,28 +97,6 @@ class ListNamedLocationsSummary(ActionOutput):
     num_named_locations: int = OutputField(example_values=[3])
 
 
-def _get_graph_response(response: httpx.Response) -> dict[str, Any]:
-    try:
-        payload = response.json()
-    except ValueError as error:
-        if response.is_success:
-            raise RuntimeError(
-                "Unable to parse JSON response from Microsoft Graph"
-            ) from error
-        response.raise_for_status()
-        raise
-    if not response.is_success:
-        graph_error = payload.get("error") if isinstance(payload, dict) else payload
-        if isinstance(graph_error, dict):
-            graph_error = graph_error.get("message", graph_error)
-        raise RuntimeError(
-            f"Error from server. Status Code: {response.status_code}. Data from server: \n{graph_error}\n"
-        )
-    if not isinstance(payload, dict):
-        raise RuntimeError("Microsoft Graph returned a non-object JSON response")
-    return payload
-
-
 def _normalize_odata(value: Any) -> Any:
     if isinstance(value, list):
         return [_normalize_odata(item) for item in value]
@@ -141,7 +120,7 @@ def _get_named_locations(
     locations: list[dict[str, Any]] = []
     next_params: dict[str, str] | None = {**params, "$top": str(GRAPH_PAGE_SIZE)}
     while next_params is not None:
-        payload = _get_graph_response(
+        payload = get_graph_response(
             client.get(endpoint, headers=headers, params=next_params)
         )
         page = payload.get("value")
