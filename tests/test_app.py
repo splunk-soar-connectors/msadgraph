@@ -37,6 +37,7 @@ EXPECTED_ACTIONS = (
     "add_cidr_to_named_location",
     "remove_cidr_from_named_location",
     "generate_token",
+    "make_request",
 )
 
 EXPECTED_TABLE_COLUMNS = {

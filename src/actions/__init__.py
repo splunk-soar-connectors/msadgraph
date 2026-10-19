@@ -30,6 +30,7 @@ from .list_named_locations import ListNamedLocationsSummary, list_named_location
 from .list_user_attributes import ListUserAttributesSummary, list_user_attributes
 from .list_user_devices import ListUserDevicesSummary, list_user_devices
 from .list_users import ListUsersSummary, list_users
+from .make_request import make_request
 from .remove_cidr_from_named_location import (
     RemoveCidrFromNamedLocationSummary,
     remove_cidr_from_named_location,
@@ -202,4 +203,5 @@ def register_actions(app: App) -> App:
         read_only=False,
         render_as="table",
     )
+    app.make_request()(make_request)
     return app

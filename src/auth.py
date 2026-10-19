@@ -148,7 +148,9 @@ class _ClientCredentialsAuth(httpx.Auth):
             yield request
 
 
-def get_graph_client(asset: Asset, asset_id: str) -> httpx.Client:
+def get_graph_client(
+    asset: Asset, asset_id: str, *, verify: bool = True
+) -> httpx.Client:
     """Return an authenticated Microsoft Graph HTTP client for the asset."""
 
     base_url = MICROSOFT_GRAPH_BASE_URLS[asset.region or "Global"].rstrip("/")
@@ -158,6 +160,7 @@ def get_graph_client(asset: Asset, asset_id: str) -> httpx.Client:
             base_url=base_url,
             auth=_ClientCredentialsAuth(get_client_credentials_flow(asset)),
             timeout=30.0,
+            verify=verify,
         )
 
     redirect_uri = get_delegated_redirect_uri(asset, asset_id)
@@ -170,6 +173,7 @@ def get_graph_client(asset: Asset, asset_id: str) -> httpx.Client:
         base_url=base_url,
         auth=OAuthBearerAuth(flow.client),
         timeout=30.0,
+        verify=verify,
     )
 
 
