@@ -11,14 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import soar_sdk.app as sdk_app
 from soar_sdk.abstract import SOARClient
 from soar_sdk.app import App
+from soar_sdk.input_spec import InputSpecification
 
 from .actions import register_actions
 from .asset import Asset
 from .consts import OAUTH_CALLBACK_ROUTE, OAUTH_START_ROUTE
 from .test_connectivity import run_test_connectivity
 from .webhooks import register_webhooks
+
+
+class _DiagnosticInputSpecification(InputSpecification):
+    enable_action_parameter_encryption: bool = False
+
+
+# TEMPORARY: preserve the platform flag that SDK 6.1.3 otherwise drops.
+# Remove this diagnostic override once the SDK input contract is fixed.
+sdk_app.InputSpecification = _DiagnosticInputSpecification
 
 
 def create_msadgraph_app() -> App:
