@@ -8,7 +8,7 @@ authors = [
     { name = "Mathieu A. Cormier" },
 ]
 dependencies = [
-    "splunk-soar-sdk==6.1.3",
+    "splunk-soar-sdk==7.0.2",
 ]
 
 [tool.soar.app]

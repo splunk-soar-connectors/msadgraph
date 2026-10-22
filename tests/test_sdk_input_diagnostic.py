@@ -15,15 +15,17 @@ import json
 
 import pytest
 from soar_sdk.app import App
+from soar_sdk.input_spec import InputSpecification
 
-from src.app import _DiagnosticInputSpecification
+from src.app import app
 
 
 @pytest.mark.parametrize("enabled", [True, False, None])
 def test_sdk_handle_input_model_preserves_encryption_flag(enabled: bool | None) -> None:
     # Use the actual model resolved by SDK App.handle, not a substitute handler.
     model = App.handle.__globals__["InputSpecification"]
-    assert model is _DiagnosticInputSpecification
+    assert app is not None
+    assert model is InputSpecification
     raw = {
         "identifier": "reset_password",
         "asset_id": "1",
