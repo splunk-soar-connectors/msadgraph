@@ -31,7 +31,7 @@ def test_sdk_handle_input_model_preserves_encryption_flag(enabled: bool | None) 
         "asset_id": "1",
         "config": {
             "app_version": "2.0.0",
-            "directory": "/tmp/sdk-input-diagnostic",
+            "directory": "/tmp/sdk-input",
             "main_module": "app.py",
         },
     }
