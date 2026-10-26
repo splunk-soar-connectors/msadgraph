@@ -31,11 +31,17 @@ def generate_token(params: Params, soar: SOARClient, asset: Asset) -> ActionOutp
             get_client_credentials_flow(asset).authenticate()
         else:
             redirect_uri = get_delegated_redirect_uri(asset, str(soar.get_asset_id()))
-            get_authorization_code_flow(
+            flow = get_authorization_code_flow(
                 asset,
                 str(soar.get_asset_id()),
                 redirect_uri=redirect_uri,
-            ).get_token()
+            )
+            token = flow.client.get_stored_token()
+            if token is None or not token.refresh_token:
+                raise ValueError(
+                    "No delegated refresh token is available. Run test connectivity again."
+                )
+            flow.client.refresh_token(token.refresh_token)
     except (OAuthClientError, RuntimeError, ValueError) as error:
         raise ActionFailure(str(error)) from error
 

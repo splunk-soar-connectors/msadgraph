@@ -16,7 +16,7 @@ import hmac
 from soar_sdk.app import App
 from soar_sdk.webhooks.models import WebhookRequest, WebhookResponse
 
-from ..auth import get_authorization_code_flow
+from ..auth import authorization_handoff_is_active, get_authorization_code_flow
 from ..consts import (
     ADMIN_CONSENT_COMPLETE_STATE_KEY,
     ADMIN_CONSENT_NONCE_STATE_KEY,
@@ -43,6 +43,12 @@ def _save_authorization_error(request: WebhookRequest, message: str) -> None:
 
 
 def oauth_start(request: WebhookRequest) -> WebhookResponse:
+    if not authorization_handoff_is_active(
+        request.asset.auth_state.get_all(force_reload=True)
+    ):
+        return WebhookResponse.text_response(
+            "No active OAuth authorization request is pending.", status_code=400
+        )
     authorization_url = request.asset.auth_state.get(AUTHORIZATION_URL_STATE_KEY)
     if not authorization_url:
         return WebhookResponse.text_response(
@@ -70,6 +76,13 @@ def _handle_callback_error(
 
 
 def oauth_callback(request: WebhookRequest) -> WebhookResponse:
+    if not authorization_handoff_is_active(
+        request.asset.auth_state.get_all(force_reload=True)
+    ):
+        return WebhookResponse.text_response(
+            "ERROR: OAuth authorization request expired or is not pending.",
+            status_code=400,
+        )
     query = _query_values(request)
     flow_mode = request.asset.auth_state.get(AUTH_FLOW_MODE_STATE_KEY)
     if flow_mode == AUTH_FLOW_MODE_DELEGATED:

@@ -22,6 +22,8 @@ from .asset import Asset
 from .auth import (
     begin_admin_consent,
     begin_delegated_authorization,
+    authorization_handoff_is_active,
+    clear_authorization_handoff,
     get_client_credentials_flow,
     get_graph_client,
 )
@@ -31,14 +33,15 @@ from .consts import (
     ADMIN_CONSENT_STATE_KEY,
     AUTHORIZATION_ERROR_MESSAGE,
     AUTHORIZATION_ERROR_STATE_KEY,
+    AUTHORIZATION_NONCE_STATE_KEY,
+    AUTHORIZE_WAIT_TIME,
+    AUTHORIZATION_POLL_ATTEMPTS,
+    AUTHORIZATION_POLL_INTERVAL,
     TEST_CONNECTIVITY_FAILED,
     TEST_CONNECTIVITY_PASSED,
 )
 
 
-AUTHORIZE_WAIT_TIME = 5
-AUTHORIZATION_POLL_ATTEMPTS = 40
-AUTHORIZATION_POLL_INTERVAL = 3
 ADMIN_CONSENT_SETTLE_SECONDS = 30
 
 
@@ -110,18 +113,22 @@ def _run_delegated_authentication(
         str(soar.get_asset_id()),
         redirect_uri=oauth_callback_url,
     )
-    _log_authorization_request(soar, oauth_callback_url, oauth_start_url)
-    authorization_code = _wait_for_authorization_code(asset, flow)
-    if not authorization_code:
-        logging.info(AUTHORIZATION_ERROR_MESSAGE)
-        logging.info(TEST_CONNECTIVITY_FAILED)
-        raise ValueError(AUTHORIZATION_ERROR_MESSAGE)
+    nonce = asset.auth_state[AUTHORIZATION_NONCE_STATE_KEY]
+    try:
+        _log_authorization_request(soar, oauth_callback_url, oauth_start_url)
+        authorization_code = _wait_for_authorization_code(asset, flow, nonce)
+        if not authorization_code:
+            logging.info(AUTHORIZATION_ERROR_MESSAGE)
+            logging.info(TEST_CONNECTIVITY_FAILED)
+            raise ValueError(AUTHORIZATION_ERROR_MESSAGE)
 
-    logging.info("Code Received")
-    logging.info("Generating access token")
-    token = flow.exchange_code_for_token(authorization_code)
-    # Preserve the token after the SDK saves its pre-exchange session snapshot.
-    flow.client._store_token(token)
+        logging.info("Code Received")
+        logging.info("Generating access token")
+        token = flow.exchange_code_for_token(authorization_code)
+        # Preserve the token after the SDK saves its pre-exchange session snapshot.
+        flow.client._store_token(token)
+    finally:
+        clear_authorization_handoff(asset, expected_nonce=nonce)
 
 
 def _run_admin_consent(
@@ -136,8 +143,12 @@ def _run_admin_consent(
         str(soar.get_asset_id()),
         redirect_uri=oauth_callback_url,
     )
-    _log_authorization_request(soar, oauth_callback_url, oauth_start_url)
-    _wait_for_admin_consent(asset)
+    nonce = asset.auth_state[AUTHORIZATION_NONCE_STATE_KEY]
+    try:
+        _log_authorization_request(soar, oauth_callback_url, oauth_start_url)
+        _wait_for_admin_consent(asset, nonce)
+    finally:
+        clear_authorization_handoff(asset, expected_nonce=nonce)
 
     if not asset.auth_state.get(ADMIN_CONSENT_STATE_KEY, False):
         logging.info(ADMIN_CONSENT_ERROR_MESSAGE)
@@ -176,10 +187,14 @@ def _log_authorization_request(
 
 
 def _wait_for_authorization_code(
-    asset: Asset, flow: AuthorizationCodeFlow
+    asset: Asset, flow: AuthorizationCodeFlow, nonce: str
 ) -> str | None:
     logging.info("Waiting for authorization to complete")
     for index in range(AUTHORIZATION_POLL_ATTEMPTS):
+        if not authorization_handoff_is_active(
+            asset.auth_state.get_all(force_reload=True), nonce
+        ):
+            raise TimeoutError("OAuth authorization session expired or was replaced")
         logging.progress("." * (index % 10))
         if authorization_error := asset.auth_state.get(AUTHORIZATION_ERROR_STATE_KEY):
             raise ValueError(authorization_error)
@@ -193,9 +208,13 @@ def _wait_for_authorization_code(
     )
 
 
-def _wait_for_admin_consent(asset: Asset) -> None:
+def _wait_for_admin_consent(asset: Asset, nonce: str) -> None:
     logging.info("Waiting for authorization to complete")
     for index in range(AUTHORIZATION_POLL_ATTEMPTS):
+        if not authorization_handoff_is_active(
+            asset.auth_state.get_all(force_reload=True), nonce
+        ):
+            raise TimeoutError("Admin consent session expired or was replaced")
         logging.progress("." * (index % 10))
         if authorization_error := asset.auth_state.get(AUTHORIZATION_ERROR_STATE_KEY):
             raise ValueError(authorization_error)

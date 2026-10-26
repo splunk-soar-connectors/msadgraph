@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import math
 import secrets
+import time
 import urllib.parse
 from collections.abc import Generator
 from copy import deepcopy
@@ -34,6 +36,9 @@ from .consts import (
     AUTH_FLOW_MODE_DELEGATED,
     AUTH_FLOW_MODE_STATE_KEY,
     AUTHORIZATION_ERROR_STATE_KEY,
+    AUTHORIZATION_EXPIRES_AT_STATE_KEY,
+    AUTHORIZATION_NONCE_STATE_KEY,
+    AUTHORIZATION_TIMEOUT_SECONDS,
     AUTHORIZATION_URL_STATE_KEY,
     MICROSOFT_GRAPH_BASE_URLS,
     MICROSOFT_GRAPH_DELEGATED_SCOPE,
@@ -204,12 +209,18 @@ def begin_delegated_authorization(
     clear_authorization_handoff(asset)
     flow = get_authorization_code_flow(asset, asset_id, redirect_uri=redirect_uri)
     authorization_url = flow.get_authorization_url()
+    session = flow.client.get_pending_session()
+    if session is None or not session.state:
+        raise RuntimeError("Unable to start the delegated authorization session")
     state = asset.auth_state.get_all()
     state.update(
         {
             AUTH_FLOW_MODE_STATE_KEY: AUTH_FLOW_MODE_DELEGATED,
             AUTHORIZATION_URL_STATE_KEY: authorization_url,
             REDIRECT_URI_STATE_KEY: redirect_uri,
+            AUTHORIZATION_NONCE_STATE_KEY: session.state,
+            AUTHORIZATION_EXPIRES_AT_STATE_KEY: time.time()
+            + AUTHORIZATION_TIMEOUT_SECONDS,
         }
     )
     asset.auth_state.put_all(state)
@@ -239,6 +250,9 @@ def begin_admin_consent(
             AUTHORIZATION_URL_STATE_KEY: authorization_url,
             REDIRECT_URI_STATE_KEY: redirect_uri,
             ADMIN_CONSENT_NONCE_STATE_KEY: state_value,
+            AUTHORIZATION_NONCE_STATE_KEY: state_value,
+            AUTHORIZATION_EXPIRES_AT_STATE_KEY: time.time()
+            + AUTHORIZATION_TIMEOUT_SECONDS,
             ADMIN_CONSENT_COMPLETE_STATE_KEY: False,
             ADMIN_CONSENT_STATE_KEY: False,
         }
@@ -247,12 +261,47 @@ def begin_admin_consent(
     return authorization_url
 
 
-def clear_authorization_handoff(asset: Asset) -> None:
-    state = asset.auth_state.get_all()
+def authorization_handoff_is_active(
+    state: dict, expected_nonce: str | None = None
+) -> bool:
+    """Reject missing, expired or superseded handoffs without changing state."""
+    deadline = state.get(AUTHORIZATION_EXPIRES_AT_STATE_KEY)
+    nonce = state.get(AUTHORIZATION_NONCE_STATE_KEY)
+    return (
+        isinstance(deadline, (int, float))
+        and not isinstance(deadline, bool)
+        and math.isfinite(deadline)
+        and time.time() < deadline
+        and isinstance(nonce, str)
+        and bool(nonce)
+        and (expected_nonce is None or nonce == expected_nonce)
+    )
+
+
+def clear_authorization_handoff(
+    asset: Asset, *, expected_nonce: str | None = None
+) -> None:
+    """Clear this pending flow, preserving stored tokens and their redirect URI."""
+    state = asset.auth_state.get_all(force_reload=True)
+    if (
+        expected_nonce is not None
+        and state.get(AUTHORIZATION_NONCE_STATE_KEY) != expected_nonce
+    ):
+        return
+    oauth = state.get("oauth")
+    if isinstance(oauth, dict):
+        session = oauth.get("session")
+        if expected_nonce is None or (
+            isinstance(session, dict) and session.get("state") == expected_nonce
+        ):
+            oauth = dict(oauth)
+            oauth.pop("session", None)
+            state["oauth"] = oauth
     for key in (
         AUTHORIZATION_ERROR_STATE_KEY,
         AUTHORIZATION_URL_STATE_KEY,
-        REDIRECT_URI_STATE_KEY,
+        AUTHORIZATION_NONCE_STATE_KEY,
+        AUTHORIZATION_EXPIRES_AT_STATE_KEY,
         AUTH_FLOW_MODE_STATE_KEY,
         ADMIN_CONSENT_NONCE_STATE_KEY,
         ADMIN_CONSENT_COMPLETE_STATE_KEY,
