@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import hmac
 import time
 
 import httpx
@@ -121,15 +120,8 @@ def _run_delegated_authentication(
     logging.info("Code Received")
     logging.info("Generating access token")
     token = flow.exchange_code_for_token(authorization_code)
-    # SDK 6.1.3 saves its pre-exchange snapshot after storing the new token.
+    # Preserve the token after the SDK saves its pre-exchange session snapshot.
     flow.client._store_token(token)
-    logging.info("OAuth token exchange completed")
-    stored_token = flow.client.get_stored_token()
-    logging.info(f"OAuth stored token present: {stored_token is not None}")
-    token_matches = stored_token is not None and hmac.compare_digest(
-        stored_token.access_token, token.access_token
-    )
-    logging.info(f"OAuth stored token matches exchange: {token_matches}")
 
 
 def _run_admin_consent(
