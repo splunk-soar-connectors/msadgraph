@@ -75,8 +75,8 @@ class IdentitiesOutput(ActionOutput):
 
 
 class PasswordprofileOutput(ActionOutput):
-    enforceChangePasswordPolicy: bool
-    forceChangePasswordNextLogin: bool
+    forceChangePasswordNextSignIn: bool
+    forceChangePasswordNextSignInWithMfa: bool
     password: str
 
 
@@ -135,14 +135,16 @@ class ListUserAttributesOutput(PermissiveActionOutput):
     officeLocation: str
     onPremisesDistinguishedName: str
     onPremisesSecurityIdentifier: str
-    otherMails: str = OutputField(cef_types=["email"], example_values=["user@test.com"])
+    otherMails: list[str] = OutputField(
+        cef_types=["email"], example_values=["user@test.com"]
+    )
     passwordPolicies: str
     passwordProfile: PasswordprofileOutput
     physicalDeliveryOfficeName: str
     postalCode: str
     preferredLanguage: str
     provisionedPlans: list[ProvisionedplansOutput]
-    proxyAddresses: str = OutputField(
+    proxyAddresses: list[str] = OutputField(
         example_values=["SMTP:test_shared_mailbox@test.com"]
     )
     refreshTokensValidFromDateTime: str = OutputField(

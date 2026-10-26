@@ -141,6 +141,10 @@ test account when validating resets and set **force_change** as appropriate.
 - A connectivity timeout can indicate an unreachable webhook, disabled incoming
   webhooks, an additional SOAR authentication requirement, or incomplete Microsoft
   sign-in. Check those prerequisites before changing credentials or permissions.
+  Pending authorization links expire with the connectivity attempt; start a new
+  **TEST CONNECTIVITY** attempt instead of completing an expired link.
+- Delegated **generate token** explicitly refreshes the stored token. If no refresh
+  token is available, run **TEST CONNECTIVITY** to authorize the asset again.
 - A Graph authorization error requires checking permission type, consent, the
   selected cloud, the target object and applicable Entra roles. Re-run connectivity
   after replacing an expired client secret.
@@ -281,11 +285,10 @@ action_result.data.\*.odata.type | string | | test.DirectoryServices.User |
 action_result.data.\*.officeLocation | string | | |
 action_result.data.\*.onPremisesDistinguishedName | string | | |
 action_result.data.\*.onPremisesSecurityIdentifier | string | | |
-action_result.data.\*.otherMails | string | `email` | user.test@outlook.com |
+action_result.data.\*.otherMails.\* | string | `email` | user.test@outlook.com |
 action_result.data.\*.passwordPolicies | string | | None |
-action_result.data.\*.passwordProfile | string | | |
-action_result.data.\*.passwordProfile.enforceChangePasswordPolicy | boolean | | True False |
-action_result.data.\*.passwordProfile.forceChangePasswordNextLogin | boolean | | True False |
+action_result.data.\*.passwordProfile.forceChangePasswordNextSignIn | boolean | | True False |
+action_result.data.\*.passwordProfile.forceChangePasswordNextSignInWithMfa | boolean | | True False |
 action_result.data.\*.passwordProfile.password | string | | |
 action_result.data.\*.physicalDeliveryOfficeName | string | | |
 action_result.data.\*.postalCode | string | | 94303 |
@@ -293,7 +296,7 @@ action_result.data.\*.preferredLanguage | string | | en-US |
 action_result.data.\*.provisionedPlans.\*.capabilityStatus | string | | Enabled |
 action_result.data.\*.provisionedPlans.\*.provisioningStatus | string | | Success |
 action_result.data.\*.provisionedPlans.\*.service | string | | exchange |
-action_result.data.\*.proxyAddresses | string | | SMTP:user1@test.com |
+action_result.data.\*.proxyAddresses.\* | string | | SMTP:user1@test.com |
 action_result.data.\*.refreshTokensValidFromDateTime | string | | 2017-09-27T22:54:59Z |
 action_result.data.\*.showInAddressList | string | | |
 action_result.data.\*.sipProxyAddress | string | `email` | user@test.com |
@@ -565,10 +568,10 @@ action_result.data.\*.objectType | string | | User |
 action_result.data.\*.officeLocation | string | | |
 action_result.data.\*.onPremisesDistinguishedName | string | | |
 action_result.data.\*.onPremisesSecurityIdentifier | string | | |
-action_result.data.\*.otherMails | string | `email` | user@test.com |
+action_result.data.\*.otherMails.\* | string | `email` | user@test.com |
 action_result.data.\*.passwordPolicies | string | | |
-action_result.data.\*.passwordProfile.enforceChangePasswordPolicy | boolean | | True False |
-action_result.data.\*.passwordProfile.forceChangePasswordNextLogin | boolean | | True False |
+action_result.data.\*.passwordProfile.forceChangePasswordNextSignIn | boolean | | True False |
+action_result.data.\*.passwordProfile.forceChangePasswordNextSignInWithMfa | boolean | | True False |
 action_result.data.\*.passwordProfile.password | string | | |
 action_result.data.\*.physicalDeliveryOfficeName | string | | |
 action_result.data.\*.postalCode | string | | |
@@ -576,7 +579,7 @@ action_result.data.\*.preferredLanguage | string | | |
 action_result.data.\*.provisionedPlans.\*.capabilityStatus | string | | Enabled |
 action_result.data.\*.provisionedPlans.\*.provisioningStatus | string | | Success |
 action_result.data.\*.provisionedPlans.\*.service | string | | exchange |
-action_result.data.\*.proxyAddresses | string | | SMTP:test_shared_mailbox@test.com |
+action_result.data.\*.proxyAddresses.\* | string | | SMTP:test_shared_mailbox@test.com |
 action_result.data.\*.refreshTokensValidFromDateTime | string | | 2019-05-16T19:54:18Z |
 action_result.data.\*.showInAddressList | string | | |
 action_result.data.\*.sipProxyAddress | string | `email` | |
@@ -728,7 +731,7 @@ action_result.data.\*.onPremisesSecurityIdentifier | string | | |
 action_result.data.\*.onPremisesSyncEnabled | string | | |
 action_result.data.\*.preferredDataLocation | string | | |
 action_result.data.\*.preferredLanguage | string | | |
-action_result.data.\*.proxyAddresses | string | | SMTP:test-h@test.com |
+action_result.data.\*.proxyAddresses.\* | string | | SMTP:test-h@test.com |
 action_result.data.\*.renewedDateTime | string | | 2021-03-25T18:40:53Z |
 action_result.data.\*.securityEnabled | boolean | | True False |
 action_result.data.\*.securityIdentifier | string | | S-1-12-1-294681889-1319597617-672379543-28952017 |
@@ -794,7 +797,7 @@ action_result.data.\*.onPremisesSecurityIdentifier | string | | |
 action_result.data.\*.onPremisesSyncEnabled | string | | |
 action_result.data.\*.preferredDataLocation | string | | |
 action_result.data.\*.preferredLanguage | string | | |
-action_result.data.\*.proxyAddresses | string | | SMTP:bc7f9cabe@test.com |
+action_result.data.\*.proxyAddresses.\* | string | | SMTP:bc7f9cabe@test.com |
 action_result.data.\*.renewedDateTime | string | | 2020-08-05T11:59:49Z |
 action_result.data.\*.securityIdentifier | string | | S-1-12-1-909260723-1083662375-1952945031-2402852259 |
 action_result.data.\*.theme | string | | |

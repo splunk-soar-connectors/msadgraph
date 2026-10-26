@@ -86,7 +86,7 @@ class GetGroupOutput(PermissiveActionOutput):
     onPremisesSyncEnabled: str
     preferredDataLocation: str
     preferredLanguage: str
-    proxyAddresses: str = OutputField(example_values=["SMTP:bc7f9cabe@test.com"])
+    proxyAddresses: list[str] = OutputField(example_values=["SMTP:bc7f9cabe@test.com"])
     renewedDateTime: str = OutputField(example_values=["2020-08-05T11:59:49Z"])
     securityIdentifier: str = OutputField(
         example_values=["S-1-12-1-909260723-1083662375-1952945031-2402852259"]

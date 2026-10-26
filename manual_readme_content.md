@@ -131,6 +131,10 @@ test account when validating resets and set **force_change** as appropriate.
 - A connectivity timeout can indicate an unreachable webhook, disabled incoming
   webhooks, an additional SOAR authentication requirement, or incomplete Microsoft
   sign-in. Check those prerequisites before changing credentials or permissions.
+  Pending authorization links expire with the connectivity attempt; start a new
+  **TEST CONNECTIVITY** attempt instead of completing an expired link.
+- Delegated **generate token** explicitly refreshes the stored token. If no refresh
+  token is available, run **TEST CONNECTIVITY** to authorize the asset again.
 - A Graph authorization error requires checking permission type, consent, the
   selected cloud, the target object and applicable Entra roles. Re-run connectivity
   after replacing an expired client secret.

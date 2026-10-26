@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import pytest
+
 from src.app import app, create_msadgraph_app
 from src.actions.validate_group import ValidateGroupOutput, ValidateGroupSummary
 from src.asset import Asset
@@ -132,3 +134,33 @@ def test_group_membership_preserves_boolean_contract() -> None:
         field["data_path"]: field for field in action.meta.output._to_json_schema()
     }
     assert fields["action_result.data.*.user_in_group"]["data_type"] == "boolean"
+
+
+@pytest.mark.parametrize("action_name", ["list_users", "list_user_attributes"])
+def test_user_output_metadata_describes_collections_and_password_profile(action_name):
+    action = app.actions_manager.get_action(action_name)
+    fields = {
+        field["data_path"]: field for field in action.meta.output._to_json_schema()
+    }
+    prefix = "action_result.data.*."
+    for name in ("otherMails", "proxyAddresses"):
+        assert fields[f"{prefix}{name}.*"]["data_type"] == "string"
+        assert f"{prefix}{name}" not in fields
+    assert f"{prefix}passwordProfile" not in fields
+    for name in (
+        "forceChangePasswordNextSignIn",
+        "forceChangePasswordNextSignInWithMfa",
+    ):
+        assert fields[f"{prefix}passwordProfile.{name}"]["data_type"] == "boolean"
+    for name in ("enforceChangePasswordPolicy", "forceChangePasswordNextLogin"):
+        assert f"{prefix}passwordProfile.{name}" not in fields
+
+
+@pytest.mark.parametrize("action_name", ["get_group", "list_groups"])
+def test_remaining_proxy_address_metadata_describes_a_collection(action_name):
+    action = app.actions_manager.get_action(action_name)
+    fields = {
+        field["data_path"]: field for field in action.meta.output._to_json_schema()
+    }
+    assert fields["action_result.data.*.proxyAddresses.*"]["data_type"] == "string"
+    assert "action_result.data.*.proxyAddresses" not in fields

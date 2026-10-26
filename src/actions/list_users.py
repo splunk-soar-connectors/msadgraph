@@ -119,8 +119,8 @@ class OdataOutput(ActionOutput):
 
 
 class PasswordprofileOutput(ActionOutput):
-    enforceChangePasswordPolicy: bool
-    forceChangePasswordNextLogin: bool
+    forceChangePasswordNextSignIn: bool
+    forceChangePasswordNextSignInWithMfa: bool
     password: str
 
 
@@ -175,17 +175,16 @@ class ListUsersOutput(PermissiveActionOutput):
     officeLocation: str
     onPremisesDistinguishedName: str
     onPremisesSecurityIdentifier: str
-    otherMails: str = OutputField(
+    otherMails: list[str] = OutputField(
         cef_types=["email"], example_values=["user.test@outlook.com"]
     )
     passwordPolicies: str = OutputField(example_values=["None"])
-    passwordProfileValue: str = OutputField(alias="passwordProfile")
     passwordProfile: PasswordprofileOutput
     physicalDeliveryOfficeName: str
     postalCode: str = OutputField(example_values=["94303"])
     preferredLanguage: str = OutputField(example_values=["en-US"])
     provisionedPlans: list[ProvisionedplansOutput]
-    proxyAddresses: str = OutputField(example_values=["SMTP:user1@test.com"])
+    proxyAddresses: list[str] = OutputField(example_values=["SMTP:user1@test.com"])
     refreshTokensValidFromDateTime: str = OutputField(
         example_values=["2017-09-27T22:54:59Z"]
     )
