@@ -77,6 +77,10 @@ def test_app_factory_builds_an_independent_application() -> None:
     assert tuple(created_app.get_actions()) == EXPECTED_ACTIONS
 
 
+def test_advertised_python_version_matches_packaged_runtime() -> None:
+    assert app.app_meta_info["python_version"] == "3.13"
+
+
 def test_migrated_custom_views_use_sdk_tables() -> None:
     for action_name, expected_columns in EXPECTED_TABLE_COLUMNS.items():
         action = app.actions_manager.get_action(action_name)

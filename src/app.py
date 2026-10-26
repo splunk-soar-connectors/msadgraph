@@ -32,6 +32,7 @@ def create_msadgraph_app() -> App:
         publisher="Splunk",
         appid="f2a239df-acb2-47d6-861c-726a435cfe76",
         min_phantom_version="8.6.0",
+        python_version="3.13",
         fips_compliant=True,
         encrypt_cache_state=True,
         encrypt_ingest_state=True,
