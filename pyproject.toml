@@ -3,7 +3,7 @@ name = "msadgraph"
 version = "2.0.0"
 description = "Connects to Microsoft Active Directory using MS Graph REST API services to support various generic and investigative actions"
 license = "Copyright (c) 2022-2026 Splunk Inc."
-requires-python = ">=3.13, <3.15"
+requires-python = ">=3.13, <3.14"
 authors = [
     { name = "Mathieu A. Cormier" },
 ]
@@ -36,14 +36,9 @@ environments = [
     "sys_platform == 'linux' and platform_machine == 'aarch64' and python_version == '3.13'",
     "sys_platform == 'darwin' and platform_machine == 'x86_64' and python_version == '3.13'",
     "sys_platform == 'darwin' and platform_machine == 'arm64' and python_version == '3.13'",
-    "sys_platform == 'linux' and platform_machine == 'x86_64' and python_version == '3.14'",
-    "sys_platform == 'linux' and platform_machine == 'aarch64' and python_version == '3.14'",
-    "sys_platform == 'darwin' and platform_machine == 'x86_64' and python_version == '3.14'",
-    "sys_platform == 'darwin' and platform_machine == 'arm64' and python_version == '3.14'",
 ]
 required-environments = [
     "sys_platform == 'linux' and platform_machine == 'x86_64' and python_version == '3.13'",
-    "sys_platform == 'linux' and platform_machine == 'x86_64' and python_version == '3.14'",
 ]
 
 [tool.ruff]
