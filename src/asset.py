@@ -18,6 +18,10 @@ class Asset(BaseAsset):
     tenant_id: str = AssetField(description="Tenant (Tenant ID or Tenant Name)")
     client_id: str = AssetField(description="Application ID")
     client_secret: str = AssetField(description="Client Secret", sensitive=True)
+    delegated_oauth_scopes: str | None = AssetField(
+        description="Delegated OAuth scopes (space-separated; blank uses existing defaults)",
+        default=None,
+    )
     region: str | None = AssetField(
         description="Microsoft AD Region",
         default="Global",

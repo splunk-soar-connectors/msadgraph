@@ -24,6 +24,7 @@ from soar_sdk.auth import (
     ClientCredentialsFlow,
     OAuthBearerAuth,
 )
+from soar_sdk.auth.client import AuthorizationRequiredError
 from soar_sdk.auth.models import OAuthState, OAuthToken
 from soar_sdk.shims.phantom.encryption_helper import encryption_helper
 
@@ -40,11 +41,41 @@ from .consts import (
     AUTHORIZATION_NONCE_STATE_KEY,
     AUTHORIZATION_TIMEOUT_SECONDS,
     AUTHORIZATION_URL_STATE_KEY,
+    AUTHORIZATION_SCOPES_STATE_KEY,
+    DELEGATED_AUTHORIZED_SCOPES_STATE_KEY,
     MICROSOFT_GRAPH_BASE_URLS,
     MICROSOFT_GRAPH_DELEGATED_SCOPE,
     MICROSOFT_LOGIN_BASE_URLS,
     REDIRECT_URI_STATE_KEY,
 )
+
+
+def get_delegated_scopes(asset: Asset) -> str:
+    """Use explicit scopes verbatim apart from whitespace, or legacy defaults."""
+    configured = " ".join((asset.delegated_oauth_scopes or "").split())
+    return configured or MICROSOFT_GRAPH_DELEGATED_SCOPE
+
+
+def require_matching_delegated_scopes(
+    requested_scopes: str, authorized_scopes: object
+) -> None:
+    """Reject a changed scope configuration; unmarked sessions used defaults."""
+    if authorized_scopes is None:
+        authorized_scopes = MICROSOFT_GRAPH_DELEGATED_SCOPE
+    if not isinstance(authorized_scopes, str) or set(requested_scopes.split()) != set(
+        authorized_scopes.split()
+    ):
+        raise AuthorizationRequiredError(
+            "Delegated OAuth scopes have changed. Run test connectivity to "
+            "authorize this asset with the configured scopes."
+        )
+
+
+def get_pending_delegated_scopes(asset: Asset) -> str:
+    """Bind the callback and code exchange to the scopes used to start login."""
+    scopes = asset.auth_state.get(AUTHORIZATION_SCOPES_STATE_KEY)
+    require_matching_delegated_scopes(get_delegated_scopes(asset), scopes)
+    return scopes if isinstance(scopes, str) else MICROSOFT_GRAPH_DELEGATED_SCOPE
 
 
 def get_authorization_code_flow(
@@ -55,6 +86,7 @@ def get_authorization_code_flow(
 ) -> AuthorizationCodeFlow:
     tenant_id = asset.tenant_id.strip()
     login_url = MICROSOFT_LOGIN_BASE_URLS[asset.region or "Global"]
+    scope = get_delegated_scopes(asset)
     return AuthorizationCodeFlow(
         asset.auth_state,
         asset_id,
@@ -63,8 +95,8 @@ def get_authorization_code_flow(
         authorization_endpoint=(f"{login_url}/{tenant_id}/oauth2/v2.0/authorize"),
         token_endpoint=(f"{login_url}/{tenant_id}/oauth2/v2.0/token"),
         redirect_uri=redirect_uri,
-        scope=MICROSOFT_GRAPH_DELEGATED_SCOPE,
-        extra_token_params={"scope": MICROSOFT_GRAPH_DELEGATED_SCOPE},
+        scope=scope,
+        extra_token_params={"scope": scope},
         use_pkce=False,
     )
 
@@ -86,6 +118,9 @@ def get_client_credentials_flow(asset: Asset) -> ClientCredentialsFlow:
 def get_delegated_redirect_uri(asset: Asset, asset_id: str) -> str:
     """Migrate an authorized legacy asset before using its delegated session."""
     state = asset.auth_state.get_all()
+    require_matching_delegated_scopes(
+        get_delegated_scopes(asset), state.get(DELEGATED_AUTHORIZED_SCOPES_STATE_KEY)
+    )
     if "oauth" not in state:
         legacy_state = asset.auth_state.backend.load_state() or {}
         redirect_uri = legacy_state.get(REDIRECT_URI_STATE_KEY)
@@ -216,6 +251,7 @@ def begin_delegated_authorization(
     state.update(
         {
             AUTH_FLOW_MODE_STATE_KEY: AUTH_FLOW_MODE_DELEGATED,
+            AUTHORIZATION_SCOPES_STATE_KEY: get_delegated_scopes(asset),
             AUTHORIZATION_URL_STATE_KEY: authorization_url,
             REDIRECT_URI_STATE_KEY: redirect_uri,
             AUTHORIZATION_NONCE_STATE_KEY: session.state,
@@ -300,6 +336,7 @@ def clear_authorization_handoff(
     for key in (
         AUTHORIZATION_ERROR_STATE_KEY,
         AUTHORIZATION_URL_STATE_KEY,
+        AUTHORIZATION_SCOPES_STATE_KEY,
         AUTHORIZATION_NONCE_STATE_KEY,
         AUTHORIZATION_EXPIRES_AT_STATE_KEY,
         AUTH_FLOW_MODE_STATE_KEY,

@@ -26,6 +26,7 @@ from .auth import (
     clear_authorization_handoff,
     get_client_credentials_flow,
     get_graph_client,
+    get_pending_delegated_scopes,
 )
 from .consts import (
     ADMIN_CONSENT_COMPLETE_STATE_KEY,
@@ -37,6 +38,7 @@ from .consts import (
     AUTHORIZE_WAIT_TIME,
     AUTHORIZATION_POLL_ATTEMPTS,
     AUTHORIZATION_POLL_INTERVAL,
+    DELEGATED_AUTHORIZED_SCOPES_STATE_KEY,
     TEST_CONNECTIVITY_FAILED,
     TEST_CONNECTIVITY_PASSED,
 )
@@ -66,6 +68,14 @@ def run_test_connectivity(
             oauth_callback_url=oauth_callback_url,
             oauth_start_url=oauth_start_url,
         )
+        if (asset.delegated_oauth_scopes or "").strip():
+            logging.info(
+                "Delegated authentication succeeded with configured scopes. "
+                "Microsoft checks permissions when individual actions run; "
+                "the user-list connectivity check is not performed."
+            )
+            logging.info(TEST_CONNECTIVITY_PASSED)
+            return
 
     logging.info("Getting info about a single user to verify token")
     try:
@@ -124,9 +134,11 @@ def _run_delegated_authentication(
 
         logging.info("Code Received")
         logging.info("Generating access token")
+        scopes = get_pending_delegated_scopes(asset)
         token = flow.exchange_code_for_token(authorization_code)
         # Preserve the token after the SDK saves its pre-exchange session snapshot.
         flow.client._store_token(token)
+        asset.auth_state[DELEGATED_AUTHORIZED_SCOPES_STATE_KEY] = scopes
     finally:
         clear_authorization_handoff(asset, expected_nonce=nonce)
 

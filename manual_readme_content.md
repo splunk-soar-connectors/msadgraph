@@ -28,6 +28,7 @@ Save the asset before configuring its callback. Use these configuration fields:
 | **Tenant (Tenant ID or Tenant Name)** | Directory tenant ID or tenant name. |
 | **Application ID** | Application client ID. |
 | **Client Secret** | Client secret value. |
+| **Delegated OAuth scopes (space-separated; blank uses existing defaults)** | Optional delegated permission list. Replaces the default list; ignored for application authentication. |
 | **Microsoft AD Region** | Cloud containing the application and users; defaults to Global. |
 | **Admin Access Required** | Leave unchecked for delegated authentication; check for application authentication. |
 | **Admin Consent Already Provided** | For application authentication, check only after an administrator has granted the required application permissions. It does not grant consent itself. |
@@ -40,7 +41,8 @@ its presence is not a claim of current service availability.
 ### Delegated authentication
 
 Delegated actions run with both the application's granted permissions and the
-signed-in user's privileges. The connector requests this fixed scope set:
+signed-in user's privileges. Leave **Delegated OAuth scopes** blank to retain
+the existing scope request and preserve authorized sessions after upgrade:
 
 ```text
 offline_access Group.ReadWrite.All User.Read.All User.ReadWrite.All
@@ -53,6 +55,23 @@ These are the connector's requested scopes, not a least-privilege recommendation
 for every individual action. Review them with your tenant administrator before
 granting consent. The `offline_access` scope enables refresh-token use.
 
+To request a smaller permission set, enter space-separated scopes in
+**Delegated OAuth scopes**, for example `offline_access User.Read.All` for user
+reads or `offline_access Policy.Read.All` for named-location reads. Only the
+configured scopes are requested; the connector does not append its defaults or
+automatically add permissions after an action fails. Include `offline_access`
+if the asset needs refresh tokens; it is not added automatically. Without it,
+reauthorization may be necessary after the access token expires.
+
+After changing the effective scope set, save the asset and run **TEST
+CONNECTIVITY** to authorize it again. An existing session with a different scope
+configuration is not reused. Reordering scopes or changing whitespace does not
+change the effective set. Existing assets with this field blank do not require
+reauthorization solely because of this upgrade. Configuring scopes does not
+revoke previously granted consent in Entra; manage consent separately there.
+Do not change scope configuration during a pending login: restart connectivity
+instead. A start link or callback with changed scopes is rejected.
+
 1. Leave **Admin Access Required** unchecked and save the asset.
 1. Enable the asset's incoming webhooks and allow callbacks without SOAR
    authentication. Microsoft cannot supply a SOAR session cookie. The connector
@@ -64,8 +83,11 @@ granting consent. The `offline_access` scope enables refresh-token use.
 1. Open the separate authorization/start link displayed by the test in a browser
    that can reach both Microsoft sign-in and the SOAR webhook service. Sign in
    with the intended account and complete the consent prompt.
-1. Return to SOAR and wait for **Test Connectivity Passed**. The connector verifies
-   the token by querying users; the consent page alone does not prove connectivity.
+1. Return to SOAR and wait for **Test Connectivity Passed**. With default scopes,
+   the connector queries users. With explicit scopes, it completes the token
+   exchange without requiring unrelated user-list permissions. This verifies
+   authentication with the identity service, not Graph access or authorization
+   for every action; run the intended read action to verify that access.
 
 The SDK callback has the form below. The app directory, asset ID and port must
 come from the actual test log; do not copy the placeholders:
@@ -98,7 +120,9 @@ Changing application permissions requires fresh administrator consent.
 ### Permissions and privileged actions
 
 Grant only permissions needed for your operations. **TEST CONNECTIVITY** lists
-users, so the configured identity must be allowed to read users. Additional
+users for default delegated configuration and application authentication, so
+those paths require user-read access. Explicit delegated scopes do not require
+that connectivity query. Additional
 actions can require directory, group, session-revocation or Conditional Access
 permissions, and Microsoft Entra roles in addition to Graph permissions.
 The generic **make request** action does not bypass these requirements.
@@ -106,6 +130,40 @@ The generic **make request** action does not bypass these requirements.
 Use Microsoft's current [Graph permissions reference](https://learn.microsoft.com/en-us/graph/permissions-reference)
 and each API's permission table rather than assigning a blanket administrator role.
 An access token or successful connectivity test does not authorize every action.
+
+### Delegated permissions by action
+
+The table maps connector operations to Microsoft Graph delegated permissions
+for work or school accounts. It is not a runtime permission allowlist. Choose
+permissions for the actual properties, target users and group types you use;
+the linked Microsoft API documentation lists alternatives and special cases.
+Reading additional properties or expanded relationships can require additional
+permissions. Consent and the signed-in user's Entra privileges still apply.
+
+| Action | Delegated permissions and conditions |
+| --- | --- |
+| **list users** | `User.ReadBasic.All` for basic profiles; `User.Read.All` for broader user properties. See [List users](https://learn.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0). |
+| **list user attributes** | `User.Read` for the signed-in user's own profile; `User.ReadBasic.All` for other users' basic profiles or `User.Read.All` for broader reads. Without a user ID it lists users. Property-specific permissions may be needed. See [Get user](https://learn.microsoft.com/en-us/graph/api/user-get?view=graph-rest-1.0). |
+| **list user devices** | `User.Read` for the signed-in user's owned devices; `User.Read.All` for other users. Device properties may be limited without permission to read those objects. See [List ownedDevices](https://learn.microsoft.com/en-us/graph/api/user-list-owneddevices?view=graph-rest-1.0). |
+| **list groups**, **get group** | `GroupMember.Read.All` for basic group properties; `Group.Read.All` for broader reads. See [List groups](https://learn.microsoft.com/en-us/graph/api/group-list?view=graph-rest-1.0) and [Get group](https://learn.microsoft.com/en-us/graph/api/group-get?view=graph-rest-1.0). |
+| **list group members** | `GroupMember.Read.All` for membership; add permissions for member properties as needed. Hidden membership requires `Member.Read.Hidden` and an appropriate role. See [List members](https://learn.microsoft.com/en-us/graph/api/group-list-members?view=graph-rest-1.0). |
+| **validate group** | Queries the user's direct memberships: `User.Read` for the signed-in user, `User.Read.All` for another user. See [List memberOf](https://learn.microsoft.com/en-us/graph/api/user-list-memberof?view=graph-rest-1.0). |
+| **add user**, **remove user** | `GroupMember.ReadWrite.All` for user membership changes, plus a supported role or group ownership. Role-assignable groups additionally require `RoleManagement.ReadWrite.Directory` and a supported role such as Privileged Role Administrator. See [Add members](https://learn.microsoft.com/en-us/graph/api/group-post-members?view=graph-rest-1.0) and [Remove member](https://learn.microsoft.com/en-us/graph/api/group-delete-members?view=graph-rest-1.0). These actions change membership, not user existence. |
+| **enable user** | `User.EnableDisableAccount.All` and `User.Read.All`; the signed-in user needs a role permitted to manage the target. See [Update user](https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0). |
+| **disable user** | Permissions for **enable user**, plus `User.RevokeSessions.All`: this action disables the account and then revokes sessions. A failure in session revocation can occur after the account was disabled. |
+| **invalidate tokens** | `User.RevokeSessions.All`; target-user privilege restrictions still apply. See [revokeSignInSessions](https://learn.microsoft.com/en-us/graph/api/user-revokesigninsessions?view=graph-rest-1.0). |
+| **reset password** | `User-PasswordProfile.ReadWrite.All`, plus a supported administrator role for the target user; see **Password resets** below. |
+| **set user attribute** | Depends on the property. `User.ReadWrite.All` is a general update permission, but properties can require specific permissions, such as `User.ManageIdentities.All` for identities or `User-PasswordProfile.ReadWrite.All` for passwordProfile. Use the property-specific requirements in [Update user](https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0), including applicable roles. |
+| **list directory roles** | `RoleManagement.Read.Directory` and a supported signed-in user role. See [List directoryRoles](https://learn.microsoft.com/en-us/graph/api/directoryrole-list?view=graph-rest-1.0). |
+| **list named locations** | `Policy.Read.All` and a supported role such as Security Reader. See [List namedLocations](https://learn.microsoft.com/en-us/graph/api/conditionalaccessroot-list-namedlocations?view=graph-rest-1.0). |
+| **add cidr to named location**, **remove cidr from named location** | `Policy.Read.All` and `Policy.ReadWrite.ConditionalAccess`, with Security Administrator or Conditional Access Administrator. Both actions read and update an existing location. See [Update ipNamedLocation](https://learn.microsoft.com/en-us/graph/api/ipnamedlocation-update?view=graph-rest-1.0). |
+| **generate token** | No additional Graph permission; uses the stored refresh token. Request `offline_access` during delegated authorization to obtain refresh tokens. |
+| **make request** | Depends on the requested endpoint, HTTP method and properties. It uses the asset's existing permissions, not an expanded set. HTTP errors, including Graph permission errors, are returned in `status_code` and `response_body` under the generic action's existing contract. |
+| **test connectivity** | Explicit delegated scopes: no user-list permission required. Default delegated scopes: user-list check. It does not test permissions for every action. |
+
+Specific actions report Microsoft's permission errors without requesting broader
+access. A `403` can also indicate a missing role or tenant restriction, not just
+a missing scope. Do not grant unrelated permissions as an automatic remedy.
 
 ### Password resets
 

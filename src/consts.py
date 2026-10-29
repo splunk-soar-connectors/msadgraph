@@ -39,6 +39,8 @@ OAUTH_CALLBACK_ROUTE = "oauth_callback"
 
 AUTHORIZATION_ERROR_STATE_KEY = "authorization_error"
 AUTHORIZATION_URL_STATE_KEY = "authorization_url"
+AUTHORIZATION_SCOPES_STATE_KEY = "authorization_scopes"
+DELEGATED_AUTHORIZED_SCOPES_STATE_KEY = "delegated_authorized_scopes"
 REDIRECT_URI_STATE_KEY = "redirect_uri"
 AUTH_FLOW_MODE_STATE_KEY = "auth_flow_mode"
 AUTHORIZATION_NONCE_STATE_KEY = "authorization_nonce"
