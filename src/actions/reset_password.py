@@ -31,8 +31,10 @@ class ResetPasswordParams(Params):
         cef_types=["user id"],
         column_name="User ID",
     )
-    force_change: bool | None = Param(
-        description="Force user to change password on next login", default=True
+    force_change: bool = Param(
+        description="Force user to change password on next login",
+        required=False,
+        default=True,
     )
     temp_password: str = Param(
         description="Temporary password for user", sensitive=True

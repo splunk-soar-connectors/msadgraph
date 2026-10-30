@@ -79,13 +79,23 @@ def disable_user(
             if error := _graph_error(response):
                 raise RuntimeError(error)
 
-            response = graph_client.post(
-                f"/users/{encoded_user_id}/revokeSignInSessions"
-            )
-            if error := _graph_error(response):
-                raise RuntimeError(
-                    f"User {params.user_id} was disabled, but session revocation failed: {error}"
+            try:
+                response = graph_client.post(
+                    f"/users/{encoded_user_id}/revokeSignInSessions"
                 )
+                if error := _graph_error(response):
+                    raise RuntimeError(error)
+            except (
+                httpx.HTTPError,
+                OAuthClientError,
+                RuntimeError,
+                ValueError,
+            ) as error:
+                detail = str(error).strip() or type(error).__name__
+                raise ActionFailure(
+                    f"User {params.user_id} was disabled, but session revocation "
+                    f"could not be confirmed: {detail}"
+                ) from error
     except (httpx.HTTPError, OAuthClientError, RuntimeError, ValueError) as error:
         raise ActionFailure(str(error)) from error
 

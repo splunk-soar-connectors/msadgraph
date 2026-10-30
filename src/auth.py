@@ -107,9 +107,15 @@ def get_delegated_session(asset: Asset, asset_id: str) -> tuple[str, OAuthToken 
                         "Unable to decrypt the legacy OAuth session. Run test connectivity again."
                     ) from error
             if legacy_token:
-                # Legacy stores relative expires_in without the acquisition time.
-                # Refresh rather than treating an old access token as newly issued.
-                legacy_token["expires_at"] = 0
+                # Preserve recorded expiry. Older sessions may only have expires_in,
+                # which cannot establish expiry without the acquisition time.
+                expires_at = legacy_token.get("expires_at")
+                if (
+                    not isinstance(expires_at, (int, float))
+                    or isinstance(expires_at, bool)
+                    or not math.isfinite(expires_at)
+                ):
+                    legacy_token["expires_at"] = 0
                 token = OAuthToken.model_validate(legacy_token)
                 state["oauth"] = OAuthState(
                     token=token, client_id=asset.client_id

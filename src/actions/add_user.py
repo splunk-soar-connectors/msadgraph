@@ -69,7 +69,8 @@ def _graph_error(response: httpx.Response) -> str | None:
     error = payload.get("error") if isinstance(payload, dict) else payload
     if isinstance(error, dict):
         error = error.get("message", error)
-    return str(error)
+    message = str(error).strip() if error is not None else ""
+    return message or f"Microsoft Graph returned HTTP {response.status_code}"
 
 
 def add_user(params: AddUserParams, soar: SOARClient, asset: Asset) -> ActionOutput:
@@ -84,7 +85,7 @@ def add_user(params: AddUserParams, soar: SOARClient, asset: Asset) -> ActionOut
     except (httpx.HTTPError, OAuthClientError, RuntimeError, ValueError) as error:
         raise ActionFailure(str(error)) from error
 
-    if error:
+    if error is not None:
         status = (
             "User already in group"
             if (

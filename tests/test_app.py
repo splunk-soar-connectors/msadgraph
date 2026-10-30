@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
+from pydantic import ValidationError
 
 from src.app import app, create_msadgraph_app
+from src.actions.reset_password import ResetPasswordParams
 from src.actions.validate_group import ValidateGroupOutput, ValidateGroupSummary
 from src.asset import Asset
 
@@ -41,6 +43,31 @@ EXPECTED_ACTIONS = (
     "generate_token",
     "make_request",
 )
+
+
+@pytest.mark.parametrize(
+    ("parameters", "expected"),
+    [({}, True), ({"force_change": True}, True), ({"force_change": False}, False)],
+)
+def test_reset_password_force_change_default(parameters, expected) -> None:
+    params = ResetPasswordParams(
+        user_id="public-marker", temp_password="public-marker", **parameters
+    )
+    assert params.force_change is expected
+
+
+def test_reset_password_force_change_rejects_null() -> None:
+    with pytest.raises(ValidationError):
+        ResetPasswordParams(
+            user_id="public-marker", temp_password="public-marker", force_change=None
+        )
+
+
+def test_reset_password_force_change_manifest_default() -> None:
+    field = ResetPasswordParams._to_json_schema()["force_change"]
+    assert field["required"] is False
+    assert field["default"] is True
+
 
 EXPECTED_TABLE_COLUMNS = {
     "list_users": ("Display Name", "Object ID", "User Principal Name"),
