@@ -1,313 +1,271 @@
 # MS Graph for Active Directory
 
 Publisher: Splunk <br>
-Connector Version: 2.0.1 <br>
+Connector Version: 2.0.2 <br>
 Product Vendor: Microsoft <br>
 Product Name: MS Graph for Active Directory <br>
 Minimum Product Version: 8.6.0
 
 Connects to Microsoft Active Directory using MS Graph REST API services to support various generic and investigative actions
 
-## Prerequisites
-
-Before configuring this connector, ensure you have:
-
-- **Azure AD Administrator Access**: Global Administrator or Privileged Role Administrator role
-- **SOAR Platform Access**: Administrator privileges in Splunk SOAR
-- **Network Connectivity**: SOAR instance can reach `https://graph.microsoft.com` and `https://login.microsoftonline.com`
-
-## Azure AD Admin Role Requirements
-
-### Required Roles for Setup
-
-The following Azure AD roles can perform the initial setup and grant admin consent:
-
-| **Role** | **Can Grant Admin Consent** | **Least Privilege Option** |
-|----------|----------------------------|---------------------------|
-| **Global Administrator** | Yes | Not recommended for production |
-| **Privileged Role Administrator** | Yes | **Recommended** |
-| **Cloud Application Administrator** | Limited | Only for apps they manage |
-| **Application Administrator** | Limited | Only for apps they manage |
-
-**Recommendation**: Use **Privileged Role Administrator** as it provides the necessary permissions without the broad access of Global Administrator.
-
-### Operational Role Requirements
-
-For ongoing operations, specific actions require different privilege levels:
-
-- **Reset Password**: User Administrator role minimum
-- **Enable/Disable Users**: Privileged Authentication Administrator role minimum
-- **Manage Groups**: Groups Administrator role minimum
-- **Read-only Operations**: Directory Readers role sufficient
-
-### Reset Password Limitations
-
-The **reset password** action calls the Microsoft Graph Update user API and updates the user's `passwordProfile`
-property. This property contains the new temporary password and whether the user must change the password at next
-sign-in. Microsoft documents in the Update user API request body properties that `passwordProfile` cannot be used for
-federated users. For federated users, Microsoft Entra ID can return the error "Password cannot be changed for federated
-users." Password management for federated users should be handled through the federation provider instead.
-
-For more information, see the Microsoft Graph
-[Update user API request body](https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body).
-
-## Configuration Overview
-
-The MS Graph for Active Directory connector supports two authentication modes:
-
-1. **Delegated Permissions** (Interactive): Acts on behalf of a signed-in user
-1. **Application Permissions** (Non-interactive): Acts with its own identity
-
-## Step-by-Step Setup Guide
-
-### Step 1: Create Azure Application Registration
-
-1. Navigate to [Azure Portal](https://portal.azure.com)
-1. Go to **Azure Active Directory** → **App registrations**
-1. Click **+ New registration**
-1. Configure the application:
-   - **Name**: `SOAR-MSGraph-Connector` (or your preferred name)
-   - **Supported account types**: Select appropriate option for your organization
-   - **Redirect URI**: Leave blank for now (will be configured later)
-1. Click **Register**
-1. **Save the Application (client) ID** - you'll need this for the SOAR asset configuration
-
-### Step 2: Create Client Secret
-
-1. In your app registration, go to **Certificates & secrets**
-1. Click **+ New client secret**
-1. Add a description and set expiration (24 months recommended)
-1. Click **Add**
-1. **Immediately copy and securely store the secret value** - it cannot be retrieved later
-
-### Step 3: Configure API Permissions
-
-Choose **either** Delegated OR Application permissions based on your use case:
-
-#### Option A: Delegated Permissions (Recommended for most use cases)
-
-1. Go to **API permissions** → **+ Add a permission**
-1. Select **Microsoft Graph** → **Delegated permissions**
-1. Add the following permissions:
-   - `User.ReadWrite.All`
-   - `Directory.ReadWrite.All`
-   - `Directory.AccessAsUser.All`
-   - `User.ManageIdentities.All`
-   - `Group.ReadWrite.All`
-   - `GroupMember.ReadWrite.All`
-   - `RoleManagement.ReadWrite.Directory`
-   - `Policy.Read.All`
-   - `Policy.ReadWrite.ConditionalAccess`
-   - `offline_access`
-1. Click **Add permissions**
-1. Click **Grant admin consent for [Your Organization]**
-
-#### Note: **reset password** and **disable user** action is required minimun User Administrator role to be run with Delegated permissions
-
-#### Option B: Application Permissions (For automated scenarios)
-
-1. Go to **API permissions** → **+ Add a permission**
-1. Select **Microsoft Graph** → **Application permissions**
-1. Add the following permissions:
-   - `User.ReadWrite.All`
-   - `Directory.ReadWrite.All`
-   - `User.ManageIdentities.All`
-   - `Group.ReadWrite.All`
-   - `GroupMember.ReadWrite.All`
-   - `RoleManagement.ReadWrite.Directory`
-   - `Policy.Read.All`
-   - `Policy.ReadWrite.ConditionalAccess`
-   - `User-PasswordProfile.ReadWrite.All`
-1. Click **Add permissions**
-1. Click **Grant admin consent for [Your Organization]**
-
-#### Note: `User-PasswordProfile.ReadWrite.All` is required only for **reset password** action to be run with Application permissions
-
-### Step 4: Configure SOAR Asset
-
-1. In Splunk SOAR, go to **Apps** → **MS Graph for Active Directory**
-1. Click **+ ASSET**
-1. Configure the asset with the following information:
-
-## Asset Configuration
-
-### Configuration Fields Explained
-
-| **SOAR Field** | **Azure Portal Equivalent** | **Description** | **Required** |
-|----------------|----------------------------|-----------------|--------------|
-| **Tenant** | Directory (tenant) ID | Your Azure AD tenant identifier | Yes |
-| **Application ID** | Application (client) ID | The app registration's unique identifier | Yes |
-| **Client Secret** | Client secret value | The secret created in Step 2 | Yes |
-| **Microsoft AD Region** | N/A | Select your Microsoft cloud environment | No (defaults to Global) |
-| **Admin Access Required** | N/A | Check if using Application permissions | No |
-| **Admin Consent Already Provided** | N/A | Check if admin consent was granted in Azure | No |
-
-### Region Options
-
-| **Region** | **Endpoint** | **Use Case** |
-|------------|--------------|--------------|
-| **Global** | `graph.microsoft.com` | Most organizations |
-| **US Gov L4** | `graph.microsoft.us` | US Government |
-| **US Gov L5 (DOD)** | `dod-graph.microsoft.us` | US Department of Defense |
-| **Germany** | `graph.microsoft.de` | Microsoft Cloud Germany |
-| **China (21Vianet)** | `microsoftgraph.chinacloudapi.cn` | Microsoft Cloud China |
-
-### Step 5: Update Redirect URI
-
-1. After saving the SOAR asset, note the **POST incoming for MS Graph to this location** URL
-1. Return to your Azure app registration
-1. Go to **Authentication** → **+ Add a platform** → **Web**
-1. Add the redirect URI: `[SOAR_URL]/result`
-   - Example: `https://<phantom_host>/rest/handler/msgraphforactivedirectory_f2a239df-acb2-47d6-861c-726a435cfe76/<asset_name>/result`
-1. Click **Configure**
-
-## Understanding Consent Types
-
-### Azure Admin Consent vs SOAR Test Connectivity
-
-There are **two different consent processes** that serve different purposes:
-
-#### 1. Azure Admin Consent
-
-- **Where**: Azure Portal → App registrations → API permissions
-- **Purpose**: Grants the application permission to access Microsoft Graph APIs
-- **Who**: Azure AD administrator (Global Admin or Privileged Role Admin)
-- **When**: During initial setup in Azure Portal
-- **What it grants**: API access permissions to the application
-
-#### 2. SOAR Test Connectivity Consent
-
-- **Where**: SOAR platform → Asset → Test Connectivity
-- **Purpose**: Establishes the authentication flow and obtains access tokens
-- **Who**: User with appropriate Azure AD permissions for the requested operations
-- **When**: During SOAR asset configuration and testing
-- **What it grants**: Actual authentication tokens for API calls
-
-**Both consents are required** for the connector to function properly.
-
-### Simplified Consent Flow
-
-The traditional three-step process can be optimized:
-
-#### Traditional Flow (Can be simplified)
-
-1. Admin grants consent in Azure Portal
-1. Uncheck "Admin Consent Already Provided" in SOAR
-1. Run Test Connectivity with functional account
-
-#### Optimized Flow (Recommended)
-
-1. Admin grants consent in Azure Portal
-1. **Check "Admin Consent Already Provided" in SOAR**
-1. Run Test Connectivity - it will use application permissions directly
-
-**Recommendation**: Use the optimized flow by checking "Admin Consent Already Provided" after granting consent in Azure Portal.
-
-## Permissions Reference
-
-### Action-Specific Permissions
-
-The following table shows the minimum required permissions for each action:
-
-| **Action** | **Minimum Delegated Permission** | **Minimum Application Permission** | **Azure AD Role Required** |
-|------------|----------------------------------|-----------------------------------|---------------------------|
-| **Test Connectivity** | `User.Read` | `User.Read.All` | Directory Readers |
-| **List Users** | `User.Read.All` | `User.Read.All` | Directory Readers |
-| **Reset Password** | `User.ReadWrite.All` | `User-PasswordProfile.ReadWrite.All` | User Administrator |
-| **Disable Tokens** | `User.RevokeSessions.All` | `User.RevokeSessions.All` | Directory Readers |
-| **Enable/Disable User** | `User.ReadWrite.All` | `User.ReadWrite.All` | Privileged Authentication Administrator |
-| **List User Devices** | `User.Read` | `Directory.Read.All` | Directory Readers |
-| **List User Attributes** | `User.Read.All` | `User.Read.All` | Directory Readers |
-| **Set User Attribute** | `User.ReadWrite.All` | `User.ReadWrite.All` | User Administrator |
-| **Add/Remove User (Group)** | `GroupMember.ReadWrite.All` | `GroupMember.ReadWrite.All` | Groups Administrator |
-| **List Groups** | `Group.Read.All` | `Group.Read.All` | Directory Readers |
-| **Get Group** | `Group.Read.All` | `Group.Read.All` | Directory Readers |
-| **List Group Members** | `GroupMember.Read.All` | `GroupMember.Read.All` | Directory Readers |
-| **Validate Group** | `User.Read.All` | `User.Read.All` | Directory Readers |
-| **List Directory Roles** | `RoleManagement.Read.Directory` | `RoleManagement.Read.Directory` | Directory Readers |
-| **List Named Locations** | `Policy.Read.All` | `Policy.Read.All` | Conditional Access Administrator |
-| **Add CIDR to Named Location** | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | Conditional Access Administrator |
-| **Remove CIDR from Named Location** | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess` | Conditional Access Administrator |
-
-### Full vs Minimum Permissions
-
-**Current Configuration** (Full permissions - maximum capability):
-
-- `User.ReadWrite.All`, `Directory.ReadWrite.All`, `User.ManageIdentities.All`
-- `Group.ReadWrite.All`, `GroupMember.ReadWrite.All`, `RoleManagement.ReadWrite.Directory`
-- `Policy.Read.All`, `Policy.ReadWrite.ConditionalAccess`
-
-**Minimum Required** (For read-only operations):
-
-- `User.Read.All`, `Group.Read.All`, `GroupMember.Read.All`
-
-## Test Connectivity
-
-### For Delegated Permissions
-
-1. Click **TEST CONNECTIVITY** on the asset
-1. A popup will display a URL - click to open in a new tab
-1. Sign in with an account that has the necessary Azure AD permissions
-1. Review and accept the permission request
-1. Close the browser tab and return to SOAR
-1. The test should complete successfully
-
-### For Application Permissions
-
-1. Ensure **Admin Access Required** and **Admin Consent Already Provided** are checked
-1. Click **TEST CONNECTIVITY**
-1. The test will authenticate using the application's own identity
-1. No interactive login is required
-
-## User Permissions Setup
-
-To complete the authorization process, this app needs permission to view assets, which is not granted by default.
-
-1. **Check Asset User**
-
-   - Navigate to **Asset Settings > Advanced**
-   - Note the user listed under **Select a user on behalf of which automated actions can be executed**
-   - Default user is typically **automation**
-
-1. **Create Asset Viewer Role**
-
-   - Go to **Administration > User Management > Roles & Permissions > + ROLE**
-   - **Name**: "Asset Viewer" (or similar)
-   - **Users tab**: Add the user from step 1
-   - **Permissions tab**: Grant **View Assets** privilege
-   - Click **SAVE**
-
-## State File Permissions
-
-The connector stores authentication tokens in a state file that requires proper permissions:
-
-### File Locations
-
-- **Root Install**: `/opt/phantom/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}_state.json`
-- **Non-Root Install**: `/<PHANTOM_HOME_DIRECTORY>/local_data/app_states/f2a239df-acb2-47d6-861c-726a435cfe76/{asset_id}_state.json`
-
-### Required Permissions
-
-- **File Rights**: `rw-rw-r--` (664) (The SOAR user should have read and write access for the state file)
-- **File Owner**: Appropriate SOAR user
-- **Access**: SOAR user must have read and write access
-
-## Port Details
-
-The app uses HTTP/ HTTPS protocol for communicating with the Microsoft Graph server. Below are the
-default ports used by the Splunk SOAR Connector.
-
-| Service Name | Transport Protocol | Port |
-|--------------|--------------------|------|
-| https | tcp | 443 |
-
-## Microsoft Documentation References
-
-- [Microsoft Graph Permissions Overview](https://learn.microsoft.com/en-us/graph/permissions-overview)
-- [Microsoft Graph Permissions Reference](https://learn.microsoft.com/en-us/graph/permissions-reference)
-- [Azure AD Built-in Roles](https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference)
-- [Microsoft Graph API Documentation](https://learn.microsoft.com/en-us/graph/)
-- [Application vs Delegated Permissions](https://learn.microsoft.com/en-us/graph/auth/auth-concepts#delegated-and-application-permissions)
+## Setup
+
+This SDK-based connector supports delegated authorization-code authentication
+and application authentication using client credentials. It requires a SOAR
+installation with Python 3.13. Existing custom views are replaced by SDK tables.
+
+### Register the Microsoft Entra application
+
+1. Open **App registrations** in the Microsoft Entra admin center and register
+   an application for your tenant.
+1. Record the **Application (client) ID** and **Directory (tenant) ID**.
+1. Under **Certificates & secrets**, create a client secret. Copy its **Value**,
+   not its secret ID, into a secure store; manage expiration according to your
+   organization's policy.
+1. Under **API permissions**, add Microsoft Graph permissions for the chosen
+   authentication mode and grant administrator consent where required. Delegated
+   and application permissions are distinct; granting one does not grant the other.
+
+See Microsoft's [delegated authorization guide](https://learn.microsoft.com/en-us/graph/auth-v2-user)
+and [application authorization guide](https://learn.microsoft.com/en-us/graph/auth-v2-service).
+
+### Configure the SOAR asset
+
+Save the asset before configuring its callback. Use these configuration fields:
+
+| Field | Value |
+| --- | --- |
+| **Tenant (Tenant ID or Tenant Name)** | Directory tenant ID or tenant name. |
+| **Application ID** | Application client ID. |
+| **Client Secret** | Client secret value. |
+| **Microsoft AD Region** | Cloud containing the application and users; defaults to Global. |
+| **Admin Access Required** | Leave unchecked for delegated authentication; check for application authentication. |
+| **Admin Consent Already Provided** | For application authentication, check only after an administrator has granted the required application permissions. It does not grant consent itself. |
+
+SOAR must reach the selected cloud's Microsoft identity and Graph endpoints over
+HTTPS. National-cloud applications and permissions must belong to that cloud.
+The Germany option is retained for legacy compatibility with a retired service;
+its presence is not a claim of current service availability.
+
+### Delegated authentication
+
+Delegated actions run with both the application's granted permissions and the
+signed-in user's privileges. The connector requests this fixed scope set:
+
+```text
+offline_access Group.ReadWrite.All User.Read.All User.ReadWrite.All
+Directory.ReadWrite.All Directory.AccessAsUser.All User.ManageIdentities.All
+GroupMember.ReadWrite.All RoleManagement.ReadWrite.Directory Policy.Read.All
+Policy.ReadWrite.ConditionalAccess
+```
+
+These are the connector's requested scopes, not a least-privilege recommendation
+for every individual action. Review them with your tenant administrator before
+granting consent. The `offline_access` scope enables refresh-token use.
+
+1. Leave **Admin Access Required** unchecked and save the asset.
+1. Enable the asset's incoming webhooks and allow callbacks without SOAR
+   authentication. Microsoft cannot supply a SOAR session cookie. The connector
+   checks the pending OAuth state before accepting a callback.
+1. Start **TEST CONNECTIVITY**. Its log displays **Using OAuth URL:** followed by
+   the callback URL. Register that exact URL as a **Web** redirect URI under the
+   Entra application's **Authentication** settings. If necessary, let this first
+   attempt time out, then restart it after saving the redirect URI.
+1. Open the separate authorization/start link displayed by the test in a browser
+   that can reach both Microsoft sign-in and the SOAR webhook service. Sign in
+   with the intended account and complete the consent prompt.
+1. Return to SOAR and wait for **Test Connectivity Passed**. The connector verifies
+   the token by querying users; the consent page alone does not prove connectivity.
+
+The SDK callback has the form below. The app directory, asset ID and port must
+come from the actual test log; do not copy the placeholders:
+
+```text
+https://<soar-host>:<webhook-port>/webhook/<app-directory>/<asset-id>/oauth_callback
+```
+
+SDK 7.0.3 uses the SOAR system base URL and the platform-configured webhook port
+(default 3500). Ensure the browser can reach that endpoint with a trusted TLS
+certificate. Register `oauth_callback`, not the `oauth_start` link and not the
+legacy `/rest/handler/.../result` URL. Do not append `/result` to a displayed URL.
+Changing the host, webhook port or asset requires checking the redirect registration.
+
+### Application authentication (client credentials)
+
+Application actions use the app's identity, not a signed-in user's delegated
+token. Configure Microsoft Graph **Application permissions**, grant administrator
+consent, then check both **Admin Access Required** and **Admin Consent Already
+Provided**. **TEST CONNECTIVITY** obtains an app token and queries users without
+interactive sign-in. This pre-consented path does not need an OAuth callback.
+
+Alternatively, leave **Admin Consent Already Provided** unchecked to request
+administrator consent through **TEST CONNECTIVITY**. That initial consent flow
+does require the reachable webhook, exact Web redirect URI and browser steps
+described above. After successful consent, check **Admin Consent Already
+Provided** and save the asset for subsequent non-interactive connectivity tests.
+Changing application permissions requires fresh administrator consent.
+
+### Permissions and privileged actions
+
+Grant only permissions needed for your operations. **TEST CONNECTIVITY** lists
+users, so the configured identity must be allowed to read users. Additional
+actions can require directory, group, session-revocation or Conditional Access
+permissions, and Microsoft Entra roles in addition to Graph permissions.
+The generic **make request** action does not bypass these requirements.
+
+Use Microsoft's current [Graph permissions reference](https://learn.microsoft.com/en-us/graph/permissions-reference)
+and each API's permission table rather than assigning a blanket administrator role.
+An access token or successful connectivity test does not authorize every action.
+
+### Password resets
+
+**reset password** updates the user's `passwordProfile`. The least-privileged
+Graph permission for that property is `User-PasswordProfile.ReadWrite.All`.
+Microsoft also imposes role requirements: delegated resets of non-administrators
+require an appropriate administrator such as User Administrator; resetting
+administrators requires higher privileges. App-only resets also require a
+supported Entra role for the application. Consult the current
+[Update user requirements](https://learn.microsoft.com/en-us/graph/api/user-update?view=graph-rest-1.0#request-body)
+for the target user's role and tenant.
+
+Microsoft enforces the effective password policy. This connector does not invent
+additional complexity rules, and it excludes the temporary password from its
+returned action parameters. Password-profile updates cannot be used for federated
+users; manage those passwords through the federation provider. Use an approved
+test account when validating resets and set **force_change** as appropriate.
+
+### Troubleshooting and upgrades
+
+- A redirect mismatch means the Entra **Web** redirect URI must match the callback
+  logged by the current asset, including scheme, host, port and path.
+- A connectivity timeout can indicate an unreachable webhook, disabled incoming
+  webhooks, an additional SOAR authentication requirement, or incomplete Microsoft
+  sign-in. Check those prerequisites before changing credentials or permissions.
+  Pending authorization links expire with the connectivity attempt; start a new
+  **TEST CONNECTIVITY** attempt instead of completing an expired link.
+- Delegated **generate token** explicitly refreshes an existing session. When a
+  usable legacy authorization code is migrated, its successful token exchange
+  completes the action without requiring a second refresh. That new token can be
+  used even if the exchange did not issue a refresh token; later regeneration
+  requires **TEST CONNECTIVITY** if no refresh token is available.
+- A Graph authorization error requires checking permission type, consent, the
+  selected cloud, the target object and applicable Entra roles. Re-run connectivity
+  after replacing an expired client secret.
+- Legacy delegated sessions are migrated when usable state is available. If
+  migration cannot recover the session, run **TEST CONNECTIVITY** to authorize the
+  asset again. Do not manually edit token state or weaken state-file permissions.
+- SDK tables may present results differently from legacy templates. Four legacy
+  reciprocal undo metadata links are omitted; the corresponding inverse actions
+  remain available. Review playbooks that depend on those UI conveniences.
+
+Keep client secrets, access tokens, authorization codes and passwords out of
+support reports. Share action IDs and sanitized Microsoft error details instead.
+
+### Corrected output datapaths and playbook migration
+
+The SDK corrects collection and password-profile metadata from the legacy app.
+These corrections affect the fields offered by the playbook editor. They do not
+convert Graph arrays into strings or rename properties in Microsoft's response.
+Review saved datapath selections and custom code before upgrading; existing
+playbooks are not rewritten automatically.
+
+In this table, `P` means the full prefix `action_result.data.*.`. Append the
+listed suffix to that prefix when reviewing a datapath.
+
+| Actions | Legacy suffix/type | SDK suffix/type | Playbook change |
+| --- | --- | --- | --- |
+| **list users**, **list user attributes** | `otherMails` / string | `otherMails.*` / string elements | Select the array elements; handle zero, one or multiple email values. |
+| **list users**, **list user attributes**, **list groups**, **get group** | `proxyAddresses` / string | `proxyAddresses.*` / string elements | Select the array elements and review formatting, comparisons and iteration. |
+| **list users**, **list user attributes** | `passwordProfile` / string | Object container with nested datapaths | Select the required property rather than treating the whole profile as a scalar string. |
+| **list users**, **list user attributes** | `passwordProfile.forceChangePasswordNextLogin` / boolean | `passwordProfile.forceChangePasswordNextSignIn` / boolean | Replace the obsolete property selection with the current Graph property. |
+| **list users**, **list user attributes** | `passwordProfile.enforceChangePasswordPolicy` / boolean | No direct replacement | Review the playbook's intended policy check. Do not automatically map this to a different password-profile flag. |
+| **list users**, **list user attributes** | Not previously advertised | `passwordProfile.forceChangePasswordNextSignInWithMfa` / boolean | This is an additional selectable property, not a replacement for `enforceChangePasswordPolicy`. |
+
+For example, the full email element datapath is
+`action_result.data.*.otherMails.*`, replacing the legacy advertised
+`action_result.data.*.otherMails`. The full corrected sign-in flag is
+`action_result.data.*.passwordProfile.forceChangePasswordNextSignIn`.
+`action_result.data.*.passwordProfile.password` is unchanged in metadata; a
+published datapath does not guarantee that Graph returns the property for a
+particular request. Preserve missing-value handling and validate affected
+playbook conditions with the output of an authorized read action.
+
+### SDK action behavior changes
+
+The SDK port includes the following output and validation changes. Review
+playbook conditions that depend on empty action data, unusual responses,
+summary selections or message text when upgrading from the legacy app.
+
+#### Token-revocation response data
+
+**disable tokens** (action identifier `invalidate_tokens`) now returns Graph's
+JSON response in action data, including `action_result.data.*.value` when Graph
+supplies that property. The legacy handler discarded the response body and
+returned no action data. This is an enhancement to the available output, not a
+change to the existing HTTP/API error handling or `action_result.summary.status`.
+
+For example, a Graph response of `{"value": true}` is now available as an
+action-data record. A successful response without a body remains accepted and
+does not guarantee that `value` is present. Use the action status for request
+success or failure, and inspect `value` when the playbook needs that returned
+property. Update conditions that previously treated empty action data as a
+requirement for success; absence or presence of a data record alone is not a
+success test.
+
+#### List requests, pagination and counts
+
+These changes apply to **list users**, **list groups**, **list group members**,
+**list user devices**, **list user attributes** and **list named locations**:
+
+- Pagination still uses the continuation's `$skiptoken`. A nonempty continuation
+  that has an invalid type or lacks a usable skip token fails the action. The
+  legacy helper could stop pagination and return success with earlier pages
+  when it could not extract that token. Do not treat that former partial-success
+  behavior as proof that all records were retrieved.
+- Collection responses must contain a `value` array of objects. Invalid
+  collection shapes fail rather than being returned as an apparent result.
+  **list user attributes** also accepts an unwrapped object response, including
+  the single-user response.
+- A normal `{"value": []}` response returns no records. Count summaries, where
+  provided, are zero, as in the legacy app.
+- The SDK does not add the legacy synthetic `"Empty response"` record when a
+  page begins with an empty object. For `{"value": [{}]}`, the empty object
+  remains one returned record. Counts use returned objects, without an extra
+  sentinel. In particular, **list group members** reports `num_users=1` for
+  this case; the legacy handler counted both the object and the sentinel.
+
+For **list users**, **list groups**, **get group**, **list group members**,
+**list user attributes** and **list user devices**, a `select_string` containing
+only whitespace and commas is treated as unspecified. The legacy handlers
+could send `$select=""`; the SDK omits `$select` after discarding empty field
+names. Nonempty selections still trim whitespace and discard empty names.
+**list named locations** already omitted empty selections in the legacy app.
+
+#### Summary fields and messages
+
+The following populated legacy summary datapaths remain the fields to use:
+
+| Actions | Summary datapath |
+| --- | --- |
+| **list users**, **list group members** | `action_result.summary.num_users` |
+| **list groups** | `action_result.summary.num_groups` |
+| **list named locations** | `action_result.summary.num_named_locations` |
+| **get group**, **list user attributes**, **list user devices**, **disable tokens** | `action_result.summary.status` |
+
+The old manifest advertised `action_result.summary.display_name` for **get
+group** and `action_result.summary.num_members` for **list group members**,
+but those legacy handlers did not populate these fields. They are no longer
+advertised by the SDK action schemas. For the group name, select
+`action_result.data.*.displayName`; for the member count, select
+`action_result.summary.num_users`.
+
+**list users** still advertises the optional `result_found` and `total_results`
+summary fields, but its handler populates `num_users`, as the legacy handler
+did. Do not assume the optional fields are present.
+
+The SDK supplies explicit human-readable messages such as `Num users: N` and
+`Num groups: N`. Use the summary datapaths for numeric comparisons rather than
+parsing message text. Review conditions that match exact legacy messages.
 
 ### Configuration variables
 
@@ -324,7 +282,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Use supplied credentials to generate a token with MS Graph <br>
+[test connectivity](#action-test-connectivity) - test connectivity <br>
 [list users](#action-list-users) - Get a list of users <br>
 [reset password](#action-reset-password) - Reset or set a user's password in a Microsoft AD environment <br>
 [disable tokens](#action-disable-tokens) - Invalidate all active refresh tokens for a user in a Microsoft AD environment <br>
@@ -343,14 +301,22 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [list named locations](#action-list-named-locations) - List named locations in Entra Conditional Access <br>
 [add cidr to named location](#action-add-cidr-to-named-location) - Add a CIDR range to an IP-based named location in Entra Conditional Access <br>
 [remove cidr from named location](#action-remove-cidr-from-named-location) - Remove a CIDR range from an IP-based named location in Entra Conditional Access <br>
-[generate token](#action-generate-token) - Generate a token
+[generate token](#action-generate-token) - Generate a token <br>
+[make request](#action-make-request) - Call Microsoft Graph with the asset's authentication; return its HTTP status and raw body.
+
+Uses the asset's configured Microsoft cloud. Supply an explicit /v1.0/ or
+/beta/ path. Redirects are not followed. HTTP errors are returned as data;
+invalid inputs, authentication and transport failures fail the action.
+One response is returned; pagination is not followed automatically.
 
 ## action: 'test connectivity'
 
-Use supplied credentials to generate a token with MS Graph
+test connectivity
 
 Type: **test** <br>
 Read only: **True**
+
+Basic test for app.
 
 #### Action Parameters
 
@@ -358,7 +324,12 @@ No parameters are required for this action
 
 #### Action Output
 
-No Output
+DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
+--------- | ---- | -------- | --------------
+action_result.status | string | | success failure |
+action_result.message | string | | |
+summary.total_objects | numeric | | 1 |
+summary.total_objects_successful | numeric | | 1 |
 
 ## action: 'list users'
 
@@ -382,11 +353,12 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.expand_string | string | | manager |
-action_result.parameter.filter_string | string | | startswith(displayName,'User') |
-action_result.parameter.select_string | string | | displayName |
-action_result.parameter.use_advanced_query | boolean | | True False |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.filter_string | string | | |
+action_result.parameter.select_string | string | | |
+action_result.parameter.expand_string | string | | |
+action_result.parameter.use_advanced_query | boolean | | |
 action_result.data.\*.accountEnabled | boolean | | True False |
 action_result.data.\*.ageGroup | string | | |
 action_result.data.\*.assignedLicenses.\*.skuId | string | | 189a915c-fe4f-4ffa-bde4-85b9628d07a0 |
@@ -422,11 +394,10 @@ action_result.data.\*.odata.type | string | | test.DirectoryServices.User |
 action_result.data.\*.officeLocation | string | | |
 action_result.data.\*.onPremisesDistinguishedName | string | | |
 action_result.data.\*.onPremisesSecurityIdentifier | string | | |
-action_result.data.\*.otherMails | string | `email` | user.test@outlook.com |
+action_result.data.\*.otherMails.\* | string | `email` | user.test@outlook.com |
 action_result.data.\*.passwordPolicies | string | | None |
-action_result.data.\*.passwordProfile | string | | |
-action_result.data.\*.passwordProfile.enforceChangePasswordPolicy | boolean | | True False |
-action_result.data.\*.passwordProfile.forceChangePasswordNextLogin | boolean | | True False |
+action_result.data.\*.passwordProfile.forceChangePasswordNextSignIn | boolean | | True False |
+action_result.data.\*.passwordProfile.forceChangePasswordNextSignInWithMfa | boolean | | True False |
 action_result.data.\*.passwordProfile.password | string | | |
 action_result.data.\*.physicalDeliveryOfficeName | string | | |
 action_result.data.\*.postalCode | string | | 94303 |
@@ -434,7 +405,7 @@ action_result.data.\*.preferredLanguage | string | | en-US |
 action_result.data.\*.provisionedPlans.\*.capabilityStatus | string | | Enabled |
 action_result.data.\*.provisionedPlans.\*.provisioningStatus | string | | Success |
 action_result.data.\*.provisionedPlans.\*.service | string | | exchange |
-action_result.data.\*.proxyAddresses | string | | SMTP:user1@test.com |
+action_result.data.\*.proxyAddresses.\* | string | | SMTP:user1@test.com |
 action_result.data.\*.refreshTokensValidFromDateTime | string | | 2017-09-27T22:54:59Z |
 action_result.data.\*.showInAddressList | string | | |
 action_result.data.\*.sipProxyAddress | string | `email` | user@test.com |
@@ -451,7 +422,6 @@ action_result.data.\*.userType | string | | Member |
 action_result.summary.num_users | numeric | | 8 |
 action_result.summary.result_found | boolean | | True False |
 action_result.summary.total_results | numeric | | 7 |
-action_result.message | string | | Successfully listed users |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -476,12 +446,12 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.force_change | boolean | | True False |
-action_result.parameter.user_id | string | `user id` | ee3dc4f2-70f9-446f-a19e-6b4e95ba030d user@test.com |
-action_result.data | string | | |
-action_result.summary.status | string | | Successfully reset user password |
-action_result.message | string | | Status: Successfully reset user password |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.user_id | string | `user id` | |
+action_result.parameter.force_change | boolean | | |
+action_result.parameter.temp_password | string | | |
+action_result.summary.status | string | | Successfully reset password for user@test.com |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -502,15 +472,14 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.user_id | string | `user id` | ee3dc4f2-70f9-446f-a19e-6b4e95ba030d user@test.com |
-action_result.data | string | | |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.user_id | string | `user id` | |
 action_result.data.\*.@odata.context | string | | https://graph.test.com/v1.0/$metadata#Edm.Boolean |
 action_result.data.\*.odata.metadata | string | `url` | https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#Edm.Null |
 action_result.data.\*.odata.null | boolean | | True False |
 action_result.data.\*.value | boolean | | True False |
 action_result.summary.status | string | | Successfully disabled tokens |
-action_result.message | string | | Successfully invalidated tokens Status: Successfully disabled tokens |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -531,11 +500,10 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.user_id | string | `user id` | user@test.com |
-action_result.data | string | | |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.user_id | string | `user id` | |
 action_result.summary.status | string | | Successfully enabled user user@test.com |
-action_result.message | string | | Status: Successfully enabled user user@test.com |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -556,11 +524,10 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.user_id | string | `user id` | user@test.com |
-action_result.data | string | | |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.user_id | string | `user id` | |
 action_result.summary.status | string | | Successfully disabled user user@test.com and revoked sign-in sessions. Already-issued access tokens for non-CAE resources may remain valid until they expire. |
-action_result.message | string | | Status: Successfully disabled user user@test.com and revoked sign-in sessions. Already-issued access tokens for non-CAE resources may remain valid until they expire. |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -584,10 +551,11 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.select_string | string | | displayName |
-action_result.parameter.user_id | string | `user id` | user@test.com |
-action_result.data.\*.@odata.type | string | | #test.graph.device |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.user_id | string | `user id` | |
+action_result.parameter.select_string | string | | |
+action_result.data.\*.odata.type | string | | #test.graph.device |
 action_result.data.\*.accountEnabled | boolean | | True False |
 action_result.data.\*.alternativeSecurityIds.\*.identityProvider | string | | |
 action_result.data.\*.alternativeSecurityIds.\*.key | string | | WAA1ADAAOQA6ADwAUwBIAEEAMQAtAFQAUAAtAFAAVQBCAEsARQBZAD4AOQA5AEEARQAwADgAOABDAEUANAA1ADgAMABCADcAQgBGAEEARQA2ADEAQQBCADYANAA3ADYANgA5ADUAOAAzAEQANABFAEYARQA5ADYAOAAyAHkAcQBSAEIANwBrAGEAMQA4AEoATAByACsAegB4AE8AYwB6AE8AYgBNAFEANQBZAEgAbgB0AFQAdgBOAG0AbgA5AEQAZQA2AFgAVQBUAGgAcwBFAD0A |
@@ -622,24 +590,22 @@ action_result.data.\*.extensionAttributes.extensionAttribute8 | string | | |
 action_result.data.\*.extensionAttributes.extensionAttribute9 | string | | |
 action_result.data.\*.externalSourceName | string | | |
 action_result.data.\*.id | string | | |
-action_result.data.\*.isCompliant | boolean | | |
-action_result.data.\*.isManaged | boolean | | |
+action_result.data.\*.isCompliant | boolean | | True False |
+action_result.data.\*.isManaged | boolean | | True False |
 action_result.data.\*.isRooted | string | | |
 action_result.data.\*.managementType | string | | |
 action_result.data.\*.manufacturer | string | | |
 action_result.data.\*.mdmAppId | string | | |
 action_result.data.\*.model | string | | |
 action_result.data.\*.onPremisesLastSyncDateTime | string | | |
-action_result.data.\*.onPremisesSyncEnabled | boolean | | |
+action_result.data.\*.onPremisesSyncEnabled | boolean | | True False |
 action_result.data.\*.operatingSystem | string | | Windows |
 action_result.data.\*.operatingSystemVersion | string | | 10.0.18362.0 |
 action_result.data.\*.profileType | string | | RegisteredDevice |
 action_result.data.\*.registrationDateTime | string | | 2019-09-26T03:42:15Z |
 action_result.data.\*.sourceType | string | | |
 action_result.data.\*.trustType | string | | Workplace |
-action_result.summary | string | | |
-action_result.summary.status | string | | Successfully retrieved owned devices for user test@user.test.com |
-action_result.message | string | | Status: Successfully retrieved owned devices for user test@user.test.com |
+action_result.summary.status | string | | Successfully retrieved owned devices for user user@test.com |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -665,12 +631,14 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.expand_string | string | | manager |
-action_result.parameter.select_string | string | | displayName |
-action_result.parameter.use_advanced_query | boolean | | True False |
-action_result.parameter.user_id | string | `user id` | user@test.com |
-action_result.data.\*.@odata.context | string | | https://graph.test.com/v1.0/$metadata#users/$entity |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.user_id | string | `user id` | |
+action_result.parameter.select_string | string | | |
+action_result.parameter.expand_string | string | | |
+action_result.parameter.use_advanced_query | boolean | | |
+action_result.data.\*.odata.metadata | string | | https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#directoryObjects/@Element |
+action_result.data.\*.odata.type | string | | test.DirectoryServices.User |
 action_result.data.\*.accountEnabled | boolean | | True False |
 action_result.data.\*.ageGroup | string | | |
 action_result.data.\*.assignedLicenses.\*.skuId | string | | f30db892-07e9-47e9-837c-80727f46fd3d |
@@ -706,16 +674,13 @@ action_result.data.\*.mobile | string | | |
 action_result.data.\*.mobilePhone | string | | |
 action_result.data.\*.objectId | string | | 59f51194-1998-4932-a8ac-468e59374edc |
 action_result.data.\*.objectType | string | | User |
-action_result.data.\*.odata.metadata | string | | https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#directoryObjects/@Element |
-action_result.data.\*.odata.type | string | | test.DirectoryServices.User |
 action_result.data.\*.officeLocation | string | | |
 action_result.data.\*.onPremisesDistinguishedName | string | | |
 action_result.data.\*.onPremisesSecurityIdentifier | string | | |
-action_result.data.\*.otherMails | string | `email` | user@test.com |
+action_result.data.\*.otherMails.\* | string | `email` | user@test.com |
 action_result.data.\*.passwordPolicies | string | | |
-action_result.data.\*.passwordProfile | string | | |
-action_result.data.\*.passwordProfile.enforceChangePasswordPolicy | boolean | | True False |
-action_result.data.\*.passwordProfile.forceChangePasswordNextLogin | boolean | | True False |
+action_result.data.\*.passwordProfile.forceChangePasswordNextSignIn | boolean | | True False |
+action_result.data.\*.passwordProfile.forceChangePasswordNextSignInWithMfa | boolean | | True False |
 action_result.data.\*.passwordProfile.password | string | | |
 action_result.data.\*.physicalDeliveryOfficeName | string | | |
 action_result.data.\*.postalCode | string | | |
@@ -723,7 +688,7 @@ action_result.data.\*.preferredLanguage | string | | |
 action_result.data.\*.provisionedPlans.\*.capabilityStatus | string | | Enabled |
 action_result.data.\*.provisionedPlans.\*.provisioningStatus | string | | Success |
 action_result.data.\*.provisionedPlans.\*.service | string | | exchange |
-action_result.data.\*.proxyAddresses | string | | SMTP:test_shared_mailbox@test.com |
+action_result.data.\*.proxyAddresses.\* | string | | SMTP:test_shared_mailbox@test.com |
 action_result.data.\*.refreshTokensValidFromDateTime | string | | 2019-05-16T19:54:18Z |
 action_result.data.\*.showInAddressList | string | | |
 action_result.data.\*.sipProxyAddress | string | `email` | |
@@ -737,8 +702,7 @@ action_result.data.\*.userPrincipalName | string | `user id` | user@test.com |
 action_result.data.\*.userState | string | | |
 action_result.data.\*.userStateChangedOn | string | | |
 action_result.data.\*.userType | string | | Member |
-action_result.summary.status | string | | Successfully retrieved user attributes Successfully retrieved attributes for user user@test.com |
-action_result.message | string | | Status: Successfully retrieved user attributes Status: Successfully retrieved attributes for user user@test.com, User enabled: False |
+action_result.summary.status | string | | Successfully retrieved attributes for user user@test.com Successfully retrieved user attributes |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -761,48 +725,14 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.attribute | string | | department |
-action_result.parameter.attribute_value | string | | Sales |
-action_result.parameter.user_id | string | `user id` | user@test.com |
-action_result.data | string | | |
-action_result.data.\*.classification | string | | |
-action_result.data.\*.createdDateTime | string | | 2021-03-25T18:40:53Z |
-action_result.data.\*.deletedDateTime | string | | |
-action_result.data.\*.deletionTimestamp | string | | |
-action_result.data.\*.description | string | | This is for testing purpose |
-action_result.data.\*.dirSyncEnabled | string | | |
-action_result.data.\*.displayName | string | | Test-site |
-action_result.data.\*.expirationDateTime | string | | |
-action_result.data.\*.id | string | `user id` | 2a201c95-101b-42d9-a7af-9a2fdf8193f1 |
-action_result.data.\*.isAssignableToRole | string | | |
-action_result.data.\*.lastDirSyncTime | string | | |
-action_result.data.\*.mail | string | `email` | Test-site@test.com |
-action_result.data.\*.mailEnabled | boolean | | True False |
-action_result.data.\*.mailNickname | string | | Test-site |
-action_result.data.\*.membershipRule | string | | |
-action_result.data.\*.membershipRuleProcessingState | string | | |
-action_result.data.\*.objectType | string | | Group |
-action_result.data.\*.odata.type | string | | test.DirectoryServices.Group |
-action_result.data.\*.onPremisesDomainName | string | `domain` | |
-action_result.data.\*.onPremisesLastSyncDateTime | string | | |
-action_result.data.\*.onPremisesNetBiosName | string | | |
-action_result.data.\*.onPremisesSamAccountName | string | | |
-action_result.data.\*.onPremisesSecurityIdentifier | string | | |
-action_result.data.\*.onPremisesSyncEnabled | string | | |
-action_result.data.\*.preferredDataLocation | string | | |
-action_result.data.\*.preferredLanguage | string | | |
-action_result.data.\*.proxyAddresses | string | | SMTP:test-h@test.com |
-action_result.data.\*.renewedDateTime | string | | 2021-03-25T18:40:53Z |
-action_result.data.\*.securityEnabled | boolean | | True False |
-action_result.data.\*.securityIdentifier | string | | S-1-12-1-294681889-1319597617-672379543-28952017 |
-action_result.data.\*.theme | string | | |
-action_result.data.\*.visibility | string | | Private |
-action_result.summary.status | string | | Successfully enabled user user@test.com |
-action_result.message | string | | Status: Successfully enabled user user@test.com |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.user_id | string | `user id` | |
+action_result.parameter.attribute | string | | |
+action_result.parameter.attribute_value | string | | |
+action_result.summary.status | string | | Successfully updated user attribute |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
-action_result.parameter.ph_0 | ph | | |
 
 ## action: 'remove user'
 
@@ -822,12 +752,11 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.group_object_id | string | `group object id` | ddb876b3-603a-437b-9814-2d46a2219a1e |
-action_result.parameter.user_id | string | `user id` | 17be76d0-35ed-4881-ab62-d2eb73c2ebe3 |
-action_result.data | string | | |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.group_object_id | string | `group object id` | |
+action_result.parameter.user_id | string | `user id` | |
 action_result.summary.status | string | | Successfully removed user from group User not in group |
-action_result.message | string | | Status: Successfully removed user from group Status: User not in group |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -849,12 +778,11 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.group_object_id | string | `group object id` | ddb876b3-603a-437b-9814-2d46a2219a1e |
-action_result.parameter.user_id | string | `user id` | 17be76d0-35ed-4881-ab62-d2eb73c2ebe3 |
-action_result.data | string | | |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.group_object_id | string | `group object id` | |
+action_result.parameter.user_id | string | `user id` | |
 action_result.summary.status | string | | Successfully added user to group User already in group |
-action_result.message | string | | Status: Successfully added user to group Status: User already in group |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -880,18 +808,19 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.expand_string | string | | members |
-action_result.parameter.filter_string | string | | createdDateTime ge '2014-01-01T00:00:00Z' |
-action_result.parameter.select_string | string | | displayName |
-action_result.parameter.use_advanced_query | boolean | | True False |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.filter_string | string | | |
+action_result.parameter.select_string | string | | |
+action_result.parameter.expand_string | string | | |
+action_result.parameter.use_advanced_query | boolean | | |
 action_result.data.\*.classification | string | | |
 action_result.data.\*.createdDateTime | string | | 2021-03-25T18:40:53Z |
 action_result.data.\*.deletedDateTime | string | | |
 action_result.data.\*.deletionTimestamp | string | | |
+action_result.data.\*.displayName | string | | Test-site |
 action_result.data.\*.description | string | | This is for testing purpose |
 action_result.data.\*.dirSyncEnabled | string | | |
-action_result.data.\*.displayName | string | | Test-site |
 action_result.data.\*.expirationDateTime | string | | |
 action_result.data.\*.id | string | `group object id` | 2a201c95-101b-42d9-a7af-9a2fdf8193f1 |
 action_result.data.\*.isAssignableToRole | string | | |
@@ -911,14 +840,13 @@ action_result.data.\*.onPremisesSecurityIdentifier | string | | |
 action_result.data.\*.onPremisesSyncEnabled | string | | |
 action_result.data.\*.preferredDataLocation | string | | |
 action_result.data.\*.preferredLanguage | string | | |
-action_result.data.\*.proxyAddresses | string | | SMTP:test-h@test.com |
+action_result.data.\*.proxyAddresses.\* | string | | SMTP:test-h@test.com |
 action_result.data.\*.renewedDateTime | string | | 2021-03-25T18:40:53Z |
 action_result.data.\*.securityEnabled | boolean | | True False |
 action_result.data.\*.securityIdentifier | string | | S-1-12-1-294681889-1319597617-672379543-28952017 |
 action_result.data.\*.theme | string | | |
 action_result.data.\*.visibility | string | | Private |
 action_result.summary.num_groups | numeric | | 7 |
-action_result.message | string | | Num groups: 7 |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -944,12 +872,14 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.expand_string | string | | members |
-action_result.parameter.object_id | string | `group object id` | ddb876b3-603a-437b-9814-2d46a2219a1e |
-action_result.parameter.select_string | string | | displayName |
-action_result.parameter.use_advanced_query | boolean | | True False |
-action_result.data.\*.@odata.context | string | | https://graph.test.com/v1.0/$metadata#groups(id,displayName)/$entity |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.object_id | string | `group object id` | |
+action_result.parameter.select_string | string | | |
+action_result.parameter.expand_string | string | | |
+action_result.parameter.use_advanced_query | boolean | | |
+action_result.data.\*.odata.metadata | string | | https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#directoryObjects/@Element |
+action_result.data.\*.odata.type | string | | test.DirectoryServices.Group |
 action_result.data.\*.classification | string | | |
 action_result.data.\*.createdDateTime | string | | 2020-08-05T11:59:49Z |
 action_result.data.\*.deletedDateTime | string | | |
@@ -962,13 +892,12 @@ action_result.data.\*.id | string | `group object id` | ddb876b3-603a-437b-9814-
 action_result.data.\*.isAssignableToRole | string | | |
 action_result.data.\*.lastDirSyncTime | string | | |
 action_result.data.\*.mail | string | `email` | bc7f9cabe@test.com |
+action_result.data.\*.securityEnabled | boolean | | True False |
 action_result.data.\*.mailEnabled | boolean | | True False |
 action_result.data.\*.mailNickname | string | | bc7f9cabe |
 action_result.data.\*.membershipRule | string | | |
 action_result.data.\*.membershipRuleProcessingState | string | | |
 action_result.data.\*.objectType | string | | Group |
-action_result.data.\*.odata.metadata | string | | https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#directoryObjects/@Element |
-action_result.data.\*.odata.type | string | | test.DirectoryServices.Group |
 action_result.data.\*.onPremisesDomainName | string | `domain` | |
 action_result.data.\*.onPremisesLastSyncDateTime | string | | |
 action_result.data.\*.onPremisesNetBiosName | string | | |
@@ -977,15 +906,12 @@ action_result.data.\*.onPremisesSecurityIdentifier | string | | |
 action_result.data.\*.onPremisesSyncEnabled | string | | |
 action_result.data.\*.preferredDataLocation | string | | |
 action_result.data.\*.preferredLanguage | string | | |
-action_result.data.\*.proxyAddresses | string | | SMTP:bc7f9cabe@test.com |
+action_result.data.\*.proxyAddresses.\* | string | | SMTP:bc7f9cabe@test.com |
 action_result.data.\*.renewedDateTime | string | | 2020-08-05T11:59:49Z |
-action_result.data.\*.securityEnabled | boolean | | True False |
 action_result.data.\*.securityIdentifier | string | | S-1-12-1-909260723-1083662375-1952945031-2402852259 |
 action_result.data.\*.theme | string | | |
 action_result.data.\*.visibility | string | | |
-action_result.summary.display_name | string | | o365group |
-action_result.summary.status | string | | Successfully retrieved group 104d4576-1544-48b5-bb7e-9f8f871aa824 |
-action_result.message | string | | Display name: o365group |
+action_result.summary.status | string | | Successfully retrieved group group-id |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -1011,13 +937,14 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.expand_string | string | | manager |
-action_result.parameter.group_object_id | string | `group object id` | ebcd3130-55a1-4cbf-81b2-86408ff21203 |
-action_result.parameter.select_string | string | | displayName |
-action_result.parameter.use_advanced_query | boolean | | True False |
-action_result.data.\*.@odata.type | string | | #test.graph.user |
-action_result.data.\*.accountEnabled | boolean | | True |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.group_object_id | string | `group object id` | |
+action_result.parameter.select_string | string | | |
+action_result.parameter.expand_string | string | | |
+action_result.parameter.use_advanced_query | boolean | | |
+action_result.data.\*.odata.type | string | | #test.graph.user |
+action_result.data.\*.accountEnabled | boolean | | True False |
 action_result.data.\*.ageGroup | string | | |
 action_result.data.\*.assignedLicenses.\*.skuId | string | | 189a915c-fe4f-4ffa-bde4-85b9628d07a0 |
 action_result.data.\*.assignedPlans.\*.assignedDateTime | string | | 2022-11-03T15:12:28Z |
@@ -1090,11 +1017,9 @@ action_result.data.\*.state | string | | CA |
 action_result.data.\*.streetAddress | string | | 2479 E. Bayshore Rd. |
 action_result.data.\*.surname | string | | |
 action_result.data.\*.usageLocation | string | | US |
-action_result.data.\*.userPrincipalName | string | | ews_retest@test.com |
+action_result.data.\*.userPrincipalName | string | `user id` | ews_retest@test.com |
 action_result.data.\*.userType | string | | Member |
-action_result.summary.num_members | numeric | `user id` | 3 |
-action_result.summary.num_users | numeric | | 3 |
-action_result.message | string | | Num members: 3 |
+action_result.summary.num_users | numeric | | 8 |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -1116,12 +1041,15 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.group_object_id | string | `group object id` | ebcd3130-55a1-4cbf-81b2-86408ff21203 |
-action_result.parameter.user_id | string | `user id` | user@test.com |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.group_object_id | string | `group object id` | |
+action_result.parameter.user_id | string | `user id` | |
 action_result.data.\*.@odata.context | string | | https://graph.test.com/v1.0/$metadata#directoryObjects |
-action_result.data.\*.user_in_group | string | | |
-action_result.data.\*.value.\*.@odata.type | string | | #test.graph.group |
+action_result.data.\*.odata.type | string | | #test.graph.group |
+action_result.data.\*.user_in_group | boolean | | True False |
+action_result.data.\*.value.\*.@odata.type | string | | |
+action_result.data.\*.value.\*.odata.type | string | | #test.graph.group |
 action_result.data.\*.value.\*.classification | string | | |
 action_result.data.\*.value.\*.createdDateTime | string | | 2022-02-25T12:05:22Z |
 action_result.data.\*.value.\*.deletedDateTime | string | | |
@@ -1131,7 +1059,7 @@ action_result.data.\*.value.\*.expirationDateTime | string | | |
 action_result.data.\*.value.\*.id | string | `user id` | 49233413-24c6-4516-a9e1-4d5f87fe34fd |
 action_result.data.\*.value.\*.isAssignableToRole | string | | |
 action_result.data.\*.value.\*.mail | string | | test@user.test.com |
-action_result.data.\*.value.\*.mailEnabled | boolean | | True |
+action_result.data.\*.value.\*.mailEnabled | boolean | | True False |
 action_result.data.\*.value.\*.mailNickname | string | | TestgroupforMSGraph |
 action_result.data.\*.value.\*.membershipRule | string | | |
 action_result.data.\*.value.\*.membershipRuleProcessingState | string | | |
@@ -1144,13 +1072,12 @@ action_result.data.\*.value.\*.onPremisesSyncEnabled | string | | |
 action_result.data.\*.value.\*.preferredDataLocation | string | | |
 action_result.data.\*.value.\*.preferredLanguage | string | | |
 action_result.data.\*.value.\*.renewedDateTime | string | | 2022-02-25T12:05:22Z |
-action_result.data.\*.value.\*.securityEnabled | boolean | | True |
+action_result.data.\*.value.\*.securityEnabled | boolean | | True False |
 action_result.data.\*.value.\*.securityIdentifier | string | | S-1-12-1-1227043859-1159079110-1598939561-4248108679 |
 action_result.data.\*.value.\*.theme | string | | |
 action_result.data.\*.value.\*.visibility | string | | Private |
-action_result.summary.message | string | | User is member of group |
-action_result.summary.user_in_group | string | | |
-action_result.message | string | | User in group: True |
+action_result.summary.user_in_group | boolean | | True False |
+action_result.summary.message | string | | User is a member of the group User is not a member of the group |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -1171,7 +1098,8 @@ No parameters are required for this action
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
+action_result.status | string | | success failure |
+action_result.message | string | | |
 action_result.data.\*.deletedDateTime | string | | |
 action_result.data.\*.deletionTimestamp | string | | |
 action_result.data.\*.description | string | | Can read basic directory information. For granting access to applications, not intended for users. |
@@ -1181,8 +1109,7 @@ action_result.data.\*.isSystem | boolean | | True False |
 action_result.data.\*.objectType | string | | Role |
 action_result.data.\*.odata.type | string | | test.DirectoryServices.DirectoryRole |
 action_result.data.\*.roleTemplateId | string | `role template id` | 88d8e3e3-8f55-4a1e-953a-9b9898b8876b |
-action_result.summary.num_directory_roles | numeric | | 9 |
-action_result.message | string | | Num directory roles: 9 |
+action_result.summary.num_directory_roles | numeric | | 5 |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -1207,23 +1134,25 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.location_type | string | | all ip country |
-action_result.parameter.filter | string | | contains(displayName,'Blocked') |
-action_result.parameter.select | string | | id,displayName |
-action_result.data.\*.@odata.type | string | | #microsoft.graph.ipNamedLocation #microsoft.graph.countryNamedLocation |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.location_type | string | | |
+action_result.parameter.filter | string | | |
+action_result.parameter.select | string | | |
+action_result.data.\*.@odata.type | string | | |
+action_result.data.\*.odata.type | string | | #microsoft.graph.iPv6CidrRange #microsoft.graph.iPv4CidrRange |
 action_result.data.\*.id | string | `directory object id` | 0c0c6d27-93e7-4fd7-88a4-952c6d61a697 |
 action_result.data.\*.displayName | string | | Named locations to be blocked |
 action_result.data.\*.createdDateTime | string | `datetime` | 2021-03-23T04:59:25.8014022Z |
 action_result.data.\*.modifiedDateTime | string | `datetime` | 2021-03-23T08:05:02.1027085Z |
 action_result.data.\*.isTrusted | boolean | | True False |
-action_result.data.\*.ipRanges.\*.@odata.type | string | | #microsoft.graph.iPv6CidrRange #microsoft.graph.iPv4CidrRange |
+action_result.data.\*.ipRanges.\*.@odata.type | string | | |
+action_result.data.\*.ipRanges.\*.odata.type | string | | #microsoft.graph.iPv6CidrRange #microsoft.graph.iPv4CidrRange |
 action_result.data.\*.ipRanges.\*.cidrAddress | string | `ip` `cidr` | 127.0.0.1/32 2001:8000::/20 |
 action_result.data.\*.countriesAndRegions.\* | string | | US CA |
 action_result.data.\*.countryLookupMethod | string | | clientIpAddress authenticatorAppGps |
 action_result.data.\*.includeUnknownCountriesAndRegions | boolean | | True False |
-action_result.summary.num_named_locations | numeric | | 2 |
-action_result.message | string | | Successfully listed named locations |
+action_result.summary.num_named_locations | numeric | | 3 |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -1245,11 +1174,11 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.cidr_range | string | `ip` `cidr` | 1.1.1.0/24 2001:db8::/32 |
-action_result.parameter.location_id | string | `directory object id` | 0c0c6d27-93e7-4fd7-88a4-952c6d61a697 |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.cidr_range | string | `ip` `cidr` | |
+action_result.parameter.location_id | string | `directory object id` | |
 action_result.summary.status | string | | Successfully added 1.1.1.0/24 CIDR already present |
-action_result.message | string | | Successfully added 1.1.1.0/24 CIDR already present in named location |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -1271,11 +1200,11 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.parameter.cidr_range | string | `ip` `cidr` | 1.1.1.0/24 2001:db8::/32 |
-action_result.parameter.location_id | string | `directory object id` | 0c0c6d27-93e7-4fd7-88a4-952c6d61a697 |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.cidr_range | string | `ip` `cidr` | |
+action_result.parameter.location_id | string | `directory object id` | |
 action_result.summary.status | string | | Successfully removed 1.1.1.0/24 CIDR not present |
-action_result.message | string | | Successfully removed 1.1.1.0/24 CIDR not present in named location |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -1294,10 +1223,52 @@ No parameters are required for this action
 
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action_result.status | string | | success failed |
-action_result.data | string | | |
-action_result.summary | string | | |
-action_result.message | string | | Token generated |
+action_result.status | string | | success failure |
+action_result.message | string | | |
+summary.total_objects | numeric | | 1 |
+summary.total_objects_successful | numeric | | 1 |
+
+## action: 'make request'
+
+Call Microsoft Graph with the asset's authentication; return its HTTP status and raw body.
+
+Uses the asset's configured Microsoft cloud. Supply an explicit /v1.0/ or
+/beta/ path. Redirects are not followed. HTTP errors are returned as data;
+invalid inputs, authentication and transport failures fail the action.
+One response is returned; pagination is not followed automatically.
+
+Type: **generic** <br>
+Read only: **False**
+
+'make request' action for the app. Used to handle arbitrary HTTP requests with the app's asset
+
+#### Action Parameters
+
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**http_method** | required | The HTTP method to use for the request. | string | |
+**endpoint** | required | Microsoft Graph path beginning with /v1.0/ or /beta/. Do not include the base URL. | string | |
+**headers** | optional | The headers to send with the request (JSON object). An example is {'Content-Type': 'application/json'} | string | |
+**query_parameters** | optional | Parameters to append to the URL (JSON object or query string). An example is ?key=value&key2=value2 | string | |
+**body** | optional | The body to send with the request (JSON object). An example is {'key': 'value', 'key2': 'value2'} | string | |
+**timeout** | optional | The timeout for the request in seconds. | numeric | |
+**verify_ssl** | optional | Whether to verify the SSL certificate. Default is True. | boolean | |
+
+#### Action Output
+
+DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
+--------- | ---- | -------- | --------------
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.http_method | string | | |
+action_result.parameter.endpoint | string | | |
+action_result.parameter.headers | string | | |
+action_result.parameter.query_parameters | string | | |
+action_result.parameter.body | string | | |
+action_result.parameter.timeout | numeric | | |
+action_result.parameter.verify_ssl | boolean | | |
+action_result.data.\*.status_code | numeric | | 200 404 500 |
+action_result.data.\*.response_body | string | | {"key": "value"} |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
