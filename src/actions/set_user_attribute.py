@@ -39,49 +39,6 @@ class SetUserAttributeParams(Params):
     )
 
 
-class OdataOutput(ActionOutput):
-    type: str = OutputField(example_values=["test.DirectoryServices.Group"])
-
-
-class SetUserAttributeOutput(ActionOutput):
-    classification: str
-    createdDateTime: str = OutputField(example_values=["2021-03-25T18:40:53Z"])
-    deletedDateTime: str
-    deletionTimestamp: str
-    description: str = OutputField(example_values=["This is for testing purpose"])
-    dirSyncEnabled: str
-    displayName: str = OutputField(example_values=["Test-site"])
-    expirationDateTime: str
-    id: str = OutputField(
-        cef_types=["user id"], example_values=["2a201c95-101b-42d9-a7af-9a2fdf8193f1"]
-    )
-    isAssignableToRole: str
-    lastDirSyncTime: str
-    mail: str = OutputField(cef_types=["email"], example_values=["Test-site@test.com"])
-    mailEnabled: bool
-    mailNickname: str = OutputField(example_values=["Test-site"])
-    membershipRule: str
-    membershipRuleProcessingState: str
-    objectType: str = OutputField(example_values=["Group"])
-    odata: OdataOutput
-    onPremisesDomainName: str = OutputField(cef_types=["domain"])
-    onPremisesLastSyncDateTime: str
-    onPremisesNetBiosName: str
-    onPremisesSamAccountName: str
-    onPremisesSecurityIdentifier: str
-    onPremisesSyncEnabled: str
-    preferredDataLocation: str
-    preferredLanguage: str
-    proxyAddresses: str = OutputField(example_values=["SMTP:test-h@test.com"])
-    renewedDateTime: str = OutputField(example_values=["2021-03-25T18:40:53Z"])
-    securityEnabled: bool
-    securityIdentifier: str = OutputField(
-        example_values=["S-1-12-1-294681889-1319597617-672379543-28952017"]
-    )
-    theme: str
-    visibility: str = OutputField(example_values=["Private"])
-
-
 class SetUserAttributeSummary(ActionOutput):
     status: str = OutputField(example_values=["Successfully updated user attribute"])
 
