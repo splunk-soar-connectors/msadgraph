@@ -83,8 +83,9 @@ def get_client_credentials_flow(asset: Asset) -> ClientCredentialsFlow:
     )
 
 
-def get_delegated_redirect_uri(asset: Asset, asset_id: str) -> str:
-    """Migrate an authorized legacy asset before using its delegated session."""
+def get_delegated_session(asset: Asset, asset_id: str) -> tuple[str, OAuthToken | None]:
+    """Return the redirect URI and any token acquired by legacy code migration."""
+    acquired_token = None
     state = asset.auth_state.get_all()
     if "oauth" not in state:
         legacy_state = asset.auth_state.backend.load_state() or {}
@@ -119,6 +120,7 @@ def get_delegated_redirect_uri(asset: Asset, asset_id: str) -> str:
                 )
                 token = flow.exchange_code_for_token(code)
                 flow.client._store_token(token)
+                acquired_token = token
                 state = asset.auth_state.get_all()
             state.setdefault(REDIRECT_URI_STATE_KEY, redirect_uri)
             asset.auth_state.put_all(state)
@@ -128,6 +130,12 @@ def get_delegated_redirect_uri(asset: Asset, asset_id: str) -> str:
         raise ValueError(
             "No delegated OAuth session is available. Run test connectivity first."
         )
+    return redirect_uri, acquired_token
+
+
+def get_delegated_redirect_uri(asset: Asset, asset_id: str) -> str:
+    """Migrate an authorized legacy asset before using its delegated session."""
+    redirect_uri, _ = get_delegated_session(asset, asset_id)
     return redirect_uri
 
 

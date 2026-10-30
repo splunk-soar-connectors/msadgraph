@@ -21,7 +21,7 @@ from ..asset import Asset
 from ..auth import (
     get_authorization_code_flow,
     get_client_credentials_flow,
-    get_delegated_redirect_uri,
+    get_delegated_session,
 )
 
 
@@ -30,18 +30,23 @@ def generate_token(params: Params, soar: SOARClient, asset: Asset) -> ActionOutp
         if asset.admin_access_required:
             get_client_credentials_flow(asset).authenticate()
         else:
-            redirect_uri = get_delegated_redirect_uri(asset, str(soar.get_asset_id()))
-            flow = get_authorization_code_flow(
-                asset,
-                str(soar.get_asset_id()),
-                redirect_uri=redirect_uri,
+            redirect_uri, acquired_token = get_delegated_session(
+                asset, str(soar.get_asset_id())
             )
-            token = flow.client.get_stored_token()
-            if token is None or not token.refresh_token:
-                raise ValueError(
-                    "No delegated refresh token is available. Run test connectivity again."
+            # A migrated authorization code has already generated a fresh token.
+            # Existing sessions must still refresh rather than reuse cached access.
+            if acquired_token is None:
+                flow = get_authorization_code_flow(
+                    asset,
+                    str(soar.get_asset_id()),
+                    redirect_uri=redirect_uri,
                 )
-            flow.client.refresh_token(token.refresh_token)
+                token = flow.client.get_stored_token()
+                if token is None or not token.refresh_token:
+                    raise ValueError(
+                        "No delegated refresh token is available. Run test connectivity again."
+                    )
+                flow.client.refresh_token(token.refresh_token)
     except (OAuthClientError, RuntimeError, ValueError) as error:
         raise ActionFailure(str(error)) from error
 
