@@ -496,7 +496,7 @@ wheels = [
 
 [[package]]
 name = "msadgraph"
-version = "2.0.0"
+version = "2.0.2"
 source = { virtual = "." }
 dependencies = [
     { name = "splunk-soar-sdk" },

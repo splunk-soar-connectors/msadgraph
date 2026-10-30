@@ -133,8 +133,11 @@ test account when validating resets and set **force_change** as appropriate.
   sign-in. Check those prerequisites before changing credentials or permissions.
   Pending authorization links expire with the connectivity attempt; start a new
   **TEST CONNECTIVITY** attempt instead of completing an expired link.
-- Delegated **generate token** explicitly refreshes the stored token. If no refresh
-  token is available, run **TEST CONNECTIVITY** to authorize the asset again.
+- Delegated **generate token** explicitly refreshes an existing session. When a
+  usable legacy authorization code is migrated, its successful token exchange
+  completes the action without requiring a second refresh. That new token can be
+  used even if the exchange did not issue a refresh token; later regeneration
+  requires **TEST CONNECTIVITY** if no refresh token is available.
 - A Graph authorization error requires checking permission type, consent, the
   selected cloud, the target object and applicable Entra roles. Re-run connectivity
   after replacing an expired client secret.
@@ -147,3 +150,109 @@ test account when validating resets and set **force_change** as appropriate.
 
 Keep client secrets, access tokens, authorization codes and passwords out of
 support reports. Share action IDs and sanitized Microsoft error details instead.
+
+### Corrected output datapaths and playbook migration
+
+The SDK corrects collection and password-profile metadata from the legacy app.
+These corrections affect the fields offered by the playbook editor. They do not
+convert Graph arrays into strings or rename properties in Microsoft's response.
+Review saved datapath selections and custom code before upgrading; existing
+playbooks are not rewritten automatically.
+
+In this table, `P` means the full prefix `action_result.data.*.`. Append the
+listed suffix to that prefix when reviewing a datapath.
+
+| Actions | Legacy suffix/type | SDK suffix/type | Playbook change |
+| --- | --- | --- | --- |
+| **list users**, **list user attributes** | `otherMails` / string | `otherMails.*` / string elements | Select the array elements; handle zero, one or multiple email values. |
+| **list users**, **list user attributes**, **list groups**, **get group** | `proxyAddresses` / string | `proxyAddresses.*` / string elements | Select the array elements and review formatting, comparisons and iteration. |
+| **list users**, **list user attributes** | `passwordProfile` / string | Object container with nested datapaths | Select the required property rather than treating the whole profile as a scalar string. |
+| **list users**, **list user attributes** | `passwordProfile.forceChangePasswordNextLogin` / boolean | `passwordProfile.forceChangePasswordNextSignIn` / boolean | Replace the obsolete property selection with the current Graph property. |
+| **list users**, **list user attributes** | `passwordProfile.enforceChangePasswordPolicy` / boolean | No direct replacement | Review the playbook's intended policy check. Do not automatically map this to a different password-profile flag. |
+| **list users**, **list user attributes** | Not previously advertised | `passwordProfile.forceChangePasswordNextSignInWithMfa` / boolean | This is an additional selectable property, not a replacement for `enforceChangePasswordPolicy`. |
+
+For example, the full email element datapath is
+`action_result.data.*.otherMails.*`, replacing the legacy advertised
+`action_result.data.*.otherMails`. The full corrected sign-in flag is
+`action_result.data.*.passwordProfile.forceChangePasswordNextSignIn`.
+`action_result.data.*.passwordProfile.password` is unchanged in metadata; a
+published datapath does not guarantee that Graph returns the property for a
+particular request. Preserve missing-value handling and validate affected
+playbook conditions with the output of an authorized read action.
+
+### SDK action behavior changes
+
+The SDK port includes the following output and validation changes. Review
+playbook conditions that depend on empty action data, unusual responses,
+summary selections or message text when upgrading from the legacy app.
+
+#### Token-revocation response data
+
+**disable tokens** (action identifier `invalidate_tokens`) now returns Graph's
+JSON response in action data, including `action_result.data.*.value` when Graph
+supplies that property. The legacy handler discarded the response body and
+returned no action data. This is an enhancement to the available output, not a
+change to the existing HTTP/API error handling or `action_result.summary.status`.
+
+For example, a Graph response of `{"value": true}` is now available as an
+action-data record. A successful response without a body remains accepted and
+does not guarantee that `value` is present. Use the action status for request
+success or failure, and inspect `value` when the playbook needs that returned
+property. Update conditions that previously treated empty action data as a
+requirement for success; absence or presence of a data record alone is not a
+success test.
+
+#### List requests, pagination and counts
+
+These changes apply to **list users**, **list groups**, **list group members**,
+**list user devices**, **list user attributes** and **list named locations**:
+
+- Pagination still uses the continuation's `$skiptoken`. A nonempty continuation
+  that has an invalid type or lacks a usable skip token fails the action. The
+  legacy helper could stop pagination and return success with earlier pages
+  when it could not extract that token. Do not treat that former partial-success
+  behavior as proof that all records were retrieved.
+- Collection responses must contain a `value` array of objects. Invalid
+  collection shapes fail rather than being returned as an apparent result.
+  **list user attributes** also accepts an unwrapped object response, including
+  the single-user response.
+- A normal `{"value": []}` response returns no records. Count summaries, where
+  provided, are zero, as in the legacy app.
+- The SDK does not add the legacy synthetic `"Empty response"` record when a
+  page begins with an empty object. For `{"value": [{}]}`, the empty object
+  remains one returned record. Counts use returned objects, without an extra
+  sentinel. In particular, **list group members** reports `num_users=1` for
+  this case; the legacy handler counted both the object and the sentinel.
+
+For **list users**, **list groups**, **get group**, **list group members**,
+**list user attributes** and **list user devices**, a `select_string` containing
+only whitespace and commas is treated as unspecified. The legacy handlers
+could send `$select=""`; the SDK omits `$select` after discarding empty field
+names. Nonempty selections still trim whitespace and discard empty names.
+**list named locations** already omitted empty selections in the legacy app.
+
+#### Summary fields and messages
+
+The following populated legacy summary datapaths remain the fields to use:
+
+| Actions | Summary datapath |
+| --- | --- |
+| **list users**, **list group members** | `action_result.summary.num_users` |
+| **list groups** | `action_result.summary.num_groups` |
+| **list named locations** | `action_result.summary.num_named_locations` |
+| **get group**, **list user attributes**, **list user devices**, **disable tokens** | `action_result.summary.status` |
+
+The old manifest advertised `action_result.summary.display_name` for **get
+group** and `action_result.summary.num_members` for **list group members**,
+but those legacy handlers did not populate these fields. They are no longer
+advertised by the SDK action schemas. For the group name, select
+`action_result.data.*.displayName`; for the member count, select
+`action_result.summary.num_users`.
+
+**list users** still advertises the optional `result_found` and `total_results`
+summary fields, but its handler populates `num_users`, as the legacy handler
+did. Do not assume the optional fields are present.
+
+The SDK supplies explicit human-readable messages such as `Num users: N` and
+`Num groups: N`. Use the summary datapaths for numeric comparisons rather than
+parsing message text. Review conditions that match exact legacy messages.
