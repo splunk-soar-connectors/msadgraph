@@ -1,6 +1,6 @@
 **Unreleased**
 
-* Allow asset-specific delegated OAuth scopes while preserving blank-field defaults and application authentication. Explicitly scoped connectivity validates authentication without requiring user-list access; scope changes require reauthorization.
+* Allow asset-specific delegated OAuth scopes while preserving blank-field defaults and application authentication. Explicitly scoped connectivity validates authentication without requiring user-list access; scope changes require reauthorization, with guidance preserved in make request failures.
 
 * Expire pending OAuth handoffs and reject callbacks after connectivity timeout.
 * Force a delegated token refresh when the generate token action is explicitly requested.
