@@ -144,6 +144,10 @@ test account when validating resets and set **force_change** as appropriate.
 - Legacy delegated sessions are migrated when usable state is available. If
   migration cannot recover the session, run **TEST CONNECTIVITY** to authorize the
   asset again. Do not manually edit token state or weaken state-file permissions.
+- Ordinary Graph requests reuse cached tokens until actual expiry. A legacy
+  token whose expiry is unknown is tried against Graph and refreshed after an
+  authentication rejection when a refresh token is available. Explicit
+  **generate token** still requires successful token generation or refresh.
 - SDK tables may present results differently from legacy templates. Four legacy
   reciprocal undo metadata links are omitted; the corresponding inverse actions
   remain available. Review playbooks that depend on those UI conveniences.

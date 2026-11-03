@@ -23,6 +23,7 @@ from soar_sdk.auth import (
     AuthorizationCodeFlow,
     ClientCredentialsFlow,
     OAuthBearerAuth,
+    SOARAssetOAuthClient,
 )
 from soar_sdk.auth.models import OAuthState, OAuthToken
 from soar_sdk.shims.phantom.encryption_helper import encryption_helper
@@ -45,6 +46,42 @@ from .consts import (
     MICROSOFT_LOGIN_BASE_URLS,
     REDIRECT_URI_STATE_KEY,
 )
+
+
+def _cached_token_is_usable(token: OAuthToken | None) -> bool:
+    """Ordinary Graph requests preserve cached tokens until actual expiry."""
+    return token is not None and not token.is_expired(leeway=0)
+
+
+class _GraphOAuthClient(SOARAssetOAuthClient):
+    def get_valid_token(self, auto_refresh: bool = True) -> OAuthToken:
+        token = self.get_stored_token()
+        if _cached_token_is_usable(token):
+            return token
+        return super().get_valid_token(auto_refresh=auto_refresh)
+
+
+class _GraphClientCredentialsFlow(ClientCredentialsFlow):
+    def get_token(self) -> OAuthToken:
+        # SDK 7.0.3 exposes no public client accessor on this flow.
+        token = self._client.get_stored_token()
+        if _cached_token_is_usable(token):
+            return token
+        return super().get_token()
+
+
+def _migrate_legacy_token(legacy_token: dict) -> OAuthToken:
+    token = deepcopy(legacy_token)
+    expires_at = token.get("expires_at")
+    if (
+        not isinstance(expires_at, (int, float))
+        or isinstance(expires_at, bool)
+        or not math.isfinite(expires_at)
+    ):
+        # An old relative lifetime cannot establish the acquisition time.
+        token.pop("expires_at", None)
+        token.pop("expires_in", None)
+    return OAuthToken.model_validate(token)
 
 
 def get_authorization_code_flow(
@@ -74,7 +111,7 @@ def get_client_credentials_flow(asset: Asset) -> ClientCredentialsFlow:
     region = asset.region or "Global"
     login_url = MICROSOFT_LOGIN_BASE_URLS[region]
     graph_root = MICROSOFT_GRAPH_BASE_URLS[region].removesuffix("/v1.0")
-    return ClientCredentialsFlow(
+    return _GraphClientCredentialsFlow(
         asset.auth_state,
         client_id=asset.client_id,
         client_secret=asset.client_secret,
@@ -107,16 +144,7 @@ def get_delegated_session(asset: Asset, asset_id: str) -> tuple[str, OAuthToken 
                         "Unable to decrypt the legacy OAuth session. Run test connectivity again."
                     ) from error
             if legacy_token:
-                # Preserve recorded expiry. Older sessions may only have expires_in,
-                # which cannot establish expiry without the acquisition time.
-                expires_at = legacy_token.get("expires_at")
-                if (
-                    not isinstance(expires_at, (int, float))
-                    or isinstance(expires_at, bool)
-                    or not math.isfinite(expires_at)
-                ):
-                    legacy_token["expires_at"] = 0
-                token = OAuthToken.model_validate(legacy_token)
+                token = _migrate_legacy_token(legacy_token)
                 state["oauth"] = OAuthState(
                     token=token, client_id=asset.client_id
                 ).model_dump(mode="json", exclude_none=True)
@@ -190,7 +218,7 @@ def get_graph_client(
     )
     return httpx.Client(
         base_url=base_url,
-        auth=OAuthBearerAuth(flow.client),
+        auth=OAuthBearerAuth(_GraphOAuthClient(flow.client.config, asset.auth_state)),
         timeout=30.0,
         verify=verify,
     )
