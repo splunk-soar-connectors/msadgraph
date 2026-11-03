@@ -1,0 +1,109 @@
+# Copyright (c) 2026 Splunk Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from ipaddress import ip_network
+
+import httpx
+from soar_sdk.abstract import SOARClient
+from soar_sdk.action_results import ActionOutput, ActionResult, OutputField
+from soar_sdk.auth import OAuthClientError
+from soar_sdk.params import Param, Params
+
+from ..action_failure import failed_result
+from ..asset import Asset
+from ..graph_utils import quote_path_segment
+from ..auth import get_graph_client
+from ..graph_response import get_graph_response
+
+
+class AddCidrToNamedLocationParams(Params):
+    cidr_range: str = Param(
+        description="IPv4 or IPv6 CIDR range, for example 1.1.1.0/24 or 2001:db8::/32",
+        primary=True,
+        cef_types=["ip", "cidr"],
+        column_name="CIDR Range",
+    )
+    location_id: str = Param(
+        description="Object ID of the IP-based named location",
+        primary=True,
+        cef_types=["directory object id"],
+        column_name="Location ID",
+    )
+
+
+class AddCidrToNamedLocationSummary(ActionOutput):
+    status: str = OutputField(
+        example_values=["Successfully added 1.1.1.0/24", "CIDR already present"]
+    )
+
+
+def add_cidr_to_named_location(
+    params: AddCidrToNamedLocationParams, soar: SOARClient, asset: Asset
+) -> ActionOutput:
+    try:
+        network = ip_network(params.cidr_range, strict=False)
+    except ValueError as error:
+        return failed_result(params, f"Invalid CIDR range: {error}")
+    normalized_cidr = str(network)
+    cidr_type = (
+        "#microsoft.graph.iPv4CidrRange"
+        if network.version == 4
+        else "#microsoft.graph.iPv6CidrRange"
+    )
+    try:
+        endpoint = (
+            "/identity/conditionalAccess/namedLocations/"
+            f"{quote_path_segment(params.location_id)}"
+        )
+        with get_graph_client(asset, str(soar.get_asset_id())) as graph_client:
+            location = get_graph_response(graph_client.get(endpoint), allow_empty=True)
+            if location.get("@odata.type") != "#microsoft.graph.ipNamedLocation":
+                raise RuntimeError(
+                    f"Named location {params.location_id} is not an IP-based named location"
+                )
+            ranges = location.get("ipRanges", [])
+            if not isinstance(ranges, list) or not all(
+                isinstance(item, dict) for item in ranges
+            ):
+                raise RuntimeError(
+                    "Microsoft Graph returned invalid named-location IP ranges"
+                )
+            if any(item.get("cidrAddress") == normalized_cidr for item in ranges):
+                status = "CIDR already present"
+                result = ActionResult(
+                    True, "CIDR already present in named location", params.model_dump()
+                )
+                result.set_summary(
+                    AddCidrToNamedLocationSummary(status=status).model_dump()
+                )
+                return result
+            updated_ranges = [
+                *ranges,
+                {"@odata.type": cidr_type, "cidrAddress": normalized_cidr},
+            ]
+            get_graph_response(
+                graph_client.patch(
+                    endpoint,
+                    json={
+                        "@odata.type": "#microsoft.graph.ipNamedLocation",
+                        "ipRanges": updated_ranges,
+                    },
+                ),
+                allow_empty=True,
+            )
+    except (httpx.HTTPError, OAuthClientError, RuntimeError, ValueError) as error:
+        return failed_result(params, str(error) or type(error).__name__)
+    status = f"Successfully added {normalized_cidr}"
+    result = ActionResult(True, status, params.model_dump())
+    result.set_summary(AddCidrToNamedLocationSummary(status=status).model_dump())
+    return result
