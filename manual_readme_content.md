@@ -74,7 +74,7 @@ come from the actual test log; do not copy the placeholders:
 https://<soar-host>:<webhook-port>/webhook/<app-directory>/<asset-id>/oauth_callback
 ```
 
-SDK 7.0.3 uses the SOAR system base URL and the platform-configured webhook port
+SDK 7.1.2 uses the SOAR system base URL and the platform-configured webhook port
 (default 3500). Ensure the browser can reach that endpoint with a trusted TLS
 certificate. Register `oauth_callback`, not the `oauth_start` link and not the
 legacy `/rest/handler/.../result` URL. Do not append `/result` to a displayed URL.
