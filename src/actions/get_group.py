@@ -20,8 +20,7 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
-from ..graph_output import OdataOutput, normalize_odata
-from ..graph_utils import quote_path_segment
+from ..graph_utils import normalize_odata_object, quote_path_segment
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
@@ -41,12 +40,17 @@ class GetGroupParams(Params):
     )
 
 
-class GetGroupOutput(PermissiveActionOutput):
-    odata: OdataOutput | None = OutputField()
-    odata_type: str = OutputField(
-        alias="@odata.type", example_values=["test.DirectoryServices.Group"]
+class OdataOutput(ActionOutput):
+    metadata: str = OutputField(
+        example_values=[
+            "https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#directoryObjects/@Element"
+        ]
     )
-    odata_context: str = OutputField(alias="@odata.context")
+    type: str = OutputField(example_values=["test.DirectoryServices.Group"])
+
+
+class GetGroupOutput(PermissiveActionOutput):
+    odata: OdataOutput
     classification: str
     createdDateTime: str = OutputField(example_values=["2020-08-05T11:59:49Z"])
     deletedDateTime: str
@@ -119,4 +123,4 @@ def get_group(params: GetGroupParams, soar: SOARClient, asset: Asset) -> GetGrou
     status = f"Successfully retrieved group {params.object_id}"
     soar.set_message(f"Status: {status}")
     soar.set_summary(GetGroupSummary(status=status))
-    return GetGroupOutput(**normalize_odata(payload))
+    return GetGroupOutput(**normalize_odata_object(payload))

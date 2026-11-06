@@ -20,8 +20,7 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
-from ..graph_output import OdataOutput, normalize_odata
-from ..graph_utils import quote_path_segment
+from ..graph_utils import normalize_odata_object, quote_path_segment
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
@@ -41,9 +40,13 @@ class ValidateGroupParams(Params):
     )
 
 
+class OdataOutput(ActionOutput):
+    type: str = OutputField(example_values=["#test.graph.group"])
+
+
 class ValueOutput(ActionOutput):
-    odata: OdataOutput | None = OutputField()
     odata_type: str = OutputField(alias="@odata.type")
+    odata: OdataOutput
     classification: str
     createdDateTime: str = OutputField(example_values=["2022-02-25T12:05:22Z"])
     deletedDateTime: str
@@ -77,14 +80,11 @@ class ValueOutput(ActionOutput):
 
 
 class ValidateGroupOutput(PermissiveActionOutput):
-    odata: OdataOutput | None = OutputField()
     odata_context: str = OutputField(
         alias="@odata.context",
         example_values=["https://graph.test.com/v1.0/$metadata#directoryObjects"],
     )
-    odata_type: str = OutputField(
-        alias="@odata.type", example_values=["#test.graph.group"]
-    )
+    odata: OdataOutput
     user_in_group: bool
     value: list[ValueOutput]
 
@@ -132,4 +132,5 @@ def validate_group(
         ValidateGroupSummary(user_in_group=user_in_group, message=summary_message)
     )
     payload["user_in_group"] = user_in_group
-    return ValidateGroupOutput(**normalize_odata(payload))
+    payload["value"] = [normalize_odata_object(item) for item in values]
+    return ValidateGroupOutput(**payload)

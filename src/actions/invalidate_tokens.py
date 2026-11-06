@@ -20,7 +20,6 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
-from ..graph_output import OdataOutput, normalize_odata
 from ..graph_utils import quote_path_segment
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
@@ -35,12 +34,22 @@ class DisableTokensParams(Params):
     )
 
 
+class OdataOutput(ActionOutput):
+    metadata: str = OutputField(
+        cef_types=["url"],
+        example_values=[
+            "https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#Edm.Null"
+        ],
+    )
+    null: bool = OutputField()
+
+
 class DisableTokensOutput(PermissiveActionOutput):
-    odata: OdataOutput | None = OutputField()
     odata_context: str = OutputField(
         alias="@odata.context",
         example_values=["https://graph.test.com/v1.0/$metadata#Edm.Boolean"],
     )
+    odata: OdataOutput = OutputField()
     value: bool = OutputField()
 
 
@@ -63,4 +72,4 @@ def invalidate_tokens(
     status = "Successfully disabled tokens"
     soar.set_summary(DisableTokensSummary(status=status))
     soar.set_message(f"Status: {status}")
-    return DisableTokensOutput(**normalize_odata(payload))
+    return DisableTokensOutput(**payload)

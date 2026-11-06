@@ -23,7 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
-from ..graph_output import OdataOutput, normalize_odata
+from ..graph_utils import normalize_odata
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
@@ -46,8 +46,11 @@ class ListGroupsParams(Params):
     )
 
 
+class OdataOutput(ActionOutput):
+    type: str = OutputField(example_values=["test.DirectoryServices.Group"])
+
+
 class ListGroupsOutput(PermissiveActionOutput):
-    odata: OdataOutput | None = OutputField()
     classification: str
     createdDateTime: str = OutputField(example_values=["2021-03-25T18:40:53Z"])
     deletedDateTime: str
@@ -73,9 +76,7 @@ class ListGroupsOutput(PermissiveActionOutput):
     membershipRule: str
     membershipRuleProcessingState: str
     objectType: str = OutputField(example_values=["Group"])
-    odata_type: str = OutputField(
-        alias="@odata.type", example_values=["test.DirectoryServices.Group"]
-    )
+    odata: OdataOutput
     onPremisesDomainName: str = OutputField(cef_types=["domain"])
     onPremisesLastSyncDateTime: str
     onPremisesNetBiosName: str

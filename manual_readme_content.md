@@ -212,21 +212,28 @@ The SDK port includes the following output and validation changes. Review
 playbook conditions that depend on empty action data, unusual responses,
 summary selections or message text when upgrading from the legacy app.
 
-#### OData annotations
+#### OData annotation aliases
 
-Action data retains Graph's original annotation keys, such as `@odata.type`
-and `@odata.context`, and adds nested copies such as `odata.type` and
-`odata.context`. This also applies to annotations in nested response objects.
-SOAR interprets dots in datapaths as nesting separators, so select
-`action_result.data.*.odata.type` in playbooks. SDK field aliases alone do not
-make literal dotted keys extractable through standard SOAR datapaths.
+The list actions and **get group** add `odata.*` aliases for Graph's `@odata.*`
+annotations. For example, an object containing `@odata.type` also exposes
+`odata.type`:
 
-The legacy manifest advertised some `odata.*` datapaths, but its handlers did
-not create those nested fields. The SDK connector now supplies them when the
-corresponding Graph annotation is present. Custom code can still use the
-original key, for example `record["@odata.type"]`. Existing fields inside an
-`odata` object take precedence over generated copies. If `odata` already holds
-a non-object value, it is retained and no aliases are added at that level.
+```json
+{"@odata.type": "#microsoft.graph.user", "odata": {"type": "#microsoft.graph.user"}}
+```
+
+The original annotation remains in action data. These aliases are additional
+fields compared with the legacy handlers, so playbooks comparing complete
+objects must allow the extra keys. Existing `odata` fields and values take
+precedence over generated aliases. An existing non-object `odata` value is
+kept unchanged.
+
+**list users**, **list groups**, **list group members**, **list user attributes**,
+**list user devices** and **list named locations** also add aliases in nested
+objects. **get group** and **list directory roles** add them only to each
+returned object's top level. **validate group** adds them to each object inside
+`value`; its `user_in_group` boolean is unchanged. Alias presence depends on the
+annotations Graph returns.
 
 #### Token-revocation response data
 

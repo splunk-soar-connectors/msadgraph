@@ -23,8 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
-from ..graph_output import OdataOutput, normalize_odata
-from ..graph_utils import quote_path_segment
+from ..graph_utils import normalize_odata, quote_path_segment
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
@@ -41,6 +40,10 @@ class ListUserDevicesParams(Params):
     select_string: str | None = Param(
         description="Select string to get additional user properties. Separate multiple values with commas"
     )
+
+
+class OdataOutput(ActionOutput):
+    type: str = OutputField(example_values=["#test.graph.device"])
 
 
 class AlternativesecurityidsOutput(ActionOutput):
@@ -72,10 +75,7 @@ class ExtensionattributesOutput(ActionOutput):
 
 
 class ListUserDevicesOutput(PermissiveActionOutput):
-    odata: OdataOutput | None = OutputField()
-    odata_type: str = OutputField(
-        alias="@odata.type", example_values=["#test.graph.device"]
-    )
+    odata: OdataOutput
     accountEnabled: bool
     alternativeSecurityIds: list[AlternativesecurityidsOutput]
     approximateLastSignInDateTime: str = OutputField(

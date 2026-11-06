@@ -20,13 +20,16 @@ from soar_sdk.params import Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
-from ..graph_output import OdataOutput, normalize_odata
+from ..graph_utils import normalize_odata_object
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
 
+class OdataOutput(ActionOutput):
+    type: str = OutputField(example_values=["test.DirectoryServices.DirectoryRole"])
+
+
 class ListDirectoryRolesOutput(PermissiveActionOutput):
-    odata: OdataOutput | None = OutputField()
     deletedDateTime: str
     deletionTimestamp: str
     description: str = OutputField(
@@ -44,9 +47,7 @@ class ListDirectoryRolesOutput(PermissiveActionOutput):
     )
     isSystem: bool
     objectType: str = OutputField(example_values=["Role"])
-    odata_type: str = OutputField(
-        alias="@odata.type", example_values=["test.DirectoryServices.DirectoryRole"]
-    )
+    odata: OdataOutput
     roleTemplateId: str = OutputField(
         cef_types=["role template id"],
         example_values=["88d8e3e3-8f55-4a1e-953a-9b9898b8876b"],
@@ -74,4 +75,4 @@ def list_directory_roles(
         return failed_result(params, str(error) or type(error).__name__)
     soar.set_message(f"Num directory roles: {len(roles)}")
     soar.set_summary(ListDirectoryRolesSummary(num_directory_roles=len(roles)))
-    return [ListDirectoryRolesOutput(**normalize_odata(role)) for role in roles]
+    return [ListDirectoryRolesOutput(**normalize_odata_object(role)) for role in roles]
