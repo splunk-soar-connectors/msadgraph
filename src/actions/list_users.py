@@ -23,7 +23,6 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
-from ..graph_utils import normalize_odata
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
@@ -53,7 +52,7 @@ def _get_users(
             )
         if not all(isinstance(user, dict) for user in page):
             raise _GraphAPIError("Microsoft Graph returned an invalid user")
-        yield from (normalize_odata(user) for user in page)
+        yield from page
 
         raw_next_url = payload.get("@odata.nextLink") or payload.get("odata.nextLink")
         if raw_next_url is None:
@@ -95,10 +94,6 @@ class AssignedplansOutput(ActionOutput):
     servicePlanId: str = OutputField(
         example_values=["e212cbc7-0961-4c40-9825-01117710dcb1"]
     )
-
-
-class OdataOutput(ActionOutput):
-    type: str = OutputField(example_values=["test.DirectoryServices.User"])
 
 
 class PasswordprofileOutput(ActionOutput):
@@ -154,7 +149,9 @@ class ListUsersOutput(PermissiveActionOutput):
     mobile: str = OutputField(example_values=["+1 5556378688"])
     mobilePhone: str
     objectType: str = OutputField(example_values=["User"])
-    odata: OdataOutput
+    odata_type: str = OutputField(
+        alias="@odata.type", example_values=["test.DirectoryServices.User"]
+    )
     officeLocation: str
     onPremisesDistinguishedName: str
     onPremisesSecurityIdentifier: str

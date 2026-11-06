@@ -23,7 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
-from ..graph_utils import normalize_odata, quote_path_segment
+from ..graph_utils import quote_path_segment
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
@@ -46,15 +46,6 @@ class ListUserAttributesParams(Params):
     use_advanced_query: bool | None = Param(
         description="Use advanced query capabilities", default=False
     )
-
-
-class OdataOutput(ActionOutput):
-    metadata: str = OutputField(
-        example_values=[
-            "https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#directoryObjects/@Element"
-        ]
-    )
-    type: str = OutputField(example_values=["test.DirectoryServices.User"])
 
 
 class AssignedlicensesOutput(ActionOutput):
@@ -97,7 +88,10 @@ class Thumbnailphoto_OdataOutput(ActionOutput):
 
 
 class ListUserAttributesOutput(PermissiveActionOutput):
-    odata: OdataOutput
+    odata_type: str = OutputField(
+        alias="@odata.type", example_values=["test.DirectoryServices.User"]
+    )
+    odata_context: str = OutputField(alias="@odata.context")
     accountEnabled: bool
     ageGroup: str
     assignedLicenses: list[AssignedlicensesOutput]
@@ -195,7 +189,7 @@ def _get_attributes(
             client.get(endpoint, headers=headers, params=next_params)
         )
         if "value" not in payload:
-            yield normalize_odata(payload)
+            yield payload
             break
         page = payload.get("value")
         if not isinstance(page, list) or not all(
@@ -204,7 +198,7 @@ def _get_attributes(
             raise RuntimeError(
                 "Microsoft Graph response did not contain a valid list value"
             )
-        yield from (normalize_odata(item) for item in page)
+        yield from page
         next_link = payload.get("@odata.nextLink") or payload.get("odata.nextLink")
         if next_link is None:
             next_params = None

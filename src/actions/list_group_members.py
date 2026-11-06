@@ -23,7 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
-from ..graph_utils import normalize_odata, quote_path_segment
+from ..graph_utils import quote_path_segment
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
@@ -44,10 +44,6 @@ class ListGroupMembersParams(Params):
     use_advanced_query: bool | None = Param(
         description="Use advanced query capabilities", default=False
     )
-
-
-class OdataOutput(ActionOutput):
-    type: str = OutputField(example_values=["#test.graph.user"])
 
 
 class AssignedlicensesOutput(ActionOutput):
@@ -94,7 +90,9 @@ class ProvisionedplansOutput(ActionOutput):
 
 
 class ListGroupMembersOutput(PermissiveActionOutput):
-    odata: OdataOutput
+    odata_type: str = OutputField(
+        alias="@odata.type", example_values=["#test.graph.user"]
+    )
     accountEnabled: bool = OutputField(example_values=[True])
     ageGroup: str
     assignedLicenses: list[AssignedlicensesOutput]
@@ -189,7 +187,7 @@ def _get_members(
             raise RuntimeError(
                 "Microsoft Graph response did not contain a valid list value"
             )
-        yield from (normalize_odata(item) for item in page)
+        yield from page
         next_link = payload.get("@odata.nextLink") or payload.get("odata.nextLink")
         if next_link is None:
             next_params = None

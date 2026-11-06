@@ -190,28 +190,18 @@ The SDK port includes the following output and validation changes. Review
 playbook conditions that depend on empty action data, unusual responses,
 summary selections or message text when upgrading from the legacy app.
 
-#### OData annotation aliases
+#### OData annotations
 
-The list actions and **get group** add `odata.*` aliases for Graph's `@odata.*`
-annotations. For example, an object containing `@odata.type` also exposes
-`odata.type`:
+Action data retains Graph's original annotation keys, such as `@odata.type`
+and `@odata.context`, including annotations in nested objects. SDK field
+aliases expose these keys in the output metadata without adding a separate
+`odata` object to the response.
 
-```json
-{"@odata.type": "#microsoft.graph.user", "odata": {"type": "#microsoft.graph.user"}}
-```
-
-The original annotation remains in action data. These aliases are additional
-fields compared with the legacy handlers, so playbooks comparing complete
-objects must allow the extra keys. Existing `odata` fields and values take
-precedence over generated aliases. An existing non-object `odata` value is
-kept unchanged.
-
-**list users**, **list groups**, **list group members**, **list user attributes**,
-**list user devices** and **list named locations** also add aliases in nested
-objects. **get group** and **list directory roles** add them only to each
-returned object's top level. **validate group** adds them to each object inside
-`value`; its `user_in_group` boolean is unchanged. Alias presence depends on the
-annotations Graph returns.
+The legacy manifest advertised some `odata.*` datapaths, but its handlers
+returned Graph's response without creating those nested fields. In custom
+code, access an annotation by its literal key, for example
+`record["@odata.type"]`; it is not a nested `odata.type` object. Fields already
+present in Graph's response, including unknown fields, are preserved.
 
 #### Token-revocation response data
 

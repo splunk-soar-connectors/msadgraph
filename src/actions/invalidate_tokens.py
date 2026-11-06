@@ -34,22 +34,11 @@ class DisableTokensParams(Params):
     )
 
 
-class OdataOutput(ActionOutput):
-    metadata: str = OutputField(
-        cef_types=["url"],
-        example_values=[
-            "https://graph.windows.net/1t309est-db6c-4tes-t1d2-12bf3456d78d/$metadata#Edm.Null"
-        ],
-    )
-    null: bool = OutputField()
-
-
 class DisableTokensOutput(PermissiveActionOutput):
     odata_context: str = OutputField(
         alias="@odata.context",
         example_values=["https://graph.test.com/v1.0/$metadata#Edm.Boolean"],
     )
-    odata: OdataOutput = OutputField()
     value: bool = OutputField()
 
 

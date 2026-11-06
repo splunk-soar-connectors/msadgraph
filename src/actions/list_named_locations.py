@@ -23,7 +23,6 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
-from ..graph_utils import normalize_odata
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
@@ -48,18 +47,8 @@ class ListNamedLocationsParams(Params):
     )
 
 
-class OdataOutput(ActionOutput):
-    type: str = OutputField(
-        example_values=[
-            "#microsoft.graph.iPv6CidrRange",
-            "#microsoft.graph.iPv4CidrRange",
-        ]
-    )
-
-
 class IprangesOutput(ActionOutput):
     odata_type: str = OutputField(alias="@odata.type")
-    odata: OdataOutput
     cidrAddress: str = OutputField(
         cef_types=["ip", "cidr"], example_values=["127.0.0.1/32", "2001:8000::/20"]
     )
@@ -67,7 +56,6 @@ class IprangesOutput(ActionOutput):
 
 class ListNamedLocationsOutput(PermissiveActionOutput):
     odata_type: str = OutputField(alias="@odata.type", column_name="Type")
-    odata: OdataOutput
     id: str = OutputField(
         cef_types=["directory object id"],
         example_values=["0c0c6d27-93e7-4fd7-88a4-952c6d61a697"],
@@ -116,7 +104,7 @@ def _get_named_locations(
             raise RuntimeError(
                 "Microsoft Graph response did not contain a valid list value"
             )
-        yield from (normalize_odata(item) for item in page)
+        yield from page
         next_link = payload.get("@odata.nextLink") or payload.get("odata.nextLink")
         if next_link is None:
             next_params = None
