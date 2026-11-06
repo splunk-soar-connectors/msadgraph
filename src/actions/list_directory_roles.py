@@ -20,11 +20,13 @@ from soar_sdk.params import Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
+from ..graph_output import OdataOutput, normalize_odata
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
 
 class ListDirectoryRolesOutput(PermissiveActionOutput):
+    odata: OdataOutput | None = OutputField()
     deletedDateTime: str
     deletionTimestamp: str
     description: str = OutputField(
@@ -72,4 +74,4 @@ def list_directory_roles(
         return failed_result(params, str(error) or type(error).__name__)
     soar.set_message(f"Num directory roles: {len(roles)}")
     soar.set_summary(ListDirectoryRolesSummary(num_directory_roles=len(roles)))
-    return [ListDirectoryRolesOutput(**role) for role in roles]
+    return [ListDirectoryRolesOutput(**normalize_odata(role)) for role in roles]

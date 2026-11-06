@@ -215,15 +215,18 @@ summary selections or message text when upgrading from the legacy app.
 #### OData annotations
 
 Action data retains Graph's original annotation keys, such as `@odata.type`
-and `@odata.context`, including annotations in nested objects. SDK field
-aliases expose these keys in the output metadata without adding a separate
-`odata` object to the response.
+and `@odata.context`, and adds nested copies such as `odata.type` and
+`odata.context`. This also applies to annotations in nested response objects.
+SOAR interprets dots in datapaths as nesting separators, so select
+`action_result.data.*.odata.type` in playbooks. SDK field aliases alone do not
+make literal dotted keys extractable through standard SOAR datapaths.
 
-The legacy manifest advertised some `odata.*` datapaths, but its handlers
-returned Graph's response without creating those nested fields. In custom
-code, access an annotation by its literal key, for example
-`record["@odata.type"]`; it is not a nested `odata.type` object. Fields already
-present in Graph's response, including unknown fields, are preserved.
+The legacy manifest advertised some `odata.*` datapaths, but its handlers did
+not create those nested fields. The SDK connector now supplies them when the
+corresponding Graph annotation is present. Custom code can still use the
+original key, for example `record["@odata.type"]`. Existing fields inside an
+`odata` object take precedence over generated copies. If `odata` already holds
+a non-object value, it is retained and no aliases are added at that level.
 
 #### Token-revocation response data
 

@@ -23,6 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
+from ..graph_output import OdataOutput, normalize_odata
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
@@ -46,6 +47,7 @@ class ListGroupsParams(Params):
 
 
 class ListGroupsOutput(PermissiveActionOutput):
+    odata: OdataOutput | None = OutputField()
     classification: str
     createdDateTime: str = OutputField(example_values=["2021-03-25T18:40:53Z"])
     deletedDateTime: str
@@ -112,7 +114,7 @@ def _get_groups(
             raise RuntimeError(
                 "Microsoft Graph response did not contain a valid list value"
             )
-        yield from page
+        yield from (normalize_odata(item) for item in page)
         next_link = payload.get("@odata.nextLink") or payload.get("odata.nextLink")
         if next_link is None:
             next_params = None

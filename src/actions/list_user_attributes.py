@@ -23,6 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
+from ..graph_output import OdataOutput, normalize_odata
 from ..graph_utils import quote_path_segment
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
@@ -88,6 +89,7 @@ class Thumbnailphoto_OdataOutput(ActionOutput):
 
 
 class ListUserAttributesOutput(PermissiveActionOutput):
+    odata: OdataOutput | None = OutputField()
     odata_type: str = OutputField(
         alias="@odata.type", example_values=["test.DirectoryServices.User"]
     )
@@ -189,7 +191,7 @@ def _get_attributes(
             client.get(endpoint, headers=headers, params=next_params)
         )
         if "value" not in payload:
-            yield payload
+            yield normalize_odata(payload)
             break
         page = payload.get("value")
         if not isinstance(page, list) or not all(
@@ -198,7 +200,7 @@ def _get_attributes(
             raise RuntimeError(
                 "Microsoft Graph response did not contain a valid list value"
             )
-        yield from page
+        yield from (normalize_odata(item) for item in page)
         next_link = payload.get("@odata.nextLink") or payload.get("odata.nextLink")
         if next_link is None:
             next_params = None

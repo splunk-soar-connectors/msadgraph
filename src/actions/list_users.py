@@ -23,6 +23,7 @@ from soar_sdk.params import Param, Params
 
 from ..action_failure import failed_result
 from ..asset import Asset
+from ..graph_output import OdataOutput, normalize_odata
 from ..auth import get_graph_client
 from ..graph_response import get_graph_response
 
@@ -52,7 +53,7 @@ def _get_users(
             )
         if not all(isinstance(user, dict) for user in page):
             raise _GraphAPIError("Microsoft Graph returned an invalid user")
-        yield from page
+        yield from (normalize_odata(item) for item in page)
 
         raw_next_url = payload.get("@odata.nextLink") or payload.get("odata.nextLink")
         if raw_next_url is None:
@@ -117,6 +118,7 @@ class Thumbnailphoto_OdataOutput(ActionOutput):
 
 
 class ListUsersOutput(PermissiveActionOutput):
+    odata: OdataOutput | None = OutputField()
     accountEnabled: bool
     ageGroup: str
     assignedLicenses: list[AssignedlicensesOutput]

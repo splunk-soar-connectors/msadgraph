@@ -225,15 +225,18 @@ summary selections or message text when upgrading from the legacy app.
 #### OData annotations
 
 Action data retains Graph's original annotation keys, such as `@odata.type`
-and `@odata.context`, including annotations in nested objects. SDK field
-aliases expose these keys in the output metadata without adding a separate
-`odata` object to the response.
+and `@odata.context`, and adds nested copies such as `odata.type` and
+`odata.context`. This also applies to annotations in nested response objects.
+SOAR interprets dots in datapaths as nesting separators, so select
+`action_result.data.*.odata.type` in playbooks. SDK field aliases alone do not
+make literal dotted keys extractable through standard SOAR datapaths.
 
-The legacy manifest advertised some `odata.*` datapaths, but its handlers
-returned Graph's response without creating those nested fields. In custom
-code, access an annotation by its literal key, for example
-`record["@odata.type"]`; it is not a nested `odata.type` object. Fields already
-present in Graph's response, including unknown fields, are preserved.
+The legacy manifest advertised some `odata.*` datapaths, but its handlers did
+not create those nested fields. The SDK connector now supplies them when the
+corresponding Graph annotation is present. Custom code can still use the
+original key, for example `record["@odata.type"]`. Existing fields inside an
+`odata` object take precedence over generated copies. If `odata` already holds
+a non-object value, it is retained and no aliases are added at that level.
 
 #### Token-revocation response data
 
@@ -403,6 +406,9 @@ action_result.parameter.filter_string | string | | |
 action_result.parameter.select_string | string | | |
 action_result.parameter.expand_string | string | | |
 action_result.parameter.use_advanced_query | boolean | | |
+action_result.data.\*.odata.type | string | | |
+action_result.data.\*.odata.context | string | | |
+action_result.data.\*.odata.nextLink | string | | |
 action_result.data.\*.accountEnabled | boolean | | True False |
 action_result.data.\*.ageGroup | string | | |
 action_result.data.\*.assignedLicenses.\*.skuId | string | | 189a915c-fe4f-4ffa-bde4-85b9628d07a0 |
@@ -520,6 +526,9 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 action_result.status | string | | success failure |
 action_result.message | string | | |
 action_result.parameter.user_id | string | `user id` | |
+action_result.data.\*.odata.type | string | | |
+action_result.data.\*.odata.context | string | | |
+action_result.data.\*.odata.nextLink | string | | |
 action_result.data.\*.@odata.context | string | | https://graph.test.com/v1.0/$metadata#Edm.Boolean |
 action_result.data.\*.value | boolean | | True False |
 action_result.summary.status | string | | Successfully disabled tokens |
@@ -598,6 +607,9 @@ action_result.status | string | | success failure |
 action_result.message | string | | |
 action_result.parameter.user_id | string | `user id` | |
 action_result.parameter.select_string | string | | |
+action_result.data.\*.odata.type | string | | |
+action_result.data.\*.odata.context | string | | |
+action_result.data.\*.odata.nextLink | string | | |
 action_result.data.\*.@odata.type | string | | #test.graph.device |
 action_result.data.\*.accountEnabled | boolean | | True False |
 action_result.data.\*.alternativeSecurityIds.\*.identityProvider | string | | |
@@ -681,6 +693,9 @@ action_result.parameter.user_id | string | `user id` | |
 action_result.parameter.select_string | string | | |
 action_result.parameter.expand_string | string | | |
 action_result.parameter.use_advanced_query | boolean | | |
+action_result.data.\*.odata.type | string | | |
+action_result.data.\*.odata.context | string | | |
+action_result.data.\*.odata.nextLink | string | | |
 action_result.data.\*.@odata.type | string | | test.DirectoryServices.User |
 action_result.data.\*.@odata.context | string | | |
 action_result.data.\*.accountEnabled | boolean | | True False |
@@ -859,6 +874,9 @@ action_result.parameter.filter_string | string | | |
 action_result.parameter.select_string | string | | |
 action_result.parameter.expand_string | string | | |
 action_result.parameter.use_advanced_query | boolean | | |
+action_result.data.\*.odata.type | string | | |
+action_result.data.\*.odata.context | string | | |
+action_result.data.\*.odata.nextLink | string | | |
 action_result.data.\*.classification | string | | |
 action_result.data.\*.createdDateTime | string | | 2021-03-25T18:40:53Z |
 action_result.data.\*.deletedDateTime | string | | |
@@ -924,6 +942,9 @@ action_result.parameter.object_id | string | `group object id` | |
 action_result.parameter.select_string | string | | |
 action_result.parameter.expand_string | string | | |
 action_result.parameter.use_advanced_query | boolean | | |
+action_result.data.\*.odata.type | string | | |
+action_result.data.\*.odata.context | string | | |
+action_result.data.\*.odata.nextLink | string | | |
 action_result.data.\*.@odata.type | string | | test.DirectoryServices.Group |
 action_result.data.\*.@odata.context | string | | |
 action_result.data.\*.classification | string | | |
@@ -989,6 +1010,9 @@ action_result.parameter.group_object_id | string | `group object id` | |
 action_result.parameter.select_string | string | | |
 action_result.parameter.expand_string | string | | |
 action_result.parameter.use_advanced_query | boolean | | |
+action_result.data.\*.odata.type | string | | |
+action_result.data.\*.odata.context | string | | |
+action_result.data.\*.odata.nextLink | string | | |
 action_result.data.\*.@odata.type | string | | #test.graph.user |
 action_result.data.\*.accountEnabled | boolean | | True False |
 action_result.data.\*.ageGroup | string | | |
@@ -1092,9 +1116,15 @@ action_result.status | string | | success failure |
 action_result.message | string | | |
 action_result.parameter.group_object_id | string | `group object id` | |
 action_result.parameter.user_id | string | `user id` | |
+action_result.data.\*.odata.type | string | | |
+action_result.data.\*.odata.context | string | | |
+action_result.data.\*.odata.nextLink | string | | |
 action_result.data.\*.@odata.context | string | | https://graph.test.com/v1.0/$metadata#directoryObjects |
 action_result.data.\*.@odata.type | string | | #test.graph.group |
 action_result.data.\*.user_in_group | boolean | | True False |
+action_result.data.\*.value.\*.odata.type | string | | |
+action_result.data.\*.value.\*.odata.context | string | | |
+action_result.data.\*.value.\*.odata.nextLink | string | | |
 action_result.data.\*.value.\*.@odata.type | string | | |
 action_result.data.\*.value.\*.classification | string | | |
 action_result.data.\*.value.\*.createdDateTime | string | | 2022-02-25T12:05:22Z |
@@ -1146,6 +1176,9 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
 action_result.message | string | | |
+action_result.data.\*.odata.type | string | | |
+action_result.data.\*.odata.context | string | | |
+action_result.data.\*.odata.nextLink | string | | |
 action_result.data.\*.deletedDateTime | string | | |
 action_result.data.\*.deletionTimestamp | string | | |
 action_result.data.\*.description | string | | Can read basic directory information. For granting access to applications, not intended for users. |
@@ -1185,12 +1218,18 @@ action_result.message | string | | |
 action_result.parameter.location_type | string | | |
 action_result.parameter.filter | string | | |
 action_result.parameter.select | string | | |
+action_result.data.\*.odata.type | string | | |
+action_result.data.\*.odata.context | string | | |
+action_result.data.\*.odata.nextLink | string | | |
 action_result.data.\*.@odata.type | string | | |
 action_result.data.\*.id | string | `directory object id` | 0c0c6d27-93e7-4fd7-88a4-952c6d61a697 |
 action_result.data.\*.displayName | string | | Named locations to be blocked |
 action_result.data.\*.createdDateTime | string | `datetime` | 2021-03-23T04:59:25.8014022Z |
 action_result.data.\*.modifiedDateTime | string | `datetime` | 2021-03-23T08:05:02.1027085Z |
 action_result.data.\*.isTrusted | boolean | | True False |
+action_result.data.\*.ipRanges.\*.odata.type | string | | |
+action_result.data.\*.ipRanges.\*.odata.context | string | | |
+action_result.data.\*.ipRanges.\*.odata.nextLink | string | | |
 action_result.data.\*.ipRanges.\*.@odata.type | string | | |
 action_result.data.\*.ipRanges.\*.cidrAddress | string | `ip` `cidr` | 127.0.0.1/32 2001:8000::/20 |
 action_result.data.\*.countriesAndRegions.\* | string | | US CA |
