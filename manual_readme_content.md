@@ -126,6 +126,28 @@ test account when validating resets and set **force_change** as appropriate.
 
 ### Troubleshooting and upgrades
 
+#### Upgrade from the legacy REST handler
+
+OAuth callbacks now use asset webhooks instead of the legacy
+`/rest/handler/.../result` route. Existing Entra redirect registrations do not
+cover the new route.
+
+1. Enable incoming webhooks on the upgraded asset and allow callbacks without
+   SOAR authentication. Ensure the browser can reach the configured webhook port.
+1. Start **TEST CONNECTIVITY** and register the exact **Using OAuth URL:** callback
+   as a **Web** redirect URI in the Entra application's **Authentication** settings.
+   Follow the delegated authentication steps above to complete authorization.
+1. Keep the old redirect URI while any legacy assets still use it. Remove it
+   once those assets have been upgraded and no longer need the REST handler.
+
+This also applies to the browser-based administrator-consent flow. Client
+credentials with **Admin Consent Already Provided** checked do not use a callback
+and need no redirect change for that flow. Usable legacy delegated state may
+migrate without a new sign-in, but configure the webhook before the next
+interactive authorization is needed.
+
+#### Troubleshooting
+
 - A redirect mismatch means the Entra **Web** redirect URI must match the callback
   logged by the current asset, including scheme, host, port and path.
 - A connectivity timeout can indicate an unreachable webhook, disabled incoming

@@ -1,6 +1,7 @@
 **Unreleased**
 
 * Migrate the connector to the Splunk SOAR SDK. Requires Python 3.13.
+* Move OAuth callbacks from the legacy REST handler to asset webhooks. Enable incoming webhooks and register the new redirect URI in Microsoft Entra before reauthorizing. See the app documentation for upgrade steps.
 * Add **make request** for authenticated Microsoft Graph API calls.
 * Replace custom result views with tables.
 * Preserve Graph's original `@odata.*` fields. Correct output datapaths, data types, list counts and summaries. **Disable tokens** now returns the Graph response. See the app documentation for playbook upgrade guidance.
