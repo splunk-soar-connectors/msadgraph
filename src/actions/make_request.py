@@ -10,6 +10,7 @@ import httpx
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import MakeRequestOutput
 from soar_sdk.auth import OAuthClientError
+from soar_sdk.auth.client import AuthorizationRequiredError
 from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import MakeRequestParams, Param
 
@@ -137,7 +138,7 @@ def make_request(
         return MakeRequestOutput(
             status_code=response.status_code, response_body=response.text
         )
-    except ActionFailure as error:
+    except (ActionFailure, AuthorizationRequiredError) as error:
         return failed_result(
             params,
             str(error),

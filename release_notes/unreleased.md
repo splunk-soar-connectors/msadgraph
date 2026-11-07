@@ -1,1 +1,3 @@
 **Unreleased**
+
+* Allow configurable delegated OAuth scopes. Blank settings preserve existing defaults; changed scopes require reauthorization.

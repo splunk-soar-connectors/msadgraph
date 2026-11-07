@@ -14,9 +14,14 @@
 import hmac
 
 from soar_sdk.app import App
+from soar_sdk.auth.client import AuthorizationRequiredError
 from soar_sdk.webhooks.models import WebhookRequest, WebhookResponse
 
-from ..auth import authorization_handoff_is_active, get_authorization_code_flow
+from ..auth import (
+    authorization_handoff_is_active,
+    get_authorization_code_flow,
+    get_pending_delegated_scopes,
+)
 from ..consts import (
     ADMIN_CONSENT_COMPLETE_STATE_KEY,
     ADMIN_CONSENT_NONCE_STATE_KEY,
@@ -54,6 +59,15 @@ def oauth_start(request: WebhookRequest) -> WebhookResponse:
         return WebhookResponse.text_response(
             "No OAuth authorization request is pending.", status_code=400
         )
+    if (
+        request.asset.auth_state.get(AUTH_FLOW_MODE_STATE_KEY)
+        == AUTH_FLOW_MODE_DELEGATED
+    ):
+        try:
+            get_pending_delegated_scopes(request.asset)
+        except AuthorizationRequiredError as error:
+            _save_authorization_error(request, str(error))
+            return WebhookResponse.text_response(str(error), status_code=400)
     return WebhookResponse(
         status_code=302,
         headers=[("Location", authorization_url)],
@@ -116,6 +130,12 @@ def _handle_delegated_callback(
 
     if error_response := _handle_callback_error(request, query):
         return error_response
+
+    try:
+        get_pending_delegated_scopes(request.asset)
+    except AuthorizationRequiredError as error:
+        _save_authorization_error(request, str(error))
+        return WebhookResponse.text_response(str(error), status_code=400)
 
     authorization_code = query.get("code")
     if not authorization_code:
